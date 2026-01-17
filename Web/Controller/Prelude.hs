@@ -6,8 +6,8 @@ module Web.Controller.Prelude
 )
 where
 
-import Web.Types
 import Application.Helper.Controller
-import IHP.ControllerPrelude
 import Generated.Types
+import IHP.ControllerPrelude
 import Web.Routes
+import Web.Types

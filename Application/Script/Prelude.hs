@@ -6,7 +6,7 @@ module Application.Script.Prelude
 )
 where
 
-import IHP.Prelude
-import IHP.ControllerPrelude
 import Generated.Types
+import IHP.ControllerPrelude
+import IHP.Prelude
 import IHP.ScriptSupport

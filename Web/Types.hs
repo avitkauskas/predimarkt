@@ -25,7 +25,7 @@ type instance CurrentUserRecord = User
 data UsersController
     = NewUserAction
     | CreateUserAction
-    | EditUserAction { userId :: !(Id User) }
-    | UpdateUserAction { userId :: !(Id User) }
-    | DeleteUserAction { userId :: !(Id User) }
+    | EditUserAction {userId :: !(Id User)}
+    | UpdateUserAction {userId :: !(Id User)}
+    | DeleteUserAction {userId :: !(Id User)}
     deriving (Eq, Show, Data)

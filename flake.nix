@@ -29,6 +29,7 @@
                         # Haskell dependencies go here
                         p.ihp
                         cabal-install
+                        stylish-haskell
                         base
                         wai
                         text
