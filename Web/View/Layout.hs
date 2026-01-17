@@ -1,33 +1,115 @@
 module Web.View.Layout (defaultLayout, Html) where
 
-import IHP.ViewPrelude
-import IHP.Environment
+import Application.Helper.View
 import Generated.Types
 import IHP.Controller.RequestContext
-import Web.Types
+import IHP.Environment
+import IHP.ViewPrelude
 import Web.Routes
-import Application.Helper.View
+import Web.Types
 
 defaultLayout :: Html -> Html
 defaultLayout inner = [hsx|
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        {metaTags}
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                {metaTags}
+                {stylesheets}
+                {scripts}
+                <title>{pageTitleOrDefault "App"}</title>
+            </head>
+            <body>
+                <div class="container mt-4">
+                    {navbar}
+                    <div class="container">
+                        {renderFlashMessages}
+                        {inner}
+                    </div>
+                </div>
+            </body>
+        </html>
+    |]
 
-        {stylesheets}
-        {scripts}
+navbar :: Html
+navbar = [hsx|
+        <nav class="navbar navbar-expand-lg bg-body">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold gradient-text fs-4"
+                   href="/">Predimarkt</a>
+                <div class="d-flex d-lg-none ms-auto align-items-center gap-1">
+                    <button
+                        aria-controls="navbar-collapse"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation"
+                        class="navbar-toggler-custom"
+                        data-bs-target="#navbar-collapse"
+                        data-bs-toggle="collapse"
+                        type="button"
+                    >
+                        <svg class="hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2" d="M4 6h16M4 12h16M4 18h16"
+                            />
+                        </svg>
+                    </button>
+                    {renderThemeToggle}
+                </div>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="navbar-nav ms-auto">
+                        {navItems}
+                        <li class="nav-item d-none d-lg-flex align-items-center">{renderThemeToggle}</li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    |]
+    where
+        navItems :: Html
+        navItems = maybe loggedOutNav loggedInNav currentUserOrNothing
 
-        <title>{pageTitleOrDefault "App"}</title>
-    </head>
-    <body>
-        <div class="container mt-4">
-            {renderFlashMessages}
-            {inner}
-        </div>
-    </body>
-</html>
-|]
+        loggedOutNav :: Html
+        loggedOutNav = [hsx|
+            <li class="nav-item"><a class="nav-link" href={NewSessionAction}>Login</a></li>
+        |]
+
+        loggedInNav :: User -> Html
+        loggedInNav user = [hsx|
+            <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+            <li class="nav-item dropdown">
+                <a aria-expanded="false"
+                   class="nav-link dropdown-toggle"
+                   data-bs-toggle="dropdown"
+                   href="#" role="button"
+                >Account</a>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
+                    <li><h6 class="dropdown-header">{get #email user}</h6></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a  class="dropdown-item" href="#">My Holdings</a></li>
+                    <li><a  class="dropdown-item" href="#">My Markets</a></li>
+                    <li><a  class="dropdown-item" href={EditUserAction (get #id user)}>Profile</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li>
+                        <a class="dropdown-item js-delete js-delete-no-confirm"
+                           href={DeleteSessionAction}
+                        >Logout</a>
+                    </li>
+                </ul>
+            </li>
+        |]
+
+renderThemeToggle :: Html
+renderThemeToggle = [hsx|
+        <button
+            type="button"
+            class="btn btn-link p-1 text-body text-decoration-none lh-1"
+            onclick="toggleTheme()"
+            aria-label="Toggle dark/light mode"
+        >
+            <span data-theme-icon></span>
+        </button>
+    |]
 
 -- The 'assetPath' function used below appends a `?v=SOME_VERSION` to the static assets in production
 -- This is useful to avoid users having old CSS and JS files in their browser cache once a new version is deployed
@@ -55,6 +137,7 @@ scripts = [hsx|
         <script src={assetPath "/vendor/turbolinksMorphdom.js"}></script>
         <script src={assetPath "/helpers.js"}></script>
         <script src={assetPath "/ihp-auto-refresh.js"}></script>
+        <script src={assetPath "/theme-toggle.js"}></script>
         <script src={assetPath "/app.js"}></script>
     |]
 
@@ -65,11 +148,11 @@ devScripts = [hsx|
 
 metaTags :: Html
 metaTags = [hsx|
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-    <meta property="og:title" content="App"/>
-    <meta property="og:type" content="website"/>
-    <meta property="og:url" content="TODO"/>
-    <meta property="og:description" content="TODO"/>
-    {autoRefreshMeta}
-|]
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+        <meta property="og:title" content="App"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:url" content="TODO"/>
+        <meta property="og:description" content="TODO"/>
+        {autoRefreshMeta}
+    |]
