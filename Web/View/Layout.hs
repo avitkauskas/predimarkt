@@ -84,7 +84,7 @@ navbar = [hsx|
                    href="#" role="button"
                 >Account</a>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
-                    <li><h6 class="dropdown-header">{get #email user}</h6></li>
+                    <li><h6 class="dropdown-header">{get #nickname user}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href="#">My Holdings</a></li>
                     <li><a  class="dropdown-item" href="#">My Markets</a></li>
