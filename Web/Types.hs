@@ -29,3 +29,23 @@ data UsersController
     | UpdateUserAction {userId :: !(Id User)}
     | DeleteUserAction {userId :: !(Id User)}
     deriving (Eq, Show, Data)
+
+data CategoriesController
+    = CategoriesAction
+    | NewCategoryAction
+    | ShowCategoryAction { categoryId :: !(Id Category) }
+    | CreateCategoryAction
+    | EditCategoryAction { categoryId :: !(Id Category) }
+    | UpdateCategoryAction { categoryId :: !(Id Category) }
+    | DeleteCategoryAction { categoryId :: !(Id Category) }
+    deriving (Eq, Show, Data)
+
+data MarketsController
+    = MarketsAction
+    | NewMarketAction
+    | ShowMarketAction { marketId :: !(Id Market) }
+    | CreateMarketAction
+    | EditMarketAction { marketId :: !(Id Market) }
+    | UpdateMarketAction { marketId :: !(Id Market) }
+    | DeleteMarketAction { marketId :: !(Id Market) }
+    deriving (Eq, Show, Data)

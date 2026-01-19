@@ -7,6 +7,8 @@ import Web.Controller.Sessions
 import Web.View.Layout (defaultLayout)
 
 -- Controller Imports
+import Web.Controller.Markets
+import Web.Controller.Categories
 import Web.Controller.Static
 import Web.Controller.Users
 
@@ -15,6 +17,8 @@ instance FrontController WebApplication where
         [ startPage WelcomeAction
         , parseRoute @SessionsController
         -- Generator Marker
+        , parseRoute @MarketsController
+        , parseRoute @CategoriesController
         , parseRoute @UsersController
         ]
 
