@@ -1,4 +1,5 @@
 -- ALTER DATABASE app SET timezone = 'UTC';
+
 CREATE FUNCTION set_updated_at_to_now() RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -19,6 +20,7 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+
 CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
@@ -45,6 +47,7 @@ CREATE TABLE markets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+
 CREATE INDEX markets_user_id_index ON markets (user_id);
 CREATE INDEX markets_status_index ON markets (status);
 CREATE INDEX markets_created_at_index ON markets (created_at);
@@ -65,8 +68,10 @@ CREATE TABLE assets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+
 CREATE INDEX assets_market_id_index ON assets (market_id);
 CREATE TRIGGER update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+
 ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
