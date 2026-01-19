@@ -1,12 +1,14 @@
+-- ALTER DATABASE app SET timezone = 'UTC';
 CREATE FUNCTION set_updated_at_to_now() RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
 $$ language plpgsql;
--- ALTER DATABASE app SET timezone = 'UTC';
+
 CREATE TYPE market_statuses AS ENUM ('draft', 'open', 'closed', 'resolved', 'refunded');
 CREATE TYPE asset_statuses AS ENUM ('open', 'resolved', 'refunded');
+
 CREATE TABLE users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
@@ -20,11 +22,13 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE
 );
+
 CREATE TABLE markets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL,
@@ -48,6 +52,7 @@ CREATE INDEX markets_opened_at_index ON markets (opened_at);
 CREATE INDEX markets_closed_at_index ON markets (closed_at);
 CREATE UNIQUE INDEX markets_category_id_slug_index ON markets (category_id, slug);
 CREATE TRIGGER update_markets_updated_at BEFORE UPDATE ON markets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+
 CREATE TABLE assets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     market_id UUID NOT NULL,

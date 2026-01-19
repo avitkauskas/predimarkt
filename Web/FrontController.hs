@@ -7,8 +7,8 @@ import Web.Controller.Sessions
 import Web.View.Layout (defaultLayout)
 
 -- Controller Imports
-import Web.Controller.Markets
 import Web.Controller.Categories
+import Web.Controller.Markets
 import Web.Controller.Static
 import Web.Controller.Users
 
