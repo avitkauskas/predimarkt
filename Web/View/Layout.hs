@@ -16,7 +16,7 @@ defaultLayout inner = [hsx|
                 {metaTags}
                 {stylesheets}
                 {scripts}
-                <title>{pageTitleOrDefault "App"}</title>
+                <title>{pageTitleOrDefault "Predimarkt"}</title>
             </head>
             <body>
                 <div class="container mt-4">

@@ -8,13 +8,13 @@
 --
 
 name:                App
-version:             0.1.0.0
+version:             0.1.0
 -- synopsis:
 -- description:
 license:             AllRightsReserved
 license-file:        LICENSE
-author:              Developers
-maintainer:          developers@example.com
+author:              Alvydas Vitkauskas
+maintainer:          alvydas.vitkauskas@gmail.com
 -- copyright:
 -- category:
 build-type:          Simple
