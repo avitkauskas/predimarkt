@@ -20,10 +20,21 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
-
 CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+
+CREATE TABLE admins (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    email TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    locked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    failed_login_attempts INT DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+CREATE UNIQUE INDEX admins_email_index ON admins (LOWER(email));
+CREATE TRIGGER update_admins_updated_at BEFORE UPDATE ON admins FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY NOT NULL,
@@ -47,7 +58,6 @@ CREATE TABLE markets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
-
 CREATE INDEX markets_user_id_index ON markets (user_id);
 CREATE INDEX markets_status_index ON markets (status);
 CREATE INDEX markets_created_at_index ON markets (created_at);
@@ -55,6 +65,8 @@ CREATE INDEX markets_opened_at_index ON markets (opened_at);
 CREATE INDEX markets_closed_at_index ON markets (closed_at);
 CREATE UNIQUE INDEX markets_category_id_slug_index ON markets (category_id, slug);
 CREATE TRIGGER update_markets_updated_at BEFORE UPDATE ON markets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
+ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
 
 CREATE TABLE assets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
@@ -68,10 +80,6 @@ CREATE TABLE assets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
-
 CREATE INDEX assets_market_id_index ON assets (market_id);
 CREATE TRIGGER update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
-
-ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
-ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;

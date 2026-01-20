@@ -1,6 +1,8 @@
 module Main where
 import IHP.Prelude
 
+import Admin.FrontController
+import Admin.Types
 import Config
 import IHP.FrameworkConfig
 import IHP.Job.Types
@@ -11,7 +13,8 @@ import Web.Types
 
 instance FrontController RootApplication where
     controllers = [
-            mountFrontController WebApplication
+            mountFrontController WebApplication,
+            mountFrontController AdminApplication
         ]
 
 instance Worker RootApplication where

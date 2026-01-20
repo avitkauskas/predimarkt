@@ -1,0 +1,9 @@
+module Admin.Routes where
+import Admin.Types
+import Generated.Types
+import IHP.RouterPrelude
+
+-- Generator Marker
+instance AutoRoute StaticController
+instance AutoRoute AdminsController
+instance AutoRoute SessionsController

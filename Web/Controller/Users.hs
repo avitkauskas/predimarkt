@@ -61,7 +61,7 @@ instance Controller UsersController where
         accessDeniedUnless (userId == currentUserId)
 
         existing_user <- fetch userId
-        let user = existing_user{passwordHash = ""}
+        let user = existing_user |> set #passwordHash ""
         let passwordConfirmation = ""
         render EditView{..}
 
