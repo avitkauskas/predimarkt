@@ -9,4 +9,6 @@ instance Controller SessionsController where
     action CreateSessionAction = Sessions.createSessionAction @Admin
     action DeleteSessionAction = Sessions.deleteSessionAction @Admin
 
-instance Sessions.SessionsControllerConfig Admin
+instance Sessions.SessionsControllerConfig Admin where
+    afterLoginRedirectPath = "/admin/"
+    afterLogoutRedirectPath = "/admin/NewSession"

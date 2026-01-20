@@ -1,5 +1,5 @@
-module Web.View.Categories.Edit where
-import Web.View.Prelude
+module Admin.View.Categories.Edit where
+import Admin.View.Prelude
 
 data EditView = EditView { category :: Category }
 
@@ -11,7 +11,8 @@ instance View EditView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbLink "Categories" CategoriesAction
+                [ breadcrumbLinkExternal "Dashboard" "/admin/"
+                , breadcrumbLink "Categories" CategoriesAction
                 , breadcrumbText "Edit Category"
                 ]
 

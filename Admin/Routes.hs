@@ -7,3 +7,4 @@ import IHP.RouterPrelude
 instance AutoRoute StaticController
 instance AutoRoute AdminsController
 instance AutoRoute SessionsController
+instance AutoRoute CategoriesController

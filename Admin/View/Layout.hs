@@ -35,7 +35,7 @@ navbar = [hsx|
         <nav class="navbar navbar-expand-lg bg-body">
             <div class="container-fluid">
                 <a class="navbar-brand fw-bold gradient-text fs-4"
-                   href="/">Predimarkt Admin</a>
+                   href="/admin/">Predimarkt · Admin</a>
                 <div class="d-flex d-lg-none ms-auto align-items-center gap-1">
                     <button
                         aria-controls="navbar-collapse"
@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: Admin -> Html
         loggedInNav admin = [hsx|
-            <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="/admin/">Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -115,7 +115,7 @@ renderThemeToggle = [hsx|
 
 stylesheets :: Html
 stylesheets = [hsx|
-        <link rel="stylesheet" href={assetPath "/vendor/bootstrap-5.2.1/bootstrap.min.css"}/>
+        <link rel="stylesheet" href={assetPath "/vendor/bootstrap-5.3.8/bootstrap.min.css"}/>
         <link rel="stylesheet" href={assetPath "/vendor/flatpickr.min.css"}/>
         <link rel="stylesheet" href={assetPath "/app.css"}/>
     |]
@@ -126,7 +126,8 @@ scripts = [hsx|
         <script src={assetPath "/vendor/jquery-3.6.0.slim.min.js"}></script>
         <script src={assetPath "/vendor/timeago.js"}></script>
         <script src={assetPath "/vendor/popper-2.11.6.min.js"}></script>
-        <script src={assetPath "/vendor/bootstrap-5.2.1/bootstrap.min.js"}></script>
+        <script src={assetPath "/vendor/bootstrap-5.3.8/bootstrap.min.js"}></script>
+        <script src={assetPath "/vendor/htmx-4.0.0-alpha6/htmx.min.js"}></script>
         <script src={assetPath "/vendor/flatpickr.js"}></script>
         <script src={assetPath "/vendor/morphdom-umd.min.js"}></script>
         <script src={assetPath "/vendor/turbolinks.js"}></script>
@@ -134,6 +135,7 @@ scripts = [hsx|
         <script src={assetPath "/vendor/turbolinksMorphdom.js"}></script>
         <script src={assetPath "/helpers.js"}></script>
         <script src={assetPath "/ihp-auto-refresh.js"}></script>
+        <script src={assetPath "/theme-toggle.js"}></script>
         <script src={assetPath "/app.js"}></script>
     |]
 
@@ -144,11 +146,11 @@ devScripts = [hsx|
 
 metaTags :: Html
 metaTags = [hsx|
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-    <meta property="og:title" content="App"/>
-    <meta property="og:type" content="website"/>
-    <meta property="og:url" content="TODO"/>
-    <meta property="og:description" content="TODO"/>
-    {autoRefreshMeta}
-|]
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+        <meta property="og:title" content="App"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:url" content="TODO"/>
+        <meta property="og:description" content="TODO"/>
+        {autoRefreshMeta}
+    |]

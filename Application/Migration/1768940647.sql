@@ -1,0 +1,14 @@
+ALTER TABLE categories DROP CONSTRAINT categories_slug_key;
+DROP INDEX markets_category_id_slug_index;
+DROP INDEX markets_closed_at_index;
+DROP INDEX markets_created_at_index;
+DROP INDEX markets_opened_at_index;
+DROP INDEX markets_status_index;
+DROP INDEX markets_user_id_index;
+DROP TRIGGER update_assets_updated_at ON assets;
+DROP TRIGGER update_markets_updated_at ON markets;
+ALTER TABLE markets DROP CONSTRAINT markets_ref_category_id;
+ALTER TABLE markets DROP CONSTRAINT markets_ref_user_id;
+DROP TABLE assets;
+DROP TABLE categories;
+DROP TABLE markets;

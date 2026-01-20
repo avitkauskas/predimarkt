@@ -8,7 +8,7 @@ import IHP.Prelude
 data AdminApplication = AdminApplication
     deriving (Eq, Show)
 
-data StaticController = WelcomeAction
+data StaticController = DashboardAction
     deriving (Eq, Show, Data)
 
 data SessionsController
@@ -26,4 +26,13 @@ data AdminsController
     = EditAdminAction {adminId :: !(Id Admin)}
     | UpdateAdminAction {adminId :: !(Id Admin)}
     | DeleteAdminAction {adminId :: !(Id Admin)}
+    deriving (Eq, Show, Data)
+
+data CategoriesController
+    = CategoriesAction
+    | NewCategoryAction
+    | CreateCategoryAction
+    | EditCategoryAction { categoryId :: !(Id Category) }
+    | UpdateCategoryAction { categoryId :: !(Id Category) }
+    | DeleteCategoryAction { categoryId :: !(Id Category) }
     deriving (Eq, Show, Data)

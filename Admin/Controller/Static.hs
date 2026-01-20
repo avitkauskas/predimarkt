@@ -1,6 +1,8 @@
 module Admin.Controller.Static where
 import Admin.Controller.Prelude
-import Admin.View.Static.Welcome
+import Admin.View.Static.Dashboard
 
 instance Controller StaticController where
-    action WelcomeAction = render WelcomeView
+    beforeAction = notFoundWhen (isNothing currentAdminOrNothing)
+
+    action DashboardAction = render DashboardView

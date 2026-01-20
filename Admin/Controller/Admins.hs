@@ -5,8 +5,9 @@ import Admin.View.Admins.Edit
 import qualified Data.Text as Text
 
 instance Controller AdminsController where
+    beforeAction = ensureIsAdmin
+
     action EditAdminAction{adminId} = do
-        ensureIsAdmin
         accessDeniedUnless (adminId == currentAdminId)
 
         existing_admin <- fetch adminId :: IO Admin
@@ -15,7 +16,6 @@ instance Controller AdminsController where
         render EditView{..}
 
     action UpdateAdminAction{adminId} = do
-        ensureIsAdmin
         accessDeniedUnless (adminId == currentAdminId)
 
         admin <- fetch adminId
@@ -42,7 +42,6 @@ instance Controller AdminsController where
                     redirectTo EditAdminAction{..}
 
     action DeleteAdminAction{adminId} = do
-        ensureIsAdmin
         accessDeniedUnless (adminId == currentAdminId)
 
         admin <- fetch adminId

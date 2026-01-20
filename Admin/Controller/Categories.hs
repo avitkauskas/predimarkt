@@ -1,12 +1,13 @@
-module Web.Controller.Categories where
+module Admin.Controller.Categories where
 
-import Web.Controller.Prelude
-import Web.View.Categories.Index
-import Web.View.Categories.New
-import Web.View.Categories.Edit
-import Web.View.Categories.Show
+import Admin.Controller.Prelude
+import Admin.View.Categories.Edit
+import Admin.View.Categories.Index
+import Admin.View.Categories.New
 
 instance Controller CategoriesController where
+    beforeAction = notFoundWhen (isNothing currentAdminOrNothing)
+
     action CategoriesAction = do
         categories <- query @Category |> fetch
         render IndexView { .. }
@@ -14,10 +15,6 @@ instance Controller CategoriesController where
     action NewCategoryAction = do
         let category = newRecord
         render NewView { .. }
-
-    action ShowCategoryAction { categoryId } = do
-        category <- fetch categoryId
-        render ShowView { .. }
 
     action EditCategoryAction { categoryId } = do
         category <- fetch categoryId
@@ -39,7 +36,7 @@ instance Controller CategoriesController where
         category
             |> buildCategory
             |> ifValid \case
-                Left category -> render NewView { .. } 
+                Left category -> render NewView { .. }
                 Right category -> do
                     category <- category |> createRecord
                     setSuccessMessage "Category created"

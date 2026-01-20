@@ -1,5 +1,5 @@
-module Web.View.Categories.New where
-import Web.View.Prelude
+module Admin.View.Categories.New where
+import Admin.View.Prelude
 
 data NewView = NewView { category :: Category }
 
@@ -11,7 +11,8 @@ instance View NewView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbLink "Categories" CategoriesAction
+                [ breadcrumbLinkExternal "Dashboard" "/admin/"
+                , breadcrumbLink "Categories" CategoriesAction
                 , breadcrumbText "New Category"
                 ]
 
