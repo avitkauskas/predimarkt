@@ -1,13 +1,18 @@
 module Web.View.Markets.Edit where
 import Web.View.Prelude
 
-data EditView = EditView { market :: Market }
+instance CanSelect Category where
+    type SelectValue Category = Id Category
+    selectValue = get #id
+    selectLabel = get #name
+
+data EditView = EditView { market :: Market, categories :: [Category] }
 
 instance View EditView where
     html EditView { .. } = [hsx|
         {breadcrumb}
         <h1>Edit Market</h1>
-        {renderForm market}
+        {renderForm market categories}
     |]
         where
             breadcrumb = renderBreadcrumb
@@ -15,16 +20,12 @@ instance View EditView where
                 , breadcrumbText "Edit Market"
                 ]
 
-renderForm :: Market -> Html
-renderForm market = formFor market [hsx|
-    {(textField #userId)}
+renderForm :: Market -> [Category] -> Html
+renderForm market categories = formFor market [hsx|
     {(textField #title)}
-    {(textField #slug)}
     {(textField #description)}
-    {(textField #categoryId)}
-    {(textField #beta)}
-    {(textField #status)}
-    {(textField #closedAt)}
+    {(selectField #categoryId categories)}
+    {(dateTimeField #closedAt)}
     {submitButton}
 
 |]

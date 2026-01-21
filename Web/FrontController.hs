@@ -14,7 +14,7 @@ import Web.Controller.Users
 
 instance FrontController WebApplication where
     controllers =
-        [ startPage WelcomeAction
+        [ startPage MarketsAction
         , parseRoute @SessionsController
         -- Generator Marker
         , parseRoute @MarketsController

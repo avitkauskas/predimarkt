@@ -1,5 +1,6 @@
 module Admin.View.Categories.Edit where
 import Admin.View.Prelude
+import Data.Attoparsec.ByteString.Char8
 
 data EditView = EditView { category :: Category }
 
@@ -11,7 +12,7 @@ instance View EditView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbLinkExternal "Dashboard" "/admin/"
+                [ breadcrumbLink "Dashboard" DashboardAction
                 , breadcrumbLink "Categories" CategoriesAction
                 , breadcrumbText "Edit Category"
                 ]

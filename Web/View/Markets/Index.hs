@@ -1,7 +1,7 @@
 module Web.View.Markets.Index where
 import Web.View.Prelude
 
-data IndexView = IndexView { markets :: [Market], pagination :: Pagination }
+data IndexView = IndexView { markets :: [Include "categoryId" Market], pagination :: Pagination }
 
 instance View IndexView where
     html IndexView { .. } = [hsx|
@@ -12,8 +12,10 @@ instance View IndexView where
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Market</th>
-                        <th></th>
+                        <th>Title</th>
+                        <th>Slug</th>
+                        <th>Category</th>
+                        <th>Closes at</th>
                         <th></th>
                         <th></th>
                     </tr>
@@ -28,12 +30,20 @@ instance View IndexView where
                 [ breadcrumbLink "Markets" MarketsAction
                 ]
 
-renderMarket :: Market -> Html
+renderMarket :: (?context :: ControllerContext) => Include "categoryId" Market -> Html
 renderMarket market = [hsx|
     <tr>
-        <td>{market}</td>
+        <td>{market.title}</td>
+        <td>{market.slug}</td>
+        <td>{category.name}</td>
+        <td>{market.closedAt}</td>
         <td><a href={ShowMarketAction market.id}>Show</a></td>
-        <td><a href={EditMarketAction market.id} class="text-muted">Edit</a></td>
-        <td><a href={DeleteMarketAction market.id} class="js-delete text-muted">Delete</a></td>
+        <td>{editButton}</td>
     </tr>
 |]
+    where
+        category = market.categoryId
+        editButton = if market.userId == currentUserId
+            then [hsx|<a href={EditMarketAction market.id} class="text-muted">Edit</a>|]
+            else mempty
+

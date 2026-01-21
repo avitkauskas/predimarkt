@@ -24,7 +24,7 @@ instance View IndexView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbLinkExternal "Dashboard" "/admin/"
+                [ breadcrumbLink "Dashboard" DashboardAction
                 , breadcrumbText "Categories"
                 ]
 

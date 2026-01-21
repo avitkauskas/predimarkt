@@ -5,10 +5,12 @@ import IHP.LoginSupport.Types
 import IHP.ModelSupport
 import IHP.Prelude
 
-data AdminApplication = AdminApplication
+data AdminApplication
+    = AdminApplication
     deriving (Eq, Show)
 
-data StaticController = DashboardAction
+data StaticController
+    = DashboardAction
     deriving (Eq, Show, Data)
 
 data SessionsController

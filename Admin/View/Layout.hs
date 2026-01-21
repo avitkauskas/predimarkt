@@ -16,7 +16,7 @@ defaultLayout inner = [hsx|
                 {metaTags}
                 {stylesheets}
                 {scripts}
-                <title>{pageTitleOrDefault "Predimarkt · Admin"}</title>
+                <title>{pageTitleOrDefault "Predimarkt / Admin"}</title>
             </head>
             <body>
                 <div class="container mt-4">
@@ -35,7 +35,7 @@ navbar = [hsx|
         <nav class="navbar navbar-expand-lg bg-body">
             <div class="container-fluid">
                 <a class="navbar-brand fw-bold gradient-text fs-4"
-                   href="/admin/">Predimarkt · Admin</a>
+                   href={DashboardAction}>Predimarkt / admin</a>
                 <div class="d-flex d-lg-none ms-auto align-items-center gap-1">
                     <button
                         aria-controls="navbar-collapse"
@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: Admin -> Html
         loggedInNav admin = [hsx|
-            <li class="nav-item"><a class="nav-link" href="/admin/">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardAction}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"

@@ -14,6 +14,7 @@ import Admin.Controller.Static
 instance FrontController AdminApplication where
     controllers =
         [ startPage DashboardAction
+        , parseRoute @StaticController
         , parseRoute @AdminsController
         , parseRoute @SessionsController
         , parseRoute @CategoriesController

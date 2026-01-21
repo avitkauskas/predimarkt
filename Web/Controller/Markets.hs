@@ -1,19 +1,24 @@
 module Web.Controller.Markets where
 
 import Web.Controller.Prelude
+import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
-import Web.View.Markets.Edit
 import Web.View.Markets.Show
 
 instance Controller MarketsController where
     action MarketsAction = do
         (marketsQ, pagination) <- query @Market |> paginate
         markets <- marketsQ |> fetch
+        markets <- collectionFetchRelated #categoryId markets
         render IndexView { .. }
 
     action NewMarketAction = do
-        let market = newRecord
+        ensureIsUser
+        now <- getCurrentTime
+        let market = newRecord @Market
+                |> set #closedAt (addUTCTime (30 * 24 * 60 * 60) now)
+        categories <- query @Category |> fetch
         render NewView { .. }
 
     action ShowMarketAction { marketId } = do
@@ -22,25 +27,38 @@ instance Controller MarketsController where
 
     action EditMarketAction { marketId } = do
         market <- fetch marketId
+        accessDeniedUnless (market.userId == currentUserId)
+        categories <- query @Category |> fetch
         render EditView { .. }
 
     action UpdateMarketAction { marketId } = do
         market <- fetch marketId
-        market
-            |> buildMarket
+        accessDeniedUnless (market.userId == currentUserId)
+        now <- getCurrentTime
+        let market' = market |> buildMarket now
+        market'
+            |> set #slug (toSlug market'.title)
             |> ifValid \case
-                Left market -> render EditView { .. }
+                Left market -> do
+                    categories <- query @Category |> fetch
+                    render EditView { .. }
                 Right market -> do
                     market <- market |> updateRecord
                     setSuccessMessage "Market updated"
-                    redirectTo EditMarketAction { .. }
+                    redirectTo MarketsAction
 
     action CreateMarketAction = do
+        ensureIsUser
+        now <- getCurrentTime
         let market = newRecord @Market
-        market
-            |> buildMarket
+        let market' = market |> buildMarket now
+        market'
+            |> set #userId currentUserId
+            |> set #slug (toSlug market'.title)
             |> ifValid \case
-                Left market -> render NewView { .. } 
+                Left market -> do
+                    categories <- query @Category |> fetch
+                    render NewView { .. }
                 Right market -> do
                     market <- market |> createRecord
                     setSuccessMessage "Market created"
@@ -48,9 +66,14 @@ instance Controller MarketsController where
 
     action DeleteMarketAction { marketId } = do
         market <- fetch marketId
+        accessDeniedUnless (market.userId == currentUserId)
         deleteRecord market
         setSuccessMessage "Market deleted"
         redirectTo MarketsAction
 
-buildMarket market = market
-    |> fill @'["userId", "title", "slug", "description", "categoryId", "beta", "status", "closedAt"]
+buildMarket now market = market
+    |> fill @'["title", "description", "categoryId", "closedAt"]
+    |> validateField #title nonEmpty
+    |> validateField #description nonEmpty
+    |> validateField #categoryId nonEmpty
+    |> validateField #closedAt (isGreaterThan now)

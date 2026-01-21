@@ -5,10 +5,12 @@ import IHP.LoginSupport.Types
 import IHP.ModelSupport
 import IHP.Prelude
 
-data WebApplication = WebApplication
+data WebApplication
+    = WebApplication
     deriving (Eq, Show)
 
-data StaticController = WelcomeAction
+data StaticController
+    = WelcomeAction
     deriving (Eq, Show, Data)
 
 data SessionsController
