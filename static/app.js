@@ -17,6 +17,7 @@ $(document).on('ready turbolinks:load', function () {
             altFormat: el.dataset.altFormat || 'Y-m-d H:i',
             enableTime: el.dataset.enableTime === 'true',
             monthSelectorType: 'static',
+            allowInput: true,
         });
     });
 });

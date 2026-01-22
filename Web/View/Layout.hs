@@ -19,9 +19,9 @@ defaultLayout inner = [hsx|
                 <title>{pageTitleOrDefault "Predimarkt"}</title>
             </head>
             <body>
-                <div class="container mt-4">
+                <div class="container-xxl mt-1">
                     {navbar}
-                    <div class="container">
+                    <div class="container-xxl mt-1">
                         {renderFlashMessages}
                         {inner}
                     </div>

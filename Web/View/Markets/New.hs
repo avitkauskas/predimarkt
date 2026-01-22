@@ -34,6 +34,6 @@ renderForm market categories = formFor market [hsx|
                     value={show (get #closedAt market)}
                     class="form-control js-flatpickr"
                     data-enable-time="true"
-                />
+                    />
             </div>
         |]
