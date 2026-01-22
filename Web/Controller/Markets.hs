@@ -17,7 +17,8 @@ instance Controller MarketsController where
         ensureIsUser
         now <- getCurrentTime
         let market = newRecord @Market
-                |> set #closedAt (addUTCTime (30 * 24 * 60 * 60) now)
+                |> set #closedAt (UTCTime (addDays 7 (utctDay now)) 0)
+                |> set #userId currentUserId
         categories <- query @Category |> fetch
         render NewView { .. }
 
