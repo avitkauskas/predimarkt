@@ -8,9 +8,24 @@ import Web.View.Markets.Show
 
 instance Controller MarketsController where
     action MarketsAction = do
-        (marketsQ, pagination) <- query @Market |> paginate
-        markets <- marketsQ |> fetch
-        markets <- collectionFetchRelated #categoryId markets
+        let categoryFilter = paramOrNothing "category"
+
+        let applyCategoryFilter queryBuilder =
+                case categoryFilter of
+                    Just categoryId -> queryBuilder |> filterWhere (#categoryId, categoryId)
+                    Nothing         -> queryBuilder
+
+        let applyStatusFilter queryBuilder =
+                queryBuilder |> filterWhereNot (#status, Draft)
+
+        markets <-
+            query @Market
+                |> applyCategoryFilter
+                |> applyStatusFilter
+                |> fetch
+                >>= collectionFetchRelated #categoryId
+
+        categories <- query @Category |> fetch
         render IndexView { .. }
 
     action NewMarketAction = do

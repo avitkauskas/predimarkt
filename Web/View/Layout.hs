@@ -34,7 +34,7 @@ navbar :: Html
 navbar = [hsx|
         <nav class="navbar navbar-expand-lg bg-body">
             <div class="container-fluid">
-                <a class="navbar-brand fw-bold gradient-text fs-4"
+                <a class="navbar-brand fw-bold gradient-text fs-3"
                    href="/">Predimarkt</a>
                 <div class="d-flex d-lg-none ms-auto align-items-center gap-1">
                     <button

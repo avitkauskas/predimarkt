@@ -44,3 +44,53 @@
 .scroll-no-bar::-webkit-scrollbar {
     display: none;
 }
+
+/* Market status colors - Light theme */
+.market-status-closed-header {
+    background-color: #dbeafe; /* blue-100 */
+}
+
+.market-status-closed-body {
+    background-color: #eff6ff; /* blue-50 */
+}
+
+.market-status-resolved-header {
+    background-color: #dcfce7; /* green-100 */
+}
+
+.market-status-resolved-body {
+    background-color: #f0fdf4; /* green-50 */
+}
+
+.market-status-refunded-header {
+    background-color: #fee2e2; /* red-100 */
+}
+
+.market-status-refunded-body {
+    background-color: #fef2f2; /* red-50 */
+}
+
+/* Market status colors - Dark theme */
+[data-bs-theme="dark"] .market-status-closed-header {
+    background-color: #1e3a8a; /* blue-900 */
+}
+
+[data-bs-theme="dark"] .market-status-closed-body {
+    background-color: #172554; /* blue-950 */
+}
+
+[data-bs-theme="dark"] .market-status-resolved-header {
+    background-color: #14532d; /* green-900 */
+}
+
+[data-bs-theme="dark"] .market-status-resolved-body {
+    background-color: #052e16; /* green-950 */
+}
+
+[data-bs-theme="dark"] .market-status-refunded-header {
+    background-color: #7f1d1d; /* red-900 */
+}
+
+[data-bs-theme="dark"] .market-status-refunded-body {
+    background-color: #450a0a; /* red-950 */
+}
