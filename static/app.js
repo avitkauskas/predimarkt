@@ -9,13 +9,16 @@ $(document).on('ready turbolinks:load', function () {
 // });
 
 $(document).on('ready turbolinks:load', function () {
-    document.querySelectorAll(".js-flatpickr").forEach(el => {
-        flatpickr(el, {
+    $('.my-flatpickr').each(function () {
+        const $el = $(this);
+
+        flatpickr(this, {
             time_24hr: true,
             dateFormat: 'Z',
             altInput: true,
-            altFormat: el.dataset.altFormat || 'Y-m-d H:i',
-            enableTime: el.dataset.enableTime === 'true',
+            altFormat: $el.data('alt-format') || 'Y-m-d H:i',
+            // enableTime: $el.data('enable-time') === true,
+            enableTime: true,
             monthSelectorType: 'static',
             allowInput: true,
         });

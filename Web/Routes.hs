@@ -9,4 +9,5 @@ instance AutoRoute SessionsController
 instance AutoRoute UsersController
 instance AutoRoute CategoriesController
 instance AutoRoute MarketsController
+instance AutoRoute AssetsController
 

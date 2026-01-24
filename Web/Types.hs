@@ -51,3 +51,7 @@ data MarketsController
     | UpdateMarketAction { marketId :: !(Id Market) }
     | DeleteMarketAction { marketId :: !(Id Market) }
     deriving (Eq, Show, Data)
+
+data AssetsController
+    = DeleteAssetAction { assetId :: !(Id Asset) }
+    deriving (Eq, Show, Data)

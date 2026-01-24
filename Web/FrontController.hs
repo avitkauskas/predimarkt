@@ -8,6 +8,7 @@ import Web.View.Layout (defaultLayout)
 
 -- Controller Imports
 import Admin.Controller.Admins
+import Web.Controller.Assets
 import Web.Controller.Markets
 import Web.Controller.Static
 import Web.Controller.Users
@@ -17,6 +18,7 @@ instance FrontController WebApplication where
         [ startPage MarketsAction
         , parseRoute @SessionsController
         -- Generator Marker
+        , parseRoute @AssetsController
         , parseRoute @MarketsController
         , parseRoute @UsersController
         ]
