@@ -20,7 +20,12 @@ renderForm market assets categories = formFor market [hsx|
     {(textField #title)}
     {(textField #description)}
     {(selectField #categoryId categories)}
-    {(dateTimeField #closedAt) { fieldClass = "my-flatpickr" }}
+    {(dateTimeField #closedAt) {
+        additionalAttributes =
+            [ ("data-alt-format", "Y-m-d H:i")
+            , ("data-month-selector-type", "static")
+            ]
+    }}
     <div class="mt-4">
         <h3>Initial Assets</h3>
         {forEachWithIndex assets renderAssetField}
@@ -40,17 +45,3 @@ renderForm market assets categories = formFor market [hsx|
                 </div>
             </div>
         |]
-
-        -- closedAtField = [hsx|
-        --     <div class="mb-3" id="form-group-market_closedAt">
-        --         <label for="market_closedAt" class="form-label">Will close at</label>
-        --         <input
-        --             type="text"
-        --             id="market_closedAt"
-        --             name="closedAt"
-        --             value={show (get #closedAt market)}
-        --             class="form-control js-flatpickr"
-        --             data-enable-time="true"
-        --             />
-        --     </div>
-        -- |]

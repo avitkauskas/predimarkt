@@ -25,7 +25,12 @@ renderForm market assets categories = formFor market [hsx|
     {(textField #title)}
     {(textField #description)}
     {(selectField #categoryId categories)}
-    {(dateTimeField #closedAt)}
+    {(dateTimeField #closedAt) {
+        additionalAttributes =
+            [ ("data-alt-format", "Y-m-d H:i")
+            , ("data-month-selector-type", "static")
+            ]
+    }}
     <div class="mt-4">
         <h3>Assets</h3>
         {forEachWithIndex assets renderAssetField}

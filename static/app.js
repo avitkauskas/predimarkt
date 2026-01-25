@@ -8,19 +8,25 @@ $(document).on('ready turbolinks:load', function () {
 //     _hyperscript.processNode(document.body);
 // });
 
-$(document).on('ready turbolinks:load', function () {
-    $('.my-flatpickr').each(function () {
-        const $el = $(this);
+window.initDatePicker = function () {
+    if (!('flatpickr' in window)) {
+        return;
+    }
 
-        flatpickr(this, {
-            time_24hr: true,
-            dateFormat: 'Z',
-            altInput: true,
-            altFormat: $el.data('alt-format') || 'Y-m-d H:i',
-            // enableTime: $el.data('enable-time') === true,
-            enableTime: true,
-            monthSelectorType: 'static',
-            allowInput: true,
+    document.querySelectorAll("input[type='date']").forEach(el => {
+        flatpickr(el, {
+            ...(el.dataset.altFormat ? {} : { altFormat: 'd.m.y' }),
+            ...(el.dataset.altInput ? {} : { altInput: true }),
         });
     });
-});
+
+    document.querySelectorAll("input[type='datetime-local']").forEach(el => {
+        flatpickr(el, {
+            ...(el.dataset.enableTime ? {} : { enableTime: true }),
+            ...(el.dataset.time_24hr ? {} : { time_24hr: true }),
+            ...(el.dataset.dateFormat ? {} : { dateFormat: 'Z' }),
+            ...(el.dataset.altFormat ? {} : { altFormat: 'd.m.y, H:i' }),
+            ...(el.dataset.altInput ? {} : { altInput: true }),
+        });
+    });
+}
