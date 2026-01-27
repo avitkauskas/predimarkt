@@ -42,11 +42,11 @@ renderForm market assets categories = formFor market [hsx|
         renderAsset :: Asset -> Html
         renderAsset asset = [hsx|
             <div class="row mb-3">
-                <input type="hidden" name="assets_id" value={tshow (get #id asset)}/>
+                <input type="hidden" name="asset_id" value={tshow (get #id asset)}/>
                 <div class="col">
                     <input
                         type="text"
-                        name="assets_name"
+                        name="asset_name"
                         value={get #name asset}
                         class="form-control"
                     />
@@ -54,7 +54,7 @@ renderForm market assets categories = formFor market [hsx|
                 <div class="col">
                     <input
                         type="text"
-                        name="assets_symbol"
+                        name="asset_symbol"
                         value={get #symbol asset}
                         class="form-control"
                     />

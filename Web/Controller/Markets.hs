@@ -9,7 +9,7 @@ import Web.View.Markets.New
 import Web.View.Markets.Show
 
 instance Controller MarketsController where
-    action MarketsAction = do
+    action MarketsAction = autoRefresh do
         let categoryFilter = paramOrNothing "category"
 
         let applyCategoryFilter queryBuilder =
@@ -122,9 +122,9 @@ fetchAssetsFromParams =
             else asset |> set #id assetId)
         assetIds assetNames assetSymbols
     where
-        assetIds = paramList "assets_id"
-        assetNames = paramList "assets_name"
-        assetSymbols = paramList "assets_symbol"
+        assetIds = paramList "asset_id"
+        assetNames = paramList "asset_name"
+        assetSymbols = paramList "asset_symbol"
 
 buildMarket now market = market
     |> fill @'["title", "description", "categoryId", "closedAt"]
