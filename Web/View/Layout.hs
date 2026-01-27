@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
-            <li class="nav-item"><a class="nav-link" href={DashboardHoldingsAction}>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardMarketsAction}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -84,11 +84,11 @@ navbar = [hsx|
                    href="#" role="button"
                 >Account</a>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
-                    <li><h6 class="dropdown-header">{get #nickname user}</h6></li>
+                    <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href={DashboardHoldingsAction}>My Holdings</a></li>
                     <li><a  class="dropdown-item" href={DashboardMarketsAction}>My Markets</a></li>
-                    <li><a  class="dropdown-item" href={EditUserAction (get #id user)}>Profile</a></li>
+                    <li><a  class="dropdown-item" href={EditUserAction user.id}>Profile</a></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li>
                         <a class="dropdown-item js-delete js-delete-no-confirm"

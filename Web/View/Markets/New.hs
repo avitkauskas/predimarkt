@@ -10,8 +10,16 @@ data NewView = NewView { market :: Market, assets :: [Asset], categories :: [Cat
 
 instance View NewView where
     html NewView { .. } = dashboardLayout [hsx|
-        <h3>New Market</h3>
-        {renderForm market assets categories}
+        <div class="row pt-2">
+            <div class="col-12 col-xl-9">
+                <div class="card shadow-sm">
+                    <div class="card-body px-4 px-md-5 py-2 py-md-4">
+                        <h3 class="mb-4">New Market</h3>
+                        {renderForm market assets categories}
+                    </div>
+                </div>
+            </div>
+        </div>
     |]
 
 renderForm :: Market -> [Asset] -> [Category] -> Html
@@ -24,10 +32,18 @@ renderForm market assets categories = formFor market [hsx|
         additionalAttributes =
             [ ("data-alt-format", "Y-m-d H:i")
             , ("data-month-selector-type", "static")
+            , ("data-allow-input", "true")
             ]
     }}
-    <div class="my-4">
-        <h5>Assets</h5>
+    <div class="mb-4">
+        <div class="row">
+            <div class="col form-label">
+                Asset Name
+            </div>
+            <div class="col-auto form-label" style="width: 100px">
+                Symbol
+            </div>
+        </div>
         {forEach assets renderAsset}
     </div>
     {submitButton}
@@ -35,22 +51,23 @@ renderForm market assets categories = formFor market [hsx|
     where
         renderAsset :: Asset -> Html
         renderAsset asset = [hsx|
-            <div class="row mb-3">
-                <input type="hidden" name="asset_id" value={tshow (get #id asset)}/>
+            <div class="row mb-2">
+                <input type="hidden" name="asset_id" value={asset.id}/>
                 <div class="col">
                     <input
                         type="text"
                         name="asset_name"
-                        value={get #name asset}
+                        value={asset.name}
                         class="form-control"
                     />
                 </div>
-                <div class="col">
+                <div class="col-auto">
                     <input
                         type="text"
                         name="asset_symbol"
-                        value={get #symbol asset}
+                        value={asset.symbol}
                         class="form-control"
+                        size="6"
                     />
                 </div>
             </div>

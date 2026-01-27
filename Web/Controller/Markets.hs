@@ -34,7 +34,7 @@ instance Controller MarketsController where
         ensureIsUser
         now <- getCurrentTime
         let market = newRecord @Market
-                |> set #closedAt (UTCTime (addDays 7 (utctDay now)) 0)
+                |> set #closedAt (UTCTime (addDays 14 (utctDay now)) 0)
                 |> set #userId (Just currentUserId)
         let assets = [ newRecord @Asset |> set #name "Yes" |> set #symbol "Yes"
                      , newRecord @Asset |> set #name "No" |> set #symbol "No"
@@ -77,7 +77,7 @@ instance Controller MarketsController where
                                 else asset |> set #marketId market.id |> updateRecord
 
                         setSuccessMessage "Market updated"
-                        redirectTo MarketsAction
+                        redirectTo DashboardMarketsAction
 
     action CreateMarketAction = do
         ensureIsUser
@@ -102,7 +102,7 @@ instance Controller MarketsController where
                         asset |> set #marketId market.id |> createRecord
 
                     setSuccessMessage "Market created"
-                    redirectTo MarketsAction
+                    redirectTo DashboardMarketsAction
 
     action DeleteMarketAction { marketId } = do
         market <- fetch marketId
