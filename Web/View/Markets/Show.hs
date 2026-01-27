@@ -1,7 +1,7 @@
 module Web.View.Markets.Show where
 import Web.View.Prelude
 
-data ShowView = ShowView { market :: Market, assets :: [Asset] }
+data ShowView = ShowView { market :: Include "assets" Market }
 
 instance View ShowView where
     html ShowView { .. } = [hsx|
@@ -22,7 +22,7 @@ instance View ShowView where
                     </tr>
                 </thead>
                 <tbody>
-                    {forEach assets renderAsset}
+                    {forEach market.assets renderAsset}
                 </tbody>
             </table>
         </div>
@@ -37,7 +37,7 @@ renderAsset :: Asset -> Html
 renderAsset asset = [hsx|
     <tr>
         <td>{asset.name}</td>
-        <td>{asset.label_}</td>
+        <td>{asset.symbol}</td>
         <td>{asset.status}</td>
     </tr>
 |]

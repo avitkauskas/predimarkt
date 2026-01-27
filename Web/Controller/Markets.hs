@@ -18,7 +18,7 @@ instance Controller MarketsController where
                     Nothing         -> queryBuilder
 
         let applyStatusFilter queryBuilder =
-                queryBuilder |> filterWhereNot (#status, Draft)
+                queryBuilder |> filterWhereNot (#status, MarketStatusDraft)
 
         markets <-
             query @Market
@@ -35,102 +35,92 @@ instance Controller MarketsController where
         now <- getCurrentTime
         let market = newRecord @Market
                 |> set #closedAt (UTCTime (addDays 7 (utctDay now)) 0)
-                |> set #userId currentUserId
-        let assets = [ newRecord @Asset |> set #name "Yes" |> set #label_ "Yes"
-                     , newRecord @Asset |> set #name "No" |> set #label_ "No"
+                |> set #userId (Just currentUserId)
+        let assets = [ newRecord @Asset |> set #name "Yes" |> set #symbol "Yes"
+                     , newRecord @Asset |> set #name "No" |> set #symbol "No"
                      ]
         categories <- query @Category |> fetch
         render NewView { .. }
 
     action ShowMarketAction { marketId } = do
-        market <- fetch marketId
-        assets <- query @Asset |> filterWhere (#marketId, marketId) |> fetch
+        market <- fetch marketId >>= fetchRelated #assets
         render ShowView { .. }
 
     action EditMarketAction { marketId } = do
         market <- fetch marketId
-        accessDeniedUnless (market.userId == currentUserId)
+        accessDeniedUnless (market.userId == Just currentUserId)
         assets <- query @Asset |> filterWhere (#marketId, marketId) |> fetch
         categories <- query @Category |> fetch
         render EditView { .. }
 
     action UpdateMarketAction { marketId } = do
         market <- fetch marketId
-        accessDeniedUnless (market.userId == currentUserId)
+        accessDeniedUnless (market.userId == Just currentUserId)
         now <- getCurrentTime
-        let market' = market |> buildMarket now
-        market'
-            |> set #slug (toSlug market'.title)
+        assets <- fetchAssetsFromParams
+        market
+            |> buildMarket now
             |> ifValid \case
                 Left market -> do
-                    assets <- fetchAssetsFromParams
                     categories <- query @Category |> fetch
                     render EditView { .. }
                 Right market -> do
-                    market <- market |> updateRecord
+                        market <- market |> updateRecord
 
-                    assets <- fetchAssetsFromParams
-                    forM_ assets \asset -> do
-                        let asset' = asset |> set #marketId market.id
-                        if get #id asset' == def
-                            then createRecord asset' >> pure ()
-                            else updateRecord asset' >> pure ()
+                        forM_ assets \asset -> do
+                            if asset.id == def
+                                then asset |> set #marketId market.id |> createRecord
+                                else asset |> set #marketId market.id |> updateRecord
 
-                    setSuccessMessage "Market updated"
-                    redirectTo MarketsAction
+                        setSuccessMessage "Market updated"
+                        redirectTo MarketsAction
 
     action CreateMarketAction = do
         ensureIsUser
         now <- getCurrentTime
+        assets <- fetchAssetsFromParams
         let market = newRecord @Market
-        let market' = market |> buildMarket now
-        market'
-            |> set #userId currentUserId
-            |> set #slug (toSlug market'.title)
+        market
+            |> buildMarket now
+            |> set #userId (Just currentUserId)
             |> ifValid \case
                 Left market -> do
-                    assets <- fetchAssetsFromParams
                     categories <- query @Category |> fetch
                     render NewView { .. }
                 Right market -> do
                     market <- market |> createRecord
 
-                    assets <- fetchAssetsFromParams
                     forM_ assets \asset -> do
-                        asset
-                            |> set #marketId market.id
-                            |> createRecord
+                        asset |> set #marketId market.id |> createRecord
 
                     setSuccessMessage "Market created"
                     redirectTo MarketsAction
 
     action DeleteMarketAction { marketId } = do
         market <- fetch marketId
-        accessDeniedUnless (market.userId == currentUserId)
+        accessDeniedUnless (market.userId == Just currentUserId)
         deleteRecord market
         setSuccessMessage "Market deleted"
         redirectTo MarketsAction
 
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
-fetchAssetsFromParams = loop 0 []
+fetchAssetsFromParams =
+    pure $ zipWith3 (\assetId name symbol ->
+        let asset = newRecord @Asset
+                |> set #name name
+                |> set #symbol symbol
+        in if assetId == def
+            then asset
+            else asset |> set #id assetId)
+        assetIds assetNames assetSymbols
     where
-        loop :: (?context :: ControllerContext) => Int -> [Asset] -> IO [Asset]
-        loop i acc = do
-            let iStr = show i
-            let name = paramOrNothing @Text (cs ("asset_name_" ++ iStr))
-            case name of
-                Just n -> do
-                    let label = paramOrDefault "" (cs ("asset_label_" ++ iStr))
-                    let assetId = paramOrNothing @(Id Asset) (cs ("asset_id_" ++ iStr))
-                    let baseAsset = newRecord @Asset |> set #name n |> set #label_ label
-                    let asset = case assetId of
-                            Just uid | uid /= def -> baseAsset |> set #id uid
-                            _                     -> baseAsset
-                    loop (i + 1) (acc ++ [asset])
-                Nothing -> pure acc
+        assetIds = paramList "assets_id"
+        assetNames = paramList "assets_name"
+        assetSymbols = paramList "assets_symbol"
 
 buildMarket now market = market
     |> fill @'["title", "description", "categoryId", "closedAt"]
+    |> set #slug (toSlug $ param "title")
     |> validateField #title nonEmpty
     |> validateField #description nonEmpty
     |> validateField #categoryId nonEmpty

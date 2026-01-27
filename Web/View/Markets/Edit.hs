@@ -1,4 +1,5 @@
 module Web.View.Markets.Edit where
+import Unsafe.Coerce
 import Web.View.Prelude
 
 instance CanSelect Category where
@@ -26,6 +27,7 @@ renderForm market assets categories = formFor market [hsx|
     {(textField #description)}
     {(selectField #categoryId categories)}
     {(dateTimeField #closedAt) {
+        fieldLabel = "Closing time",
         additionalAttributes =
             [ ("data-alt-format", "Y-m-d H:i")
             , ("data-month-selector-type", "static")
@@ -33,21 +35,38 @@ renderForm market assets categories = formFor market [hsx|
     }}
     <div class="mt-4">
         <h3>Assets</h3>
-        {forEachWithIndex assets renderAssetField}
+        <div class="row form-label">
+            <div class="col">
+                Asset Name
+            </div>
+            <div class="col">
+                Symbol
+            </div>
+        </div>
+        {forEach assets renderAsset}
     </div>
     {submitButton}
 |]
     where
-        renderAssetField (index, asset) = [hsx|
-            <div class="row mb-3">
-                <input type="hidden" name={"asset_id_" <> show index} value={show asset.id} />
+        renderAsset :: Asset -> Html
+        renderAsset asset = [hsx|
+            <div class="row mb-2">
+                <input type="hidden" name="assets_id" value={tshow (get #id asset)}/>
                 <div class="col">
-                    <label class="form-label">Asset {index + 1} Name</label>
-                    <input type="text" name={"asset_name_" <> show index} value={asset.name} class="form-control" placeholder="e.g. Yes" required />
+                    <input
+                        type="text"
+                        name="assets_name"
+                        value={get #name asset}
+                        class="form-control"
+                    />
                 </div>
                 <div class="col">
-                    <label class="form-label">Asset {index + 1} Label</label>
-                    <input type="text" name={"asset_label_" <> show index} value={asset.label_} class="form-control" placeholder="e.g. Yes" required />
+                    <input
+                        type="text"
+                        name="assets_symbol"
+                        value={get #symbol asset}
+                        class="form-control"
+                    />
                 </div>
             </div>
         |]

@@ -6,7 +6,7 @@ instance Controller AssetsController where
     action DeleteAssetAction { assetId } = do
         asset <- fetch assetId
         market <- fetch asset.marketId
-        accessDeniedUnless (market.userId == currentUserId)
+        accessDeniedUnless (market.userId == Just currentUserId)
 
         assetCount <- query @Asset
             |> filterWhere (#marketId, asset.marketId)

@@ -60,11 +60,11 @@ renderMarket market = [hsx|
         category = market.categoryId
 
         statusBadge =
-            when (inputValue market.status /= "open")
-                [hsx|<span>{inputValue market.status}</span>|]
+            when (market.status /= MarketStatusOpen)
+                [hsx|<span>{marketStatusLabel market.status}</span>|]
 
-        (headerClass, bodyClass) = case inputValue market.status of
-            "closed"   -> ("market-status-closed-header",   "market-status-closed-body")
-            "resolved" -> ("market-status-resolved-header", "market-status-resolved-body")
-            "refunded" -> ("market-status-refunded-header", "market-status-refunded-body")
-            _          -> ("", "")
+        (headerClass, bodyClass) = case market.status of
+            MarketStatusClosed   -> ("market-status-closed-header",   "market-status-closed-body")
+            MarketStatusResolved -> ("market-status-resolved-header", "market-status-resolved-body")
+            MarketStatusRefunded -> ("market-status-refunded-header", "market-status-refunded-body")
+            _                    -> ("", "")
