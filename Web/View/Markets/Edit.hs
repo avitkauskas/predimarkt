@@ -10,16 +10,10 @@ instance CanSelect Category where
 data EditView = EditView { market :: Market, assets :: [Asset], categories :: [Category] }
 
 instance View EditView where
-    html EditView { .. } = [hsx|
-        {breadcrumb}
-        <h1>Edit Market</h1>
+    html EditView { .. } = dashboardLayout [hsx|
+        <h3>Edit Market</h3>
         {renderForm market assets categories}
     |]
-        where
-            breadcrumb = renderBreadcrumb
-                [ breadcrumbLink "Markets" MarketsAction
-                , breadcrumbText "Edit Market"
-                ]
 
 renderForm :: Market -> [Asset] -> [Category] -> Html
 renderForm market assets categories = formFor market [hsx|
@@ -33,11 +27,11 @@ renderForm market assets categories = formFor market [hsx|
             , ("data-month-selector-type", "static")
             ]
     }}
-    <div class="mt-4">
-        <h3>Assets</h3>
+    <div class="my-4">
+        <h5>Assets</h5>
         <div class="row form-label">
             <div class="col">
-                Asset Name
+                Name
             </div>
             <div class="col">
                 Symbol

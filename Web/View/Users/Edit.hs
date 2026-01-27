@@ -1,15 +1,15 @@
-module Web.View.Users.Edit where
+module Web.View.Users.Edit (EditView(..), renderForm) where
 import Web.View.Prelude
 
 data EditView = EditView { user :: User, passwordConfirmation :: Text }
 
 instance View EditView where
-    html EditView { .. } = [hsx|
+    html EditView { .. } = dashboardLayout [hsx|
         <div class="h-100" id="users-edit">
             <div class="d-flex align-items-center">
                 <div class="w-100">
-                    <div style="max-width: 400px" class="mx-auto mb-5">
-                        <h1>Edit Profile</h1>
+                    <div style="max-width: 400px" class="mb-5">
+                        <h3>Edit Profile</h3>
                         {renderForm user passwordConfirmation}
 
                         <hr class="my-4" />

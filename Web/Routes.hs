@@ -10,4 +10,5 @@ instance AutoRoute UsersController
 instance AutoRoute CategoriesController
 instance AutoRoute MarketsController
 instance AutoRoute AssetsController
+instance AutoRoute DashboardController
 

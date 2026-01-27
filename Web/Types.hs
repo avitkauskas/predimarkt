@@ -55,3 +55,8 @@ data MarketsController
 data AssetsController
     = DeleteAssetAction { assetId :: !(Id Asset) }
     deriving (Eq, Show, Data)
+
+data DashboardController
+    = DashboardHoldingsAction
+    | DashboardMarketsAction
+    deriving (Eq, Show, Data)

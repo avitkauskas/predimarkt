@@ -1,4 +1,4 @@
-module Web.View.Layout (defaultLayout, Html) where
+module Web.View.Layout (defaultLayout, dashboardLayout, Html) where
 
 import Application.Helper.View
 import Generated.Types
@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
-            <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardHoldingsAction}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -86,8 +86,8 @@ navbar = [hsx|
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
                     <li><h6 class="dropdown-header">{get #nickname user}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a  class="dropdown-item" href="#">My Holdings</a></li>
-                    <li><a  class="dropdown-item" href="#">My Markets</a></li>
+                    <li><a  class="dropdown-item" href={DashboardHoldingsAction}>My Holdings</a></li>
+                    <li><a  class="dropdown-item" href={DashboardMarketsAction}>My Markets</a></li>
                     <li><a  class="dropdown-item" href={EditUserAction (get #id user)}>Profile</a></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li>
@@ -98,6 +98,52 @@ navbar = [hsx|
                 </ul>
             </li>
         |]
+
+dashboardLayout :: Html -> Html
+dashboardLayout inner = [hsx|
+    <div class="container-fluid mt-2">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky">
+                    <div class="mb-2">
+                        <h5>Dashboard</h5>
+                    </div>
+                    <ul class="nav flex-column gap-2">
+                        <li class="nav-item">
+                            <a class={
+                                classes
+                                    ["nav-link",
+                                    ("active", isActivePath (pathTo DashboardHoldingsAction))]}
+                               href={DashboardHoldingsAction}>
+                              Holdings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class={classes
+                                    ["nav-link",
+                                    ("active", isActivePath (pathTo DashboardMarketsAction))]}
+                                href={DashboardMarketsAction}>
+                              Markets
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class={classes
+                                    ["nav-link",
+                                    ("active", isActivePath (pathTo (EditUserAction currentUserId)))]}
+                                href={EditUserAction currentUserId}>
+                              Profile
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-2">
+                {inner}
+            </main>
+        </div>
+    </div>
+|]
 
 renderThemeToggle :: Html
 renderThemeToggle = [hsx|
