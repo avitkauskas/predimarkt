@@ -65,7 +65,11 @@ instance Controller MarketsController where
                     categories <- query @Category |> fetch
                     render EditView { .. }
                 Right market -> do
-                        market <- market |> updateRecord
+                        uniqueSlug <- constructUniqueSlug 
+                            market.categoryId (toSlug market.title) (Just marketId)
+                        market <- market
+                            |> set #slug uniqueSlug
+                            |> updateRecord
 
                         forM_ assets \asset -> do
                             if asset.id == def
@@ -88,7 +92,11 @@ instance Controller MarketsController where
                     categories <- query @Category |> fetch
                     render NewView { .. }
                 Right market -> do
-                    market <- market |> createRecord
+                    uniqueSlug <- constructUniqueSlug
+                        market.categoryId (toSlug market.title) Nothing
+                    market <- market
+                        |> set #slug uniqueSlug
+                        |> createRecord
 
                     forM_ assets \asset -> do
                         asset |> set #marketId market.id |> createRecord
@@ -120,7 +128,6 @@ fetchAssetsFromParams =
 
 buildMarket now market = market
     |> fill @'["title", "description", "categoryId", "closedAt"]
-    |> set #slug (toSlug $ param "title")
     |> validateField #title nonEmpty
     |> validateField #description nonEmpty
     |> validateField #categoryId nonEmpty

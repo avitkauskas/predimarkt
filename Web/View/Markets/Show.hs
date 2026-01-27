@@ -7,6 +7,7 @@ instance View ShowView where
     html ShowView { .. } = [hsx|
         {breadcrumb}
         <h1>{market.title}</h1>
+        <p>{market.slug}</p>
         <p>{market.description}</p>
 
         <div class="mt-4">
