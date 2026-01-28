@@ -11,6 +11,7 @@ renderAssetRow asset = [hsx|
                 name="asset_name"
                 value={asset.name}
                 class="form-control"
+                onkeydown="if(event.key === 'Enter') { event.target.form?.elements[event.target.tabIndex]?.focus(); }"
             />
         </div>
         <div class="col-auto" style="width: 100px">
@@ -20,6 +21,7 @@ renderAssetRow asset = [hsx|
                 value={asset.symbol}
                 class="form-control"
                 maxlength="6"
+                onkeydown="if(event.key === 'Enter') { event.target.form?.elements[event.target.tabIndex]?.focus(); }"
             />
         </div>
         <div class="col-auto" style="width: 100px">
@@ -29,6 +31,7 @@ renderAssetRow asset = [hsx|
                 value={show asset.quantity}
                 class="form-control"
                 step="10"
+                onkeydown="if(event.key === 'Enter') { event.target.form?.elements[event.target.tabIndex]?.focus(); }"
             />
         </div>
         <div class="col-auto d-flex align-items-center">
