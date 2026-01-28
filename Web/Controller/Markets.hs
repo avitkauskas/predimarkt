@@ -7,6 +7,7 @@ import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
 import Web.View.Markets.Show
+import Web.View.Markets.AddAssetField (renderAssetRow)
 
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do
@@ -58,51 +59,79 @@ instance Controller MarketsController where
         accessDeniedUnless (market.userId == Just currentUserId)
         now <- getCurrentTime
         assets <- fetchAssetsFromParams
-        market
-            |> buildMarket now
-            |> ifValid \case
-                Left market -> do
-                    categories <- query @Category |> fetch
-                    render EditView { .. }
-                Right market -> do
-                        uniqueSlug <- constructUniqueSlug 
-                            market.categoryId (toSlug market.title) (Just marketId)
-                        market <- market
-                            |> set #slug uniqueSlug
-                            |> updateRecord
+        
+        if length assets < 2
+            then do
+                setErrorMessage "Market must have at least 2 assets"
+                categories <- query @Category |> fetch
+                render EditView { .. }
+            else do
+                market
+                    |> buildMarket now
+                    |> ifValid \case
+                        Left market -> do
+                            categories <- query @Category |> fetch
+                            render EditView { .. }
+                        Right market -> do
+                            uniqueSlug <- constructUniqueSlug 
+                                market.categoryId (toSlug market.title) (Just marketId)
+                            
+                            withTransaction do
+                                market <- market
+                                    |> set #slug uniqueSlug
+                                    |> updateRecord
 
-                        forM_ assets \asset -> do
-                            if asset.id == def
-                                then asset |> set #marketId market.id |> createRecord
-                                else asset |> set #marketId market.id |> updateRecord
+                                -- Handle assets diffing
+                                existingAssets <- query @Asset |> filterWhere (#marketId, marketId) |> fetch
+                                let existingIds = map (.id) existingAssets
+                                let newIds = map (\a -> if a.id == def then Nothing else Just a.id) assets
+                                let keptIds = catMaybes newIds
+                                
+                                -- Delete assets that are no longer in the form
+                                let assetsToDelete = filter (\a -> a.id `notElem` keptIds) existingAssets
+                                deleteRecords assetsToDelete
 
-                        setSuccessMessage "Market updated"
-                        redirectTo DashboardMarketsAction
+                                -- Create or Update remaining assets
+                                forM_ assets \asset -> do
+                                    if asset.id == def
+                                        then asset |> set #marketId market.id |> createRecord
+                                        else asset |> set #marketId market.id |> updateRecord
+
+                            setSuccessMessage "Market updated"
+                            redirectTo DashboardMarketsAction
 
     action CreateMarketAction = do
         ensureIsUser
         now <- getCurrentTime
         assets <- fetchAssetsFromParams
         let market = newRecord @Market
-        market
-            |> buildMarket now
-            |> set #userId (Just currentUserId)
-            |> ifValid \case
-                Left market -> do
-                    categories <- query @Category |> fetch
-                    render NewView { .. }
-                Right market -> do
-                    uniqueSlug <- constructUniqueSlug
-                        market.categoryId (toSlug market.title) Nothing
-                    market <- market
-                        |> set #slug uniqueSlug
-                        |> createRecord
+        
+        if length assets < 2
+            then do
+                setErrorMessage "Market must have at least 2 assets"
+                categories <- query @Category |> fetch
+                render NewView { .. }
+            else do
+                market
+                    |> buildMarket now
+                    |> set #userId (Just currentUserId)
+                    |> ifValid \case
+                        Left market -> do
+                            categories <- query @Category |> fetch
+                            render NewView { .. }
+                        Right market -> do
+                            withTransaction do
+                                uniqueSlug <- constructUniqueSlug
+                                    market.categoryId (toSlug market.title) Nothing
+                                market <- market
+                                    |> set #slug uniqueSlug
+                                    |> createRecord
 
-                    forM_ assets \asset -> do
-                        asset |> set #marketId market.id |> createRecord
+                                forM_ assets \asset -> do
+                                    asset |> set #marketId market.id |> createRecord
 
-                    setSuccessMessage "Market created"
-                    redirectTo DashboardMarketsAction
+                            setSuccessMessage "Market created"
+                            redirectTo DashboardMarketsAction
 
     action DeleteMarketAction { marketId } = do
         market <- fetch marketId
@@ -110,6 +139,10 @@ instance Controller MarketsController where
         deleteRecord market
         setSuccessMessage "Market deleted"
         redirectTo MarketsAction
+
+    action AddAssetFieldAction = do
+        let asset = newRecord @Asset
+        respondHtml $ renderAssetRow asset
 
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =
