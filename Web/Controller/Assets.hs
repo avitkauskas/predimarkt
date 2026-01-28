@@ -1,6 +1,7 @@
 module Web.Controller.Assets where
 
 import Web.Controller.Prelude
+import Web.View.Assets.New
 
 instance Controller AssetsController where
     action DeleteAssetAction { assetId } = do
@@ -20,3 +21,7 @@ instance Controller AssetsController where
                 deleteRecord asset
                 setSuccessMessage "Asset deleted"
                 redirectTo (ShowMarketAction asset.marketId)
+
+    action NewAssetAction = do
+        let asset = newRecord @Asset
+        respondHtml $ renderAssetRow asset

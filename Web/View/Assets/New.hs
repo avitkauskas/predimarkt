@@ -1,10 +1,5 @@
-module Web.View.Markets.AddAssetField (renderAssetRow) where
+module Web.View.Assets.New where
 import Web.View.Prelude
-
-data AddAssetFieldView = AddAssetFieldView { asset :: Asset }
-
-instance View AddAssetFieldView where
-    html AddAssetFieldView { .. } = renderAssetRow asset
 
 renderAssetRow :: Asset -> Html
 renderAssetRow asset = [hsx|
@@ -16,7 +11,6 @@ renderAssetRow asset = [hsx|
                 name="asset_name"
                 value={asset.name}
                 class="form-control"
-                placeholder="Name"
             />
         </div>
         <div class="col-auto">
@@ -26,11 +20,12 @@ renderAssetRow asset = [hsx|
                 value={asset.symbol}
                 class="form-control"
                 size="6"
-                placeholder="Symbol"
             />
         </div>
         <div class="col-auto d-flex align-items-center">
-            <a href="#" class="text-danger delete-asset-btn" onclick="if(document.querySelectorAll('.asset-row').length > 2) { this.closest('.asset-row').remove(); } else { alert('Market must have at least 2 assets.'); } return false;">
+            <a href="#"
+               class="text-danger delete-asset-btn"
+               onclick="if(document.querySelectorAll('.asset-row').length > 2) { this.closest('.asset-row').remove(); } else { alert('Market must have at least 2 assets.'); } return false;">
                 Delete
             </a>
         </div>

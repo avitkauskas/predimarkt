@@ -7,7 +7,6 @@ import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
 import Web.View.Markets.Show
-import Web.View.Markets.AddAssetField (renderAssetRow)
 
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do
@@ -139,10 +138,6 @@ instance Controller MarketsController where
         deleteRecord market
         setSuccessMessage "Market deleted"
         redirectTo MarketsAction
-
-    action AddAssetFieldAction = do
-        let asset = newRecord @Asset
-        respondHtml $ renderAssetRow asset
 
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =

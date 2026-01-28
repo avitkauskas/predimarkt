@@ -50,11 +50,11 @@ data MarketsController
     | EditMarketAction { marketId :: !(Id Market) }
     | UpdateMarketAction { marketId :: !(Id Market) }
     | DeleteMarketAction { marketId :: !(Id Market) }
-    | AddAssetFieldAction
     deriving (Eq, Show, Data)
 
 data AssetsController
     = DeleteAssetAction { assetId :: !(Id Asset) }
+    | NewAssetAction
     deriving (Eq, Show, Data)
 
 data DashboardController
