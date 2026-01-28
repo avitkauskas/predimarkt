@@ -26,6 +26,7 @@ instance Controller MarketsController where
                 |> applyStatusFilter
                 |> fetch
                 >>= collectionFetchRelated #categoryId
+                >>= collectionFetchRelated #assets
 
         categories <- query @Category |> fetch
         render IndexView { .. }
