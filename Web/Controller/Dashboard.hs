@@ -9,9 +9,11 @@ instance Controller DashboardController where
 
     action DashboardHoldingsAction = render HoldingsView
 
-    action DashboardMarketsAction = do
+    action DashboardMarketsAction { statusFilter } = do
+        let activeStatus = fromMaybe MarketStatusDraft $ statusFilter <|> paramOrNothing @MarketStatus "statusFilter"
         markets <- query @Market
             |> filterWhere (#userId, Just currentUserId)
+            |> filterWhere (#status, activeStatus)
             |> orderByDesc #createdAt
             |> fetch
         render MarketsView { .. }

@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
-            <li class="nav-item"><a class="nav-link" href={DashboardMarketsAction}>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardMarketsAction (Just MarketStatusOpen)}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -87,7 +87,7 @@ navbar = [hsx|
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href={DashboardHoldingsAction}>My Holdings</a></li>
-                    <li><a  class="dropdown-item" href={DashboardMarketsAction}>My Markets</a></li>
+                    <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>My Markets</a></li>
                     <li><a  class="dropdown-item" href={EditUserAction user.id}>Profile</a></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li>
@@ -121,8 +121,8 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", isActivePath (pathTo DashboardMarketsAction))]}
-                                href={DashboardMarketsAction}>
+                                    ("active", any (\s -> isActivePath (pathTo (DashboardMarketsAction s))) (Nothing : map Just allEnumValues))]}
+                               href={DashboardMarketsAction (Just MarketStatusOpen)}>
                               Markets
                             </a>
                         </li>

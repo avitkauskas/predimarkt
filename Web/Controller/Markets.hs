@@ -98,8 +98,7 @@ instance Controller MarketsController where
                                         then asset |> set #marketId market.id |> createRecord
                                         else asset |> set #marketId market.id |> updateRecord
 
-                            setSuccessMessage "Market updated"
-                            redirectTo DashboardMarketsAction
+                            redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
 
     action CreateMarketAction = do
         ensureIsUser
@@ -132,7 +131,7 @@ instance Controller MarketsController where
                                     asset |> set #marketId market.id |> createRecord
 
                             setSuccessMessage "Market created"
-                            redirectTo DashboardMarketsAction
+                            redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
 
     action DeleteMarketAction { marketId } = do
         market <- fetch marketId

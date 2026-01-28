@@ -59,5 +59,7 @@ data AssetsController
 
 data DashboardController
     = DashboardHoldingsAction
-    | DashboardMarketsAction
+    | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
     deriving (Eq, Show, Data)
+    
+deriving instance Data MarketStatus

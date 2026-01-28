@@ -2,7 +2,10 @@ module Web.View.Dashboard.Markets where
 
 import Web.View.Prelude
 
-data MarketsView = MarketsView { markets :: [Market] }
+data MarketsView = MarketsView
+    { markets :: [Market]
+    , activeStatus :: MarketStatus
+    }
 
 instance View MarketsView where
     html MarketsView { .. } = dashboardLayout [hsx|
@@ -12,16 +15,8 @@ instance View MarketsView where
                 <a href={NewMarketAction} class="btn btn-primary">+ New Market</a>
             </div>
             <div class="table-responsive">
+                {renderTabs activeStatus}
                 <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Status</th>
-                            <th>Created At</th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                    </thead>
                     <tbody>
                         {forEach markets renderMarket}
                     </tbody>
@@ -34,19 +29,50 @@ renderMarket :: (?context :: ControllerContext) => Market -> Html
 renderMarket market = [hsx|
     <tr>
         <td>{market.title}</td>
-        <td>{market.status}</td>
-        <td>{market.createdAt |> timeAgo}</td>
         <td class="text-end">
-            <a href={ShowMarketAction market.id} 
-               class="btn btn-outline-secondary btn-sm me-2">
-                View
-            </a>
-        </td>
-        <td class="text-end">
-            <a href={EditMarketAction market.id}
-               class="btn btn-outline-secondary btn-sm me-2">
-                Edit
-            </a>
+            {renderActions market}
         </td>
     </tr>
 |]
+
+renderTabs :: MarketStatus -> Html
+renderTabs activeStatus = [hsx|
+    <ul class="nav nav-tabs mb-4">
+        {forEach statuses renderTab}
+    </ul>
+|]
+    where
+        statuses = [MarketStatusDraft, MarketStatusOpen, MarketStatusClosed, MarketStatusRefunded, MarketStatusResolved]
+        renderTab status = [hsx|
+            <li class="nav-item">
+                <a class={classes [("nav-link", True), ("active", status == activeStatus)]} 
+                   href={DashboardMarketsAction (Just status)}>
+                    {statusLabel status}
+                </a>
+            </li>
+        |]
+
+        statusLabel :: MarketStatus -> Text
+        statusLabel MarketStatusDraft = "Draft"
+        statusLabel MarketStatusOpen = "Open"
+        statusLabel MarketStatusClosed = "Closed"
+        statusLabel MarketStatusRefunded = "Refunded"
+        statusLabel MarketStatusResolved = "Resolved"
+
+renderActions :: (?context :: ControllerContext) => Market -> Html
+renderActions market =
+    case market.status of
+        MarketStatusDraft -> [hsx|
+            <a href={EditMarketAction market.id} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+            <button class="btn btn-sm btn-outline-primary" disabled>Publish</button>
+        |]
+        MarketStatusOpen -> [hsx|
+            <button class="btn btn-sm btn-outline-secondary me-2" disabled>Close</button>
+            <button class="btn btn-sm btn-outline-secondary me-2" disabled>Refund</button>
+            <button class="btn btn-sm btn-outline-secondary" disabled>Resolve</button>
+        |]
+        MarketStatusClosed -> [hsx|
+            <button class="btn btn-sm btn-outline-secondary me-2" disabled>Refund</button>
+            <button class="btn btn-sm btn-outline-secondary" disabled>Resolve</button>
+        |]
+        _ -> mempty
