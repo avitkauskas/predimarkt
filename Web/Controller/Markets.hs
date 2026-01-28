@@ -3,6 +3,7 @@
 module Web.Controller.Markets where
 
 import Web.Controller.Prelude
+import Data.List (zipWith4)
 import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
@@ -142,18 +143,20 @@ instance Controller MarketsController where
 
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =
-    pure $ zipWith3 (\assetId name symbol ->
+    pure $ zipWith4 (\assetId name symbol quantity ->
         let asset = newRecord @Asset
                 |> set #name name
                 |> set #symbol symbol
+                |> set #quantity quantity
         in if assetId == def
             then asset
             else asset |> set #id assetId)
-        assetIds assetNames assetSymbols
+        assetIds assetNames assetSymbols assetQuantities
     where
         assetIds = paramList "asset_id"
         assetNames = paramList "asset_name"
         assetSymbols = paramList "asset_symbol"
+        assetQuantities = paramList "asset_quantity"
 
 buildMarket now market = market
     |> fill @'["title", "description", "categoryId", "closedAt"]

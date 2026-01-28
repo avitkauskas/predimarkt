@@ -13,18 +13,27 @@ renderAssetRow asset = [hsx|
                 class="form-control"
             />
         </div>
-        <div class="col-auto">
+        <div class="col-auto" style="width: 100px">
             <input
                 type="text"
                 name="asset_symbol"
                 value={asset.symbol}
                 class="form-control"
-                size="6"
+                maxlength="6"
+            />
+        </div>
+        <div class="col-auto" style="width: 100px">
+             <input
+                type="number"
+                name="asset_quantity"
+                value={show asset.quantity}
+                class="form-control"
+                step="10"
             />
         </div>
         <div class="col-auto d-flex align-items-center">
             <a href="#"
-               class="text-danger delete-asset-btn"
+               class="text-danger"
                onclick="if(document.querySelectorAll('.asset-row').length > 2) { this.closest('.asset-row').remove(); } else { alert('Market must have at least 2 assets.'); } return false;">
                 Delete
             </a>

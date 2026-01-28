@@ -44,7 +44,10 @@ renderForm market assets categories = formFor market [hsx|
             <div class="col-auto form-label" style="width: 100px">
                 Symbol
             </div>
-            <div class="col-auto">
+             <div class="col-auto form-label" style="width: 100px">
+                Quantity
+            </div>
+            <div class="col-auto" style="width: 70px">
             </div>
         </div>
         <div id="assets-list">
