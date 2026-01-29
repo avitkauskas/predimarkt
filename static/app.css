@@ -45,6 +45,14 @@
     display: none;
 }
 
+.card-header {
+    border-bottom: 0 !important;
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-color: #adb5bd; /* Dimmed white for comfort */
+}
+
 /* Market status colors - Light theme */
 .market-status-closed-header {
     background-color: #dbeafe; /* blue-100 */
@@ -70,29 +78,34 @@
     background-color: #fef2f2; /* red-50 */
 }
 
-/* Market status colors - Dark theme */
+/* Market status colors - Dark theme (Pastel Dark) */
+[data-bs-theme="dark"] .card {
+    background-color: #1a1d21;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 [data-bs-theme="dark"] .market-status-closed-header {
-    background-color: #1e3a8a; /* blue-900 */
+    background-color: rgba(94, 158, 255, 0.12); /* Brighter pastel blue overlay */
 }
 
 [data-bs-theme="dark"] .market-status-closed-body {
-    background-color: #172554; /* blue-950 */
+    background-color: rgba(94, 158, 255, 0.04);
 }
 
 [data-bs-theme="dark"] .market-status-resolved-header {
-    background-color: #14532d; /* green-900 */
+    background-color: rgba(74, 222, 128, 0.12); /* Brighter pastel green overlay */
 }
 
 [data-bs-theme="dark"] .market-status-resolved-body {
-    background-color: #052e16; /* green-950 */
+    background-color: rgba(74, 222, 128, 0.04);
 }
 
 [data-bs-theme="dark"] .market-status-refunded-header {
-    background-color: #7f1d1d; /* red-900 */
+    background-color: rgba(248, 113, 113, 0.12); /* Brighter pastel red overlay */
 }
 
 [data-bs-theme="dark"] .market-status-refunded-body {
-    background-color: #450a0a; /* red-950 */
+    background-color: rgba(248, 113, 113, 0.04);
 }
 
 /* Premium UI Enhancements */
@@ -108,6 +121,10 @@
 
 .asset-row {
     border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .asset-row {
+    border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 .market-container h1 {
@@ -128,25 +145,31 @@
     font-weight: 500;
 }
 
-/* Updated Soft Buttons (Darkened) */
+/* Updated Soft Buttons (Intense but Lighter on Hover) */
 .btn-soft-success {
-    background-color: #bbf7d0; /* green-200 */
-    color: #166534; /* green-800 */
-    border: 1px solid #86efac; /* green-300 */
+    background-color: #86efac; /* green-300 - More intense */
+    color: #064e3b; /* green-900 */
+    border: 1px solid #4ade80; /* green-400 */
+    transition: all 0.2s ease;
 }
 
 .btn-soft-success:hover {
-    background-color: #86efac;
+    background-color: #dcfce7; /* green-100 - Lighter */
+    color: #065f46;
+    border-color: #86efac;
 }
 
 .btn-soft-danger {
-    background-color: #fecaca; /* red-200 */
-    color: #991b1b; /* red-800 */
-    border: 1px solid #fca5a5; /* red-300 */
+    background-color: #fca5a5; /* red-300 - More intense */
+    color: #7f1d1d; /* red-900 */
+    border: 1px solid #f87171; /* red-400 */
+    transition: all 0.2s ease;
 }
 
 .btn-soft-danger:hover {
-    background-color: #fca5a5;
+    background-color: #fee2e2; /* red-100 - Lighter */
+    color: #991b1b;
+    border-color: #fca5a5;
 }
 
 .market-description-box {
@@ -158,14 +181,25 @@
     background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Dark mode specific buttons - more intense normal, lighter hover */
 [data-bs-theme="dark"] .btn-soft-success {
-    background-color: rgba(34, 197, 94, 0.25);
+    background-color: rgba(34, 197, 94, 0.35); /* More intense */
     color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.4);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+[data-bs-theme="dark"] .btn-soft-success:hover {
+    background-color: rgba(34, 197, 94, 0.15); /* Lighter */
+    color: #86efac;
 }
 
 [data-bs-theme="dark"] .btn-soft-danger {
-    background-color: rgba(239, 68, 68, 0.25);
+    background-color: rgba(239, 68, 68, 0.35); /* More intense */
     color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.4);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+[data-bs-theme="dark"] .btn-soft-danger:hover {
+    background-color: rgba(239, 68, 68, 0.15); /* Lighter */
+    color: #fca5a5;
 }

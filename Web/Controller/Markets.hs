@@ -45,7 +45,9 @@ instance Controller MarketsController where
         render NewView { .. }
 
     action ShowMarketAction { marketId } = do
-        market <- fetch marketId >>= fetchRelated #assets
+        market <- fetch marketId 
+            >>= fetchRelated #assets
+            >>= fetchRelated #categoryId
         render ShowView { .. }
 
     action EditMarketAction { marketId } = do

@@ -1,12 +1,18 @@
 module Web.View.Markets.Show where
 import Web.View.Prelude
 
-data ShowView = ShowView { market :: Include "assets" Market }
+data ShowView = ShowView { market :: Include' ["assets", "categoryId"] Market }
 
 instance View ShowView where
     html ShowView { .. } = [hsx|
         <div class="market-container py-3">
             <div class="card shadow-sm">
+                <div class={classes [("card-header", True), ("text-muted", True), ("small", True), ("d-flex", True), ("justify-content-between", True), ("align-items-center", True), ("py-2", True), (headerClass, True)]}>
+                    <span class="ms-2">{market.categoryId.name}</span>
+                    <div class="me-2">
+                        {statusBadge}
+                    </div>
+                </div>
                 <div class="card-body p-4">
                     <header class="mb-4">
                         <h1 class="h3 fw-bold mb-3 ms-2">{market.title}</h1>
@@ -23,6 +29,11 @@ instance View ShowView where
         </div>
     |]
         where
+            headerClass = marketStatusHeaderClasses market.status
+            statusBadge =
+                when (market.status /= MarketStatusOpen)
+                    [hsx|<span>{marketStatusLabel market.status}</span>|]
+
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
                 <div class={classes [("asset-row", True), ("py-3", True), ("border-bottom", True), (assetStatusClasses asset.status, True)]} id={"asset-" <> show asset.id}>

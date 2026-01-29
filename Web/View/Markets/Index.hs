@@ -81,8 +81,10 @@ renderMarket market = [hsx|
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
-                        <button class="btn btn-success p-1 rounded-1" style="font-size: 0.7rem; line-height: 1;">Buy</button>
-                        <button class="btn btn-danger p-1 rounded-1" style="font-size: 0.7rem; line-height: 1;">Sell</button>
+                        <div class="btn-group shadow-sm" style="width: 80px">
+                            <button class="btn btn-soft-success p-0 rounded-start-1" style="font-size: 0.65rem; line-height: 1.5; width: 50%;">Buy</button>
+                            <button class="btn btn-soft-danger p-0 rounded-end-1" style="font-size: 0.65rem; line-height: 1.5; width: 50%;">Sell</button>
+                        </div>
                     |]
                     else mempty
             in [hsx|
@@ -91,11 +93,12 @@ renderMarket market = [hsx|
                    {asset.name}
                 </div>
                 <div class="d-flex align-items-center gap-1 ps-1 flex-shrink-0">
-                    <span class="me-1">{assetPrice}%</span>
+                    <span class="me-1" style="font-size: 0.75rem;">{assetPrice}%</span>
                     {buttons}
                 </div>
             </div>
         |]
+
 
 data LMSRState = LMSRState
     { sMap :: M.Map (Id Asset) Double
