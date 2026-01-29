@@ -45,7 +45,7 @@ data CategoriesController
 data MarketsController
     = MarketsAction
     | NewMarketAction
-    | ShowMarketAction { marketId :: !(Id Market) }
+    | ShowMarketAction { marketId :: !(Id Market), tradingAssetId :: !(Maybe (Id Asset)), tradingAction :: !(Maybe Text) }
     | CreateMarketAction
     | EditMarketAction { marketId :: !(Id Market) }
     | UpdateMarketAction { marketId :: !(Id Market) }

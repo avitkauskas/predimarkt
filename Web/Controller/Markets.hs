@@ -44,21 +44,27 @@ instance Controller MarketsController where
         categories <- query @Category |> fetch
         render NewView { .. }
 
-    action ShowMarketAction { marketId } = autoRefresh do
-        market <- fetch marketId 
+    action ShowMarketAction { marketId, tradingAssetId, tradingAction } = autoRefresh do
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
+        let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
+
+        market <- fetch mId 
             >>= fetchRelated #assets . modify #assets (orderByDesc #quantity)
             >>= fetchRelated #categoryId
-        render ShowView { .. }
+        render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction }
 
     action EditMarketAction { marketId } = do
-        market <- fetch marketId
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        assets <- query @Asset |> filterWhere (#marketId, marketId) |> fetch
+        assets <- query @Asset |> filterWhere (#marketId, mId) |> fetch
         categories <- query @Category |> fetch
         render EditView { .. }
 
     action UpdateMarketAction { marketId } = do
-        market <- fetch marketId
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         now <- getCurrentTime
         assets <- fetchAssetsFromParams
@@ -77,7 +83,7 @@ instance Controller MarketsController where
                             render EditView { .. }
                         Right market -> do
                             uniqueSlug <- constructUniqueSlug
-                                market.categoryId (toSlug market.title) (Just marketId)
+                                market.categoryId (toSlug market.title) (Just mId)
 
                             withTransaction do
                                 market <- market
@@ -85,7 +91,7 @@ instance Controller MarketsController where
                                     |> updateRecord
 
                                 -- Handle assets diffing
-                                existingAssets <- query @Asset |> filterWhere (#marketId, marketId) |> fetch
+                                existingAssets <- query @Asset |> filterWhere (#marketId, mId) |> fetch
                                 let existingIds = map (.id) existingAssets
                                 let newIds = map (\a -> if a.id == def then Nothing else Just a.id) assets
                                 let keptIds = catMaybes newIds
@@ -136,7 +142,8 @@ instance Controller MarketsController where
                             redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
 
     action DeleteMarketAction { marketId } = do
-        market <- fetch marketId
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         deleteRecord market
         setSuccessMessage "Market deleted"

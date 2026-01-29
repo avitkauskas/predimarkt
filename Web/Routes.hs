@@ -2,6 +2,7 @@ module Web.Routes where
 import Generated.Types
 import IHP.RouterPrelude
 import IHP.ModelSupport
+import IHP.Prelude
 import Web.Types
 
 -- Generator Marker
@@ -9,7 +10,28 @@ instance AutoRoute StaticController
 instance AutoRoute SessionsController
 instance AutoRoute UsersController
 instance AutoRoute CategoriesController
-instance AutoRoute MarketsController
+instance HasPath MarketsController where
+    pathTo MarketsAction = "/Markets"
+    pathTo NewMarketAction = "/NewMarket"
+    pathTo CreateMarketAction = "/CreateMarket"
+    pathTo ShowMarketAction { marketId, tradingAssetId, tradingAction } =
+        "/ShowMarket"
+        <> "?marketId=" <> inputValue marketId
+        <> (case tradingAssetId of Just id -> "&tradingAssetId=" <> inputValue id; Nothing -> "")
+        <> (case tradingAction of Just a -> "&tradingAction=" <> a; Nothing -> "")
+    pathTo EditMarketAction { marketId } = "/EditMarket?marketId=" <> inputValue marketId
+    pathTo UpdateMarketAction { marketId } = "/UpdateMarket?marketId=" <> inputValue marketId
+    pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
+
+instance CanRoute MarketsController where
+    parseRoute' = 
+        (string "/Markets" >> pure MarketsAction)
+        <|> (string "/NewMarket" >> pure NewMarketAction)
+        <|> (string "/CreateMarket" >> pure CreateMarketAction)
+        <|> (string "/ShowMarket" >> pure (ShowMarketAction { marketId = def, tradingAssetId = Nothing, tradingAction = Nothing }))
+        <|> (string "/EditMarket" >> pure (EditMarketAction { marketId = def }))
+        <|> (string "/UpdateMarket" >> pure (UpdateMarketAction { marketId = def }))
+        <|> (string "/DeleteMarket" >> pure (DeleteMarketAction { marketId = def }))
 instance AutoRoute AssetsController
 
 instance HasPath DashboardController where

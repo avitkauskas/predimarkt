@@ -16,11 +16,11 @@ instance Controller AssetsController where
         if assetCount <= 2
             then do
                 setErrorMessage "Cannot delete asset: A market must have at least 2 assets."
-                redirectTo (ShowMarketAction asset.marketId)
+                redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
             else do
                 deleteRecord asset
                 setSuccessMessage "Asset deleted"
-                redirectTo (ShowMarketAction asset.marketId)
+                redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
 
     action NewAssetAction = do
         let asset = newRecord @Asset
@@ -39,4 +39,4 @@ instance Controller AssetsController where
             |> set #quantity newQuantity
             |> updateRecord
         
-        redirectTo (ShowMarketAction asset.marketId)
+        redirectTo (ShowMarketAction asset.marketId Nothing Nothing)

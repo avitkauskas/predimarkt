@@ -40,14 +40,14 @@ renderMarket :: (?context :: ControllerContext) => Include' ["categoryId", "asse
 renderMarket market = [hsx|
     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
         <div class="card h-100">
-            <a href={ShowMarketAction market.id} class="stretched-link" aria-hidden="true"></a>
+            <a href={ShowMarketAction market.id Nothing Nothing} class="stretched-link" aria-hidden="true"></a>
             <div class={classes [("card-header", True), ("text-muted", True), ("small", True), ("d-flex", True), ("justify-content-between", True), ("align-items-center", True), ("py-1", True), (headerClass, True)]}>
                 <span>{category.name}</span>
                 {statusBadge}
             </div>
             <div class={classes [("card-body", True), ("position-relative", True), ("d-flex", True), ("flex-column", True), (bodyClass, True)]}>
                 <h6 class="card-title scroll-no-bar fs-6 position-relative mb-2" style="z-index: 2;">
-                    <a href={ShowMarketAction market.id}
+                    <a href={ShowMarketAction market.id Nothing Nothing}
                        class="text-decoration-none text-reset stretched-link">
                         {market.title}
                     </a>
@@ -79,14 +79,16 @@ renderMarket market = [hsx|
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
                         <div class="btn-group shadow-sm" style="width: 80px">
-                            <button class="btn btn-soft-success p-0 rounded-start-1"
+                            <a href={ShowMarketAction market.id (Just asset.id) (Just "buy")}
+                                    class="btn btn-soft-success p-0 rounded-start-1 d-flex align-items-center justify-content-center"
                                     style="font-size: 0.75rem; line-height: 1.5; width: 50%;">
                                 Buy
-                            </button>
-                            <button class="btn btn-soft-danger p-0 rounded-end-1"
+                            </a>
+                            <a href={ShowMarketAction market.id (Just asset.id) (Just "sell")}
+                                    class="btn btn-soft-danger p-0 rounded-end-1 d-flex align-items-center justify-content-center"
                                     style="font-size: 0.75rem; line-height: 1.5; width: 50%;">
                                 Sell
-                            </button>
+                            </a>
                         </div>
                     |]
                     else mempty

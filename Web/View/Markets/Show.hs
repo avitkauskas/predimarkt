@@ -2,7 +2,11 @@ module Web.View.Markets.Show where
 import Web.View.Prelude
 import Text.Printf (printf)
 
-data ShowView = ShowView { market :: Include' ["assets", "categoryId"] Market }
+data ShowView = ShowView 
+    { market :: Include' ["assets", "categoryId"] Market 
+    , tradingAssetId :: Maybe (Id Asset)
+    , tradingAction :: Maybe Text
+    }
 
 instance View ShowView where
     html ShowView { .. } = [hsx|
@@ -57,6 +61,8 @@ instance View ShowView where
             |]
                 where
                     isTradable = market.status == MarketStatusOpen && asset.status == AssetStatusOpen
+                    isBuyFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "buy"
+                    isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
                     
                     assetPrice :: Double
                     assetPrice = price asset.id lmsrState
@@ -83,7 +89,7 @@ instance View ShowView where
                     |]
 
                     buySellForms = [hsx|
-                        <div id={"buy-form-" <> show asset.id} class="d-none mt-3">
+                        <div id={"buy-form-" <> show asset.id} class={classes ["mt-3", ("d-none", not isBuyFormOpen)]}>
                             <form action={TradeAssetAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="buy" />
                                 <div class="d-flex justify-content-end align-items-center gap-3">
@@ -91,7 +97,8 @@ instance View ShowView where
                                     <div class="d-flex align-items-center gap-2">
                                         <input type="number" name="quantity" step="10" min="0" 
                                                class="form-control text-start" 
-                                               style="width: 80px" value="10" />
+                                               style="width: 80px" value="10"
+                                               autofocus={isBuyFormOpen} />
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">BUY</button>
                                     </div>
@@ -99,7 +106,7 @@ instance View ShowView where
                             </form>
                         </div>
 
-                        <div id={"sell-form-" <> show asset.id} class="d-none mt-3">
+                        <div id={"sell-form-" <> show asset.id} class={classes ["mt-3", ("d-none", not isSellFormOpen)]}>
                             <form action={TradeAssetAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="sell" />
                                 <div class="d-flex justify-content-end align-items-center gap-3">
@@ -107,7 +114,8 @@ instance View ShowView where
                                     <div class="d-flex align-items-center gap-2">
                                         <input type="number" name="quantity" step="10" min="0" 
                                                class="form-control text-start" 
-                                               style="width: 80px" value="10" />
+                                               style="width: 80px" value="10"
+                                               autofocus={isSellFormOpen} />
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">SELL</button>
                                     </div>
