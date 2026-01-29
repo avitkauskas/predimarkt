@@ -1,9 +1,6 @@
 module Web.View.Markets.Index where
 import Web.View.Prelude
 
-import qualified Data.Map as M
-import Text.Printf (printf)
-
 data IndexView = IndexView
     { markets        :: [Include' ["categoryId", "assets"] Market]
     , categories     :: [Category]
@@ -82,8 +79,8 @@ renderMarket market = [hsx|
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
                         <div class="btn-group shadow-sm" style="width: 80px">
-                            <button class="btn btn-soft-success p-0 rounded-start-1" style="font-size: 0.65rem; line-height: 1.5; width: 50%;">Buy</button>
-                            <button class="btn btn-soft-danger p-0 rounded-end-1" style="font-size: 0.65rem; line-height: 1.5; width: 50%;">Sell</button>
+                            <button class="btn btn-soft-success p-0 rounded-start-1" style="font-size: 0.75rem; line-height: 1.5; width: 50%;">Buy</button>
+                            <button class="btn btn-soft-danger p-0 rounded-end-1" style="font-size: 0.75rem; line-height: 1.5; width: 50%;">Sell</button>
                         </div>
                     |]
                     else mempty
@@ -98,26 +95,3 @@ renderMarket market = [hsx|
                 </div>
             </div>
         |]
-
-
-data LMSRState = LMSRState
-    { sMap :: M.Map (Id Asset) Double
-    , sSum :: !Double
-    }
-
-precompute :: Double -> [Asset] -> LMSRState
-precompute beta assets =
-    let quantities = map (.quantity) assets
-        m = if null quantities then 0 else maximum quantities
-        sMap = M.fromList
-            [ (asset.id, exp ((asset.quantity - m) / beta))
-            | asset <- assets
-            ]
-        sSum = sum (M.elems sMap)
-    in LMSRState sMap sSum
-
-price :: Id Asset -> LMSRState -> Double
-price aid st =
-    case M.lookup aid (sMap st) of
-        Just v -> v / sSum st
-        Nothing -> 0.0

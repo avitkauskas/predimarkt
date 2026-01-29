@@ -1,9 +1,32 @@
 module Application.Helper.View where
 
 import Generated.Enums
+import Generated.Types
 import IHP.ViewPrelude
 
--- Here you can add functions which are available in all your views
+import qualified Data.Map as M
+
+data LMSRState = LMSRState
+    { sMap :: M.Map (Id Asset) Double
+    , sSum :: !Double
+    }
+
+precompute :: Double -> [Asset] -> LMSRState
+precompute beta assets =
+    let quantities = map (.quantity) assets
+        m = if null quantities then 0 else maximum quantities
+        sMap = M.fromList
+            [ (asset.id, exp ((asset.quantity - m) / beta))
+            | asset <- assets
+            ]
+        sSum = sum (M.elems sMap)
+    in LMSRState sMap sSum
+
+price :: Id Asset -> LMSRState -> Double
+price aid st =
+    case M.lookup aid (sMap st) of
+        Just v -> v / sSum st
+        Nothing -> 0.0
 
 marketStatusLabel :: MarketStatus -> Text
 marketStatusLabel = \case
@@ -38,4 +61,3 @@ marketStatusHeaderClasses = \case
     MarketStatusResolved -> "market-status-resolved-header"
     MarketStatusRefunded -> "market-status-refunded-header"
     _                    -> ""
-

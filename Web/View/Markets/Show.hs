@@ -1,5 +1,6 @@
 module Web.View.Markets.Show where
 import Web.View.Prelude
+import Text.Printf (printf)
 
 data ShowView = ShowView { market :: Include' ["assets", "categoryId"] Market }
 
@@ -33,6 +34,8 @@ instance View ShowView where
             statusBadge =
                 when (market.status /= MarketStatusOpen)
                     [hsx|<span>{marketStatusLabel market.status}</span>|]
+            
+            lmsrState = precompute market.beta market.assets
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
@@ -41,7 +44,8 @@ instance View ShowView where
                         <div class="asset-info ms-3">
                             <div class="fw-semibold fs-5">{asset.name}</div>
                         </div>
-                        <div class="asset-actions d-flex align-items-center gap-3">
+                        <div class="asset-actions d-flex align-items-center gap-2">
+                            {priceDisplay}
                             {renderStatus asset.status}
                             {when (isTradable) buySellButtons}
                         </div>
@@ -52,6 +56,15 @@ instance View ShowView where
             |]
                 where
                     isTradable = market.status == MarketStatusOpen && asset.status == AssetStatusOpen
+                    
+                    assetPrice :: Double
+                    assetPrice = price asset.id lmsrState
+
+                    priceDisplay = [hsx|
+                        <div class="text-center fw-medium" style="width: 80px; font-variant-numeric: tabular-nums;">
+                            {printf "%.2f" assetPrice :: String}
+                        </div>
+                    |]
 
                     buySellButtons = [hsx|
                         <div class="btn-group shadow-sm" style="width: 140px">
@@ -71,24 +84,24 @@ instance View ShowView where
                     buySellForms = [hsx|
                         <div id={"buy-form-" <> show asset.id} class="asset-form-container d-none mt-3">
                             <div class="d-flex justify-content-end align-items-center gap-3">
-                                <div class="text-muted small">Enter the quantity of shares to buy</div>
+                                <div class="text-muted small">Number of shares to BUY</div>
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="number" step="10" min="0" 
-                                           class="form-control form-control-sm text-start" 
-                                           style="width: 80px" />
-                                    <button class="btn btn-orange btn-sm text-white fw-bold" style="width: 140px">Transact</button>
+                                           class="form-control form-control text-start" 
+                                           style="width: 80px" value="10" />
+                                    <button class="btn btn-orange text-white fw-bold" style="width: 140px">Transact</button>
                                 </div>
                             </div>
                         </div>
 
                         <div id={"sell-form-" <> show asset.id} class="asset-form-container d-none mt-3">
                             <div class="d-flex justify-content-end align-items-center gap-3">
-                                <div class="text-muted small">Enter the quantity of shares to sell</div>
+                                <div class="text-muted small">Number of shares to SELL</div>
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="number" step="10" min="0" 
-                                           class="form-control form-control-sm text-start" 
-                                           style="width: 80px" />
-                                    <button class="btn btn-orange btn-sm text-white fw-bold" style="width: 140px">Transact</button>
+                                           class="form-control form-control text-start" 
+                                           style="width: 80px" value="10" />
+                                    <button class="btn btn-orange text-white fw-bold" style="width: 140px">Transact</button>
                                 </div>
                             </div>
                         </div>
@@ -104,4 +117,3 @@ instance View ShowView where
 
                     toggleForm :: Text -> Text -> Text
                     toggleForm id type' = "window.toggleAssetForm('" <> id <> "', '" <> type' <> "')"
-
