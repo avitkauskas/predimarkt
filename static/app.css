@@ -80,94 +80,62 @@
 
 /* Market status colors - Dark theme (Pastel Dark) */
 [data-bs-theme="dark"] .card {
-    background-color: #1a1d21;
+    /* background-color: #1a1d21; */
+    background-color: #2a2d31;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 [data-bs-theme="dark"] .market-status-closed-header {
-    background-color: rgba(94, 158, 255, 0.12); /* Brighter pastel blue overlay */
+    background-color: rgba(94, 158, 255, 0.14); /* Brighter pastel blue overlay */
 }
 
 [data-bs-theme="dark"] .market-status-closed-body {
-    background-color: rgba(94, 158, 255, 0.04);
+    background-color: rgba(94, 158, 255, 0.06);
 }
 
 [data-bs-theme="dark"] .market-status-resolved-header {
-    background-color: rgba(74, 222, 128, 0.12); /* Brighter pastel green overlay */
+    background-color: rgba(74, 222, 128, 0.14); /* Brighter pastel green overlay */
 }
 
 [data-bs-theme="dark"] .market-status-resolved-body {
-    background-color: rgba(74, 222, 128, 0.04);
+    background-color: rgba(74, 222, 128, 0.06);
 }
 
 [data-bs-theme="dark"] .market-status-refunded-header {
-    background-color: rgba(248, 113, 113, 0.12); /* Brighter pastel red overlay */
+    background-color: rgba(248, 113, 113, 0.14); /* Brighter pastel red overlay */
 }
 
 [data-bs-theme="dark"] .market-status-refunded-body {
-    background-color: rgba(248, 113, 113, 0.04);
-}
-
-/* Premium UI Enhancements */
-.btn-orange {
-    background-color: #f97316;
-    border-color: #f97316;
-}
-
-.btn-orange:hover {
-    background-color: #ea580c;
-    border-color: #ea580c;
-}
-
-.asset-row {
-    border-color: rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-bs-theme="dark"] .asset-row {
-    border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-.market-container h1 {
-    letter-spacing: -0.01em;
-}
-
-.form-control-sm {
-    font-size: 0.8125rem;
-    padding: 0.25rem 0.5rem;
+    background-color: rgba(248, 113, 113, 0.06);
 }
 
 .btn-sm {
     font-size: 0.8125rem;
 }
 
-.badge.small {
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
 /* Updated Soft Buttons (Intense but Lighter on Hover) */
 .btn-soft-success {
-    background-color: #86efac; /* green-300 - More intense */
-    color: #064e3b; /* green-900 */
-    border: 1px solid #4ade80; /* green-400 */
+    background-color: #86efac;
+    color: #064e3b;
+    border: 1px solid #4ade80;
     transition: all 0.2s ease;
 }
 
 .btn-soft-success:hover {
-    background-color: #dcfce7; /* green-100 - Lighter */
+    background-color: #dcfce7;
     color: #065f46;
     border-color: #86efac;
 }
 
 .btn-soft-danger {
-    background-color: #fca5a5; /* red-300 - More intense */
-    color: #7f1d1d; /* red-900 */
-    border: 1px solid #f87171; /* red-400 */
+    background-color: #fca5a5;
+    color: #7f1d1d;
+    border: 1px solid #f87171;
     transition: all 0.2s ease;
 }
 
 .btn-soft-danger:hover {
-    background-color: #fee2e2; /* red-100 - Lighter */
+    background-color: #fee2e2;
     color: #991b1b;
     border-color: #fca5a5;
 }
@@ -184,22 +152,22 @@
 /* Dark mode specific buttons - more intense normal, lighter hover */
 [data-bs-theme="dark"] .btn-soft-success {
     background-color: rgba(34, 197, 94, 0.35); /* More intense */
-    color: #4ade80;
+    color: #2abe60;
     border: 1px solid rgba(34, 197, 94, 0.5);
 }
 
 [data-bs-theme="dark"] .btn-soft-success:hover {
-    background-color: rgba(34, 197, 94, 0.15); /* Lighter */
-    color: #86efac;
+    background-color: rgba(34, 197, 94, 0.20); /* Lighter */
+    color: #76df9c;
 }
 
 [data-bs-theme="dark"] .btn-soft-danger {
     background-color: rgba(239, 68, 68, 0.35); /* More intense */
-    color: #f87171;
+    color: #dc6565;
     border: 1px solid rgba(239, 68, 68, 0.5);
 }
 
 [data-bs-theme="dark"] .btn-soft-danger:hover {
     background-color: rgba(239, 68, 68, 0.15); /* Lighter */
-    color: #fca5a5;
+    color: #dc9595;
 }

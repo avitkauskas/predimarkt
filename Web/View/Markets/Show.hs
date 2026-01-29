@@ -6,7 +6,7 @@ data ShowView = ShowView { market :: Include' ["assets", "categoryId"] Market }
 
 instance View ShowView where
     html ShowView { .. } = [hsx|
-        <div class="market-container py-3">
+        <div class="py-3">
             <div class="card shadow-sm">
                 <div class={classes [("card-header", True), ("text-muted", True), ("small", True), ("d-flex", True), ("justify-content-between", True), ("align-items-center", True), ("py-2", True), (headerClass, True)]}>
                     <span class="ms-2">{market.categoryId.name}</span>
@@ -39,7 +39,8 @@ instance View ShowView where
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
-                <div class={classes [("asset-row", True), ("py-3", True), ("border-bottom", True), (assetStatusClasses asset.status, True)]} id={"asset-" <> show asset.id}>
+                <div class={classes ["py-3 border-bottom", (assetStatusClasses asset.status, True)]}
+                     id={"asset-" <> show asset.id}>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="asset-info ms-3">
                             <div class="fw-semibold fs-5">{asset.name}</div>
@@ -87,9 +88,9 @@ instance View ShowView where
                                 <div class="text-muted small">Number of shares to BUY</div>
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="number" step="10" min="0" 
-                                           class="form-control form-control text-start" 
+                                           class="form-control text-start" 
                                            style="width: 80px" value="10" />
-                                    <button class="btn btn-orange text-white fw-bold" style="width: 140px">Transact</button>
+                                    <button class="btn btn-primary fw-bold" style="width: 140px">BUY</button>
                                 </div>
                             </div>
                         </div>
@@ -99,9 +100,9 @@ instance View ShowView where
                                 <div class="text-muted small">Number of shares to SELL</div>
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="number" step="10" min="0" 
-                                           class="form-control form-control text-start" 
+                                           class="form-control text-start" 
                                            style="width: 80px" value="10" />
-                                    <button class="btn btn-orange text-white fw-bold" style="width: 140px">Transact</button>
+                                    <button class="btn btn-primary fw-bold" style="width: 140px">SELL</button>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +111,7 @@ instance View ShowView where
                     renderStatus :: AssetStatus -> Html
                     renderStatus AssetStatusOpen = [hsx||]
                     renderStatus status = [hsx|
-                        <div class="text-center text-secondary small" style="width: 140px; letter-spacing: 0.05em;">
+                        <div class="text-center small" style="width: 140px;">
                             {assetStatusLabel status}
                         </div>
                     |]
