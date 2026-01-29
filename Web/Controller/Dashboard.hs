@@ -11,10 +11,18 @@ instance Controller DashboardController where
 
     action DashboardMarketsAction { statusFilter } = do
         let activeStatus = fromMaybe MarketStatusDraft $ statusFilter <|> paramOrNothing @MarketStatus "statusFilter"
+        let applySorting queryBuilder =
+                case activeStatus of
+                    MarketStatusDraft -> queryBuilder |> orderByDesc #createdAt
+                    MarketStatusOpen -> queryBuilder |> orderByDesc #openedAt
+                    MarketStatusClosed -> queryBuilder |> orderByDesc #closedAt
+                    MarketStatusResolved -> queryBuilder |> orderByDesc #resolvedAt
+                    MarketStatusRefunded -> queryBuilder |> orderByDesc #refundedAt
+
         markets <- query @Market
             |> filterWhere (#userId, Just currentUserId)
             |> filterWhere (#status, activeStatus)
-            |> orderByDesc #createdAt
+            |> applySorting
             |> fetch
         render MarketsView { .. }
 

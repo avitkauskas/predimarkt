@@ -65,8 +65,9 @@ renderActions market =
         MarketStatusDraft -> [hsx|
             <a href={EditMarketAction market.id} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Open</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
             </form>
+            <a href={DeleteMarketAction market.id} class="btn btn-sm btn-outline-danger js-delete" data-confirm="Are you sure?">Delete</a>
         |]
         MarketStatusOpen -> [hsx|
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed)} class="d-inline">

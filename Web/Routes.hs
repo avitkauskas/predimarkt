@@ -10,6 +10,7 @@ instance AutoRoute StaticController
 instance AutoRoute SessionsController
 instance AutoRoute UsersController
 instance AutoRoute CategoriesController
+instance AutoRoute AssetsController
 instance HasPath MarketsController where
     pathTo MarketsAction = "/Markets"
     pathTo NewMarketAction = "/NewMarket"
@@ -32,7 +33,6 @@ instance CanRoute MarketsController where
         <|> (string "/EditMarket" >> pure (EditMarketAction { marketId = def }))
         <|> (string "/UpdateMarket" >> pure (UpdateMarketAction { marketId = def }))
         <|> (string "/DeleteMarket" >> pure (DeleteMarketAction { marketId = def }))
-instance AutoRoute AssetsController
 
 instance HasPath DashboardController where
     pathTo DashboardHoldingsAction = "/DashboardHoldings"

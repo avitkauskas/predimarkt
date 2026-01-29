@@ -25,6 +25,7 @@ instance Controller MarketsController where
             query @Market
                 |> applyCategoryFilter
                 |> applyStatusFilter
+                |> orderByDesc #updatedAt
                 |> fetch
                 >>= collectionFetchRelated #assets . map (modify #assets (orderByDesc #quantity))
                 >>= collectionFetchRelated #categoryId
@@ -45,6 +46,7 @@ instance Controller MarketsController where
         render NewView { .. }
 
     action ShowMarketAction { marketId, tradingAssetId, tradingAction } = autoRefresh do
+        ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
         let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
@@ -58,6 +60,7 @@ instance Controller MarketsController where
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
+        accessDeniedUnless (market.status == MarketStatusDraft)
         assets <- query @Asset |> filterWhere (#marketId, mId) |> fetch
         categories <- query @Category |> fetch
         render EditView { .. }
@@ -66,6 +69,7 @@ instance Controller MarketsController where
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
+        accessDeniedUnless (market.status == MarketStatusDraft)
         now <- getCurrentTime
         assets <- fetchAssetsFromParams
 
@@ -145,9 +149,10 @@ instance Controller MarketsController where
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
+        accessDeniedUnless (market.status == MarketStatusDraft)
         deleteRecord market
         setSuccessMessage "Market deleted"
-        redirectTo MarketsAction
+        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
 
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =
