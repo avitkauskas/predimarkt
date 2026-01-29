@@ -79,8 +79,14 @@ renderMarket market = [hsx|
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
                         <div class="btn-group shadow-sm" style="width: 80px">
-                            <button class="btn btn-soft-success p-0 rounded-start-1" style="font-size: 0.75rem; line-height: 1.5; width: 50%;">Buy</button>
-                            <button class="btn btn-soft-danger p-0 rounded-end-1" style="font-size: 0.75rem; line-height: 1.5; width: 50%;">Sell</button>
+                            <button class="btn btn-soft-success p-0 rounded-start-1"
+                                    style="font-size: 0.75rem; line-height: 1.5; width: 50%;">
+                                Buy
+                            </button>
+                            <button class="btn btn-soft-danger p-0 rounded-end-1"
+                                    style="font-size: 0.75rem; line-height: 1.5; width: 50%;">
+                                Sell
+                            </button>
                         </div>
                     |]
                     else mempty
@@ -90,7 +96,9 @@ renderMarket market = [hsx|
                    {asset.name}
                 </div>
                 <div class="d-flex align-items-center gap-1 ps-1 flex-shrink-0">
-                    <span class="me-1" style="font-size: 0.75rem;">{assetPrice}%</span>
+                    <span class="me-1" style="font-size: 0.75rem;">
+                        {assetPrice}%
+                    </span>
                     {buttons}
                 </div>
             </div>

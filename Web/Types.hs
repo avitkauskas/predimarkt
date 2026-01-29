@@ -55,6 +55,7 @@ data MarketsController
 
 data AssetsController
     = DeleteAssetAction { assetId :: !(Id Asset) }
+    | TradeAssetAction { assetId :: !(Id Asset) }
     | NewAssetAction
     deriving (Eq, Show, Data)
 

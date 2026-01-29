@@ -62,8 +62,8 @@ instance View ShowView where
                     assetPrice = price asset.id lmsrState
 
                     priceDisplay = [hsx|
-                        <div class="text-center fw-medium" style="width: 80px; font-variant-numeric: tabular-nums;">
-                            {printf "%.2f" assetPrice :: String}
+                        <div class="text-center fw-medium" style="width: 80px;">
+                            {printf "%.4f" assetPrice :: String}
                         </div>
                     |]
 
@@ -83,28 +83,36 @@ instance View ShowView where
                     |]
 
                     buySellForms = [hsx|
-                        <div id={"buy-form-" <> show asset.id} class="asset-form-container d-none mt-3">
-                            <div class="d-flex justify-content-end align-items-center gap-3">
-                                <div class="text-muted small">Number of shares to BUY</div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="number" step="10" min="0" 
-                                           class="form-control text-start" 
-                                           style="width: 80px" value="10" />
-                                    <button class="btn btn-primary fw-bold" style="width: 140px">BUY</button>
+                        <div id={"buy-form-" <> show asset.id} class="d-none mt-3">
+                            <form action={TradeAssetAction asset.id} method="POST">
+                                <input type="hidden" name="type" value="buy" />
+                                <div class="d-flex justify-content-end align-items-center gap-3">
+                                    <div class="text-muted small">Number of shares to BUY</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="number" name="quantity" step="10" min="0" 
+                                               class="form-control text-start" 
+                                               style="width: 80px" value="10" />
+                                        <button type="submit" class="btn btn-primary fw-bold"
+                                                style="width: 140px">BUY</button>
+                                    </div>
                                 </div>
-                            </div>
+                            </form>
                         </div>
 
-                        <div id={"sell-form-" <> show asset.id} class="asset-form-container d-none mt-3">
-                            <div class="d-flex justify-content-end align-items-center gap-3">
-                                <div class="text-muted small">Number of shares to SELL</div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="number" step="10" min="0" 
-                                           class="form-control text-start" 
-                                           style="width: 80px" value="10" />
-                                    <button class="btn btn-primary fw-bold" style="width: 140px">SELL</button>
+                        <div id={"sell-form-" <> show asset.id} class="d-none mt-3">
+                            <form action={TradeAssetAction asset.id} method="POST">
+                                <input type="hidden" name="type" value="sell" />
+                                <div class="d-flex justify-content-end align-items-center gap-3">
+                                    <div class="text-muted small">Number of shares to SELL</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="number" name="quantity" step="10" min="0" 
+                                               class="form-control text-start" 
+                                               style="width: 80px" value="10" />
+                                        <button type="submit" class="btn btn-primary fw-bold"
+                                                style="width: 140px">SELL</button>
+                                    </div>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     |]
 

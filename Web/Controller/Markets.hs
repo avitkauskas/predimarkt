@@ -26,8 +26,8 @@ instance Controller MarketsController where
                 |> applyCategoryFilter
                 |> applyStatusFilter
                 |> fetch
+                >>= collectionFetchRelated #assets . map (modify #assets (orderByDesc #quantity))
                 >>= collectionFetchRelated #categoryId
-                >>= collectionFetchRelated #assets
 
         categories <- query @Category |> fetch
         render IndexView { .. }
@@ -44,9 +44,9 @@ instance Controller MarketsController where
         categories <- query @Category |> fetch
         render NewView { .. }
 
-    action ShowMarketAction { marketId } = do
+    action ShowMarketAction { marketId } = autoRefresh do
         market <- fetch marketId 
-            >>= fetchRelated #assets
+            >>= fetchRelated #assets . modify #assets (orderByDesc #quantity)
             >>= fetchRelated #categoryId
         render ShowView { .. }
 
@@ -62,7 +62,7 @@ instance Controller MarketsController where
         accessDeniedUnless (market.userId == Just currentUserId)
         now <- getCurrentTime
         assets <- fetchAssetsFromParams
-        
+
         if length assets < 2
             then do
                 setErrorMessage "Market must have at least 2 assets"
@@ -76,9 +76,9 @@ instance Controller MarketsController where
                             categories <- query @Category |> fetch
                             render EditView { .. }
                         Right market -> do
-                            uniqueSlug <- constructUniqueSlug 
+                            uniqueSlug <- constructUniqueSlug
                                 market.categoryId (toSlug market.title) (Just marketId)
-                            
+
                             withTransaction do
                                 market <- market
                                     |> set #slug uniqueSlug
@@ -89,7 +89,7 @@ instance Controller MarketsController where
                                 let existingIds = map (.id) existingAssets
                                 let newIds = map (\a -> if a.id == def then Nothing else Just a.id) assets
                                 let keptIds = catMaybes newIds
-                                
+
                                 -- Delete assets that are no longer in the form
                                 let assetsToDelete = filter (\a -> a.id `notElem` keptIds) existingAssets
                                 deleteRecords assetsToDelete
@@ -107,7 +107,7 @@ instance Controller MarketsController where
         now <- getCurrentTime
         assets <- fetchAssetsFromParams
         let market = newRecord @Market
-        
+
         if length assets < 2
             then do
                 setErrorMessage "Market must have at least 2 assets"

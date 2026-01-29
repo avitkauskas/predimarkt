@@ -25,3 +25,18 @@ instance Controller AssetsController where
     action NewAssetAction = do
         let asset = newRecord @Asset
         respondHtml $ renderAssetRow asset
+
+    action TradeAssetAction { assetId } = do
+        asset <- fetch assetId
+        let quantity = param @Double "quantity"
+        let tradeType = param @Text "type"
+        
+        let newQuantity = if tradeType == "buy"
+                          then asset.quantity + quantity
+                          else asset.quantity - quantity
+        
+        asset 
+            |> set #quantity newQuantity
+            |> updateRecord
+        
+        redirectTo (ShowMarketAction asset.marketId)
