@@ -50,6 +50,7 @@ data MarketsController
     | EditMarketAction { marketId :: !(Id Market) }
     | UpdateMarketAction { marketId :: !(Id Market) }
     | DeleteMarketAction { marketId :: !(Id Market) }
+
     deriving (Eq, Show, Data)
 
 data AssetsController
@@ -60,6 +61,7 @@ data AssetsController
 data DashboardController
     = DashboardHoldingsAction
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
+    | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
     deriving (Eq, Show, Data)
     
 deriving instance Data MarketStatus

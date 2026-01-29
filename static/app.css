@@ -94,3 +94,78 @@
 [data-bs-theme="dark"] .market-status-refunded-body {
     background-color: #450a0a; /* red-950 */
 }
+
+/* Premium UI Enhancements */
+.btn-orange {
+    background-color: #f97316;
+    border-color: #f97316;
+}
+
+.btn-orange:hover {
+    background-color: #ea580c;
+    border-color: #ea580c;
+}
+
+.asset-row {
+    border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.market-container h1 {
+    letter-spacing: -0.01em;
+}
+
+.form-control-sm {
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-sm {
+    font-size: 0.8125rem;
+}
+
+.badge.small {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Updated Soft Buttons (Darkened) */
+.btn-soft-success {
+    background-color: #bbf7d0; /* green-200 */
+    color: #166534; /* green-800 */
+    border: 1px solid #86efac; /* green-300 */
+}
+
+.btn-soft-success:hover {
+    background-color: #86efac;
+}
+
+.btn-soft-danger {
+    background-color: #fecaca; /* red-200 */
+    color: #991b1b; /* red-800 */
+    border: 1px solid #fca5a5; /* red-300 */
+}
+
+.btn-soft-danger:hover {
+    background-color: #fca5a5;
+}
+
+.market-description-box {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.5rem;
+}
+
+[data-bs-theme="dark"] .market-description-box {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .btn-soft-success {
+    background-color: rgba(34, 197, 94, 0.25);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+[data-bs-theme="dark"] .btn-soft-danger {
+    background-color: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}

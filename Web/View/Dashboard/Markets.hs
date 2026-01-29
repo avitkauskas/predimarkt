@@ -28,7 +28,7 @@ instance View MarketsView where
 renderMarket :: (?context :: ControllerContext) => Market -> Html
 renderMarket market = [hsx|
     <tr>
-        <td>{market.title}</td>
+        <td class="align-middle">{market.title}</td>
         <td class="text-end">
             {renderActions market}
         </td>
@@ -37,7 +37,7 @@ renderMarket market = [hsx|
 
 renderTabs :: MarketStatus -> Html
 renderTabs activeStatus = [hsx|
-    <ul class="nav nav-tabs mb-4">
+    <ul class="nav nav-tabs mb-2">
         {forEach statuses renderTab}
     </ul>
 |]
@@ -64,15 +64,40 @@ renderActions market =
     case market.status of
         MarketStatusDraft -> [hsx|
             <a href={EditMarketAction market.id} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
-            <button class="btn btn-sm btn-outline-primary" disabled>Publish</button>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Open</button>
+            </form>
         |]
         MarketStatusOpen -> [hsx|
-            <button class="btn btn-sm btn-outline-secondary me-2" disabled>Close</button>
-            <button class="btn btn-sm btn-outline-secondary me-2" disabled>Refund</button>
-            <button class="btn btn-sm btn-outline-secondary" disabled>Resolve</button>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Close</button>
+            </form>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusResolved)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-success me-2">Resolve</button>
+            </form>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusRefunded)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Refund</button>
+            </form>
         |]
         MarketStatusClosed -> [hsx|
-            <button class="btn btn-sm btn-outline-secondary me-2" disabled>Refund</button>
-            <button class="btn btn-sm btn-outline-secondary" disabled>Resolve</button>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
+            </form>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusRefunded)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger me-2">Refund</button>
+            </form>
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusResolved)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-success">Resolve</button>
+            </form>
         |]
-        _ -> mempty
+        MarketStatusRefunded -> [hsx|
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
+            </form>
+        |]
+        MarketStatusResolved -> [hsx|
+            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
+            </form>
+        |]
+        -- _ -> mempty

@@ -17,3 +17,28 @@ instance Controller DashboardController where
             |> orderByDesc #createdAt
             |> fetch
         render MarketsView { .. }
+
+    action ChangeMarketStatusAction { marketId, status } = do
+        let mId = case marketId of
+                Just id -> id
+                Nothing -> param @(Id Market) "marketId"
+        let st = case status of
+                Just s -> s
+                Nothing -> param @MarketStatus "status"
+        
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+        now <- getCurrentTime
+        
+        let marketWithStatus = market |> set #status st
+        
+        let marketWithTimestamps = case st of
+                MarketStatusOpen -> marketWithStatus |> set #openedAt (Just now)
+                MarketStatusResolved -> marketWithStatus |> set #resolvedAt (Just now)
+                MarketStatusRefunded -> marketWithStatus |> set #refundedAt (Just now)
+                _ -> marketWithStatus
+        
+        marketWithTimestamps |> updateRecord
+        
+        setSuccessMessage "Market status updated"
+        redirectTo $ DashboardMarketsAction { statusFilter = Just st }

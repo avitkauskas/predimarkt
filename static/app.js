@@ -30,3 +30,16 @@ window.initDatePicker = function () {
         });
     });
 }
+
+window.toggleAssetForm = function (assetId, type) {
+    const buyForm = document.getElementById(`buy-form-${assetId}`);
+    const sellForm = document.getElementById(`sell-form-${assetId}`);
+
+    if (type === 'buy') {
+        sellForm.classList.add('d-none');
+        buyForm.classList.toggle('d-none');
+    } else {
+        buyForm.classList.add('d-none');
+        sellForm.classList.toggle('d-none');
+    }
+}

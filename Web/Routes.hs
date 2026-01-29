@@ -18,8 +18,13 @@ instance HasPath DashboardController where
         case statusFilter of
             Just s -> "/DashboardMarkets?statusFilter=" <> inputValue s
             Nothing -> "/DashboardMarkets"
+    pathTo ChangeMarketStatusAction { marketId, status } = 
+        "/ChangeMarketStatus"
+        <> (case marketId of Just id -> "?marketId=" <> inputValue id; Nothing -> "")
+        <> (case status of Just s -> (if isJust marketId then "&" else "?") <> "status=" <> inputValue s; Nothing -> "")
 
 instance CanRoute DashboardController where
     parseRoute' = 
         (string "/DashboardHoldings" >> pure DashboardHoldingsAction)
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction { statusFilter = Nothing }))
+        <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction { marketId = Nothing, status = Nothing }))
