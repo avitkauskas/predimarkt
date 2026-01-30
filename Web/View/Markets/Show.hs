@@ -67,6 +67,12 @@ instance View ShowView where
                     assetPrice :: Double
                     assetPrice = price asset.id lmsrState
 
+                    assetSum :: Double
+                    assetSum = sumItem asset.id lmsrState
+
+                    assetTotal :: Double
+                    assetTotal = sumTotal lmsrState
+
                     priceDisplay = [hsx|
                         <div class="text-center fw-medium" style="width: 80px;">
                             {printf "%.4f" assetPrice :: String}
@@ -93,12 +99,19 @@ instance View ShowView where
                             <form action={TradeAssetAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="buy" />
                                 <div class="d-flex justify-content-end align-items-center gap-3">
+                                    <div id={"buy-info-" <> show asset.id} 
+                                         class="text-muted small mt-2 text-end">
+                                    </div>
                                     <div class="text-muted small">Number of shares to BUY</div>
                                     <div class="d-flex align-items-center gap-2">
                                         <input type="number" name="quantity" step="10" min="0" 
                                                class="form-control text-start" 
                                                style="width: 80px" value="10"
-                                               autofocus={isBuyFormOpen} />
+                                               autofocus={isBuyFormOpen}
+                                               oninput="updateBuyInfo(this)"
+                                               data-info-id={"buy-info-" <> show asset.id}
+                                               data-a={show (assetSum / assetTotal)}
+                                               data-beta={show market.beta} />
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">BUY</button>
                                     </div>
@@ -110,12 +123,19 @@ instance View ShowView where
                             <form action={TradeAssetAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="sell" />
                                 <div class="d-flex justify-content-end align-items-center gap-3">
+                                    <div id={"sell-info-" <> show asset.id} 
+                                         class="text-muted small mt-2 text-end">
+                                    </div>
                                     <div class="text-muted small">Number of shares to SELL</div>
                                     <div class="d-flex align-items-center gap-2">
                                         <input type="number" name="quantity" step="10" min="0" 
                                                class="form-control text-start" 
                                                style="width: 80px" value="10"
-                                               autofocus={isSellFormOpen} />
+                                               autofocus={isSellFormOpen} 
+                                               oninput="updateSellInfo(this)"
+                                               data-info-id={"sell-info-" <> show asset.id}
+                                               data-a={show (assetSum / assetTotal)}
+                                               data-beta={show market.beta} />
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">SELL</button>
                                     </div>

@@ -3,6 +3,7 @@ module Application.Helper.View where
 import Generated.Enums
 import Generated.Types
 import IHP.ViewPrelude
+import Data.Maybe
 
 import qualified Data.Map as M
 
@@ -22,11 +23,14 @@ precompute beta assets =
         sSum = sum (M.elems sMap)
     in LMSRState sMap sSum
 
+sumItem :: Id Asset -> LMSRState -> Double
+sumItem aid st = Data.Maybe.fromMaybe 0.0 (M.lookup aid (sMap st))
+
+sumTotal :: LMSRState -> Double
+sumTotal = sSum
+
 price :: Id Asset -> LMSRState -> Double
-price aid st =
-    case M.lookup aid (sMap st) of
-        Just v -> v / sSum st
-        Nothing -> 0.0
+price aid st = sumItem aid st / sumTotal st
 
 marketStatusLabel :: MarketStatus -> Text
 marketStatusLabel = \case
