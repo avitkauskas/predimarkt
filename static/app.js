@@ -1,6 +1,26 @@
 $(document).on('ready turbolinks:load', function () {
     // This is called on the first page load *and* also when the page is changed by turbolinks
     htmx.process(document.body);
+
+    // Initialize info blocks for any pre-opened trade forms (only on market show pages)
+    const buyForms = document.querySelectorAll('[id^="buy-form-"]:not(.d-none)');
+    const sellForms = document.querySelectorAll('[id^="sell-form-"]:not(.d-none)');
+
+    if (buyForms.length > 0 || sellForms.length > 0) {
+        buyForms.forEach(form => {
+            const input = form.querySelector('input[type="number"]');
+            if (input && input.value && Number(input.value) > 0) {
+                updateBuyInfo(input);
+            }
+        });
+
+        sellForms.forEach(form => {
+            const input = form.querySelector('input[type="number"]');
+            if (input && input.value && Number(input.value) > 0) {
+                updateSellInfo(input);
+            }
+        });
+    }
 });
 
 // document.addEventListener('turbolinks:load', () => {
@@ -37,10 +57,28 @@ window.toggleAssetForm = function (assetId, type) {
 
     if (type === 'buy') {
         sellForm.classList.add('d-none');
+        const wasHidden = buyForm.classList.contains('d-none');
         buyForm.classList.toggle('d-none');
+
+        // Trigger info update if form was just opened and has a value
+        if (wasHidden && !buyForm.classList.contains('d-none')) {
+            const input = buyForm.querySelector('input[type="number"]');
+            if (input && input.value) {
+                updateBuyInfo(input);
+            }
+        }
     } else {
         buyForm.classList.add('d-none');
+        const wasHidden = sellForm.classList.contains('d-none');
         sellForm.classList.toggle('d-none');
+
+        // Trigger info update if form was just opened and has a value
+        if (wasHidden && !sellForm.classList.contains('d-none')) {
+            const input = sellForm.querySelector('input[type="number"]');
+            if (input && input.value) {
+                updateSellInfo(input);
+            }
+        }
     }
 }
 
@@ -78,7 +116,15 @@ window.lmsrPreview = function ({ x, a, beta, sign }) {
 
 window.updateBuyInfo = function (input) {
     const x = Number(input.value || 0)
-    if (x <= 0) return
+    const containerId = input.dataset.infoId
+    const container = document.getElementById(containerId)
+    if (!container) return
+
+    if (x <= 0) {
+        container.classList.add('d-none')
+        return
+    }
+    container.classList.remove('d-none')
 
     const { money, pNew, net } = lmsrPreview({
         x,
@@ -87,16 +133,42 @@ window.updateBuyInfo = function (input) {
         sign: -1
     })
 
-    document.getElementById(input.dataset.infoId).innerText =
-        `Invest €${money.toFixed(2)} ` +
-        `expecting to gain €${net.toFixed(2)} ` +
-        `(return of ${(net / money * 100).toFixed(1)}%) ` +
-        `changing the probability to ${(pNew * 100).toFixed(2)}%`
+    container.innerHTML = `
+        <div class="trade-info-grid">
+            <div class="info-item">
+                <span class="info-label">Invest</span>
+                <span class="info-value">€${money.toFixed(2)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Return</span>
+                <span class="info-value">${(net / money * 100).toFixed(1)}%</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Gain</span>
+                <span class="info-value text-success">€${net.toFixed(2)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Probability</span>
+                <span class="info-value">
+                    <span class="info-transition">↑</span>
+                    ${(pNew * 100).toFixed(2)}%
+                </span>
+            </div>
+        </div>
+    `
 }
 
 window.updateSellInfo = function (input) {
     const x = Number(input.value || 0)
-    if (x <= 0) return
+    const containerId = input.dataset.infoId
+    const container = document.getElementById(containerId)
+    if (!container) return
+
+    if (x <= 0) {
+        container.classList.add('d-none')
+        return
+    }
+    container.classList.remove('d-none')
 
     const { money, pNew, net } = lmsrPreview({
         x,
@@ -105,9 +177,27 @@ window.updateSellInfo = function (input) {
         sign: +1
     })
 
-    document.getElementById(input.dataset.infoId).innerText =
-        `Receive €${money.toFixed(2)} ` +
-        `risking to lose €${net.toFixed(2)} ` +
-        `(return of ${(money / net * 100).toFixed(1)}%) ` +
-        `changing the probability to ${(pNew * 100).toFixed(2)}%`
+    container.innerHTML = `
+        <div class="trade-info-grid">
+            <div class="info-item">
+                <span class="info-label">Receive</span>
+                <span class="info-value">€${money.toFixed(2)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Return</span>
+                <span class="info-value">${(money / net * 100).toFixed(1)}%</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Risk</span>
+                <span class="info-value text-danger">€${net.toFixed(2)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Probability</span>
+                <span class="info-value">
+                    <span class="info-transition">↓</span>
+                    ${(pNew * 100).toFixed(2)}%
+                </span>
+            </div>
+        </div>
+    `
 }

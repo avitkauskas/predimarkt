@@ -10,9 +10,9 @@ data ShowView = ShowView
 
 instance View ShowView where
     html ShowView { .. } = [hsx|
-        <div class="py-3">
+        <div class="py-3" style="max-width: 800px; margin: 0 auto;">
             <div class="card shadow-sm">
-                <div class={classes [("card-header", True), ("text-muted", True), ("small", True), ("d-flex", True), ("justify-content-between", True), ("align-items-center", True), ("py-2", True), (headerClass, True)]}>
+                <div class={classes ["card-header text-muted d-flex justify-content-between align-items-center py-2", (headerClass, True)]}>
                     <span class="ms-2">{market.categoryId.name}</span>
                     <div class="me-2">
                         {statusBadge}
@@ -20,7 +20,13 @@ instance View ShowView where
                 </div>
                 <div class="card-body p-4">
                     <header class="mb-4">
-                        <h1 class="h3 fw-bold mb-3 ms-2">{market.title}</h1>
+                        <button class="btn btn-outline-secondary back-button mb-3" 
+                                onclick="history.back()" 
+                                type="button"
+                                title="Go back">
+                            ←
+                        </button>
+                        <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
                         <div class="market-description-box p-3">
                             <p class="text-muted mb-0">{market.description}</p>
                         </div>
@@ -74,8 +80,8 @@ instance View ShowView where
                     assetTotal = sumTotal lmsrState
 
                     priceDisplay = [hsx|
-                        <div class="text-center fw-medium" style="width: 80px;">
-                            {printf "%.4f" assetPrice :: String}
+                        <div class="text-end fw-medium pe-4" style="width: 100px;">
+                            €{printf "%.4f" assetPrice :: String}
                         </div>
                     |]
 
@@ -95,49 +101,57 @@ instance View ShowView where
                     |]
 
                     buySellForms = [hsx|
-                        <div id={"buy-form-" <> show asset.id} class={classes ["mt-3", ("d-none", not isBuyFormOpen)]}>
+                        <div id={"buy-form-" <> show asset.id}
+                             class={classes ["mt-3", ("d-none", not isBuyFormOpen)]}>
                             <form action={TradeAssetAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="buy" />
-                                <div class="d-flex justify-content-end align-items-center gap-3">
-                                    <div id={"buy-info-" <> show asset.id} 
-                                         class="text-muted small mt-2 text-end">
-                                    </div>
-                                    <div class="text-muted small">Number of shares to BUY</div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="number" name="quantity" step="10" min="0" 
-                                               class="form-control text-start" 
-                                               style="width: 80px" value="10"
-                                               autofocus={isBuyFormOpen}
-                                               oninput="updateBuyInfo(this)"
-                                               data-info-id={"buy-info-" <> show asset.id}
-                                               data-a={show (assetSum / assetTotal)}
-                                               data-beta={show market.beta} />
+                                <div class="d-flex flex-column align-items-end gap-2">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="input-group" style="width: 160px">
+                                            <span class="input-group-text text-muted">shares</span>
+                                            <input type="number" name="quantity"
+                                                   value="10" step="10" min="0" 
+                                                   class="form-control" 
+                                                   autofocus={isBuyFormOpen}
+                                                   oninput="updateBuyInfo(this)"
+                                                   data-info-id={"buy-info-" <> show asset.id}
+                                                   data-a={show (assetSum / assetTotal)}
+                                                   data-beta={show market.beta} />
+                                        </div>
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">BUY</button>
+                                    </div>
+                                    <div id={"buy-info-" <> show asset.id} 
+                                         class="trade-info-container text-end w-100 d-none"
+                                         style="max-width: 320px;">
                                     </div>
                                 </div>
                             </form>
                         </div>
 
-                        <div id={"sell-form-" <> show asset.id} class={classes ["mt-3", ("d-none", not isSellFormOpen)]}>
+                        <div id={"sell-form-" <> show asset.id}
+                             class={classes ["mt-3", ("d-none", not isSellFormOpen)]}>
                             <form action={TradeAssetAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="sell" />
-                                <div class="d-flex justify-content-end align-items-center gap-3">
-                                    <div id={"sell-info-" <> show asset.id} 
-                                         class="text-muted small mt-2 text-end">
-                                    </div>
-                                    <div class="text-muted small">Number of shares to SELL</div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="number" name="quantity" step="10" min="0" 
-                                               class="form-control text-start" 
-                                               style="width: 80px" value="10"
-                                               autofocus={isSellFormOpen} 
-                                               oninput="updateSellInfo(this)"
-                                               data-info-id={"sell-info-" <> show asset.id}
-                                               data-a={show (assetSum / assetTotal)}
-                                               data-beta={show market.beta} />
+                                <div class="d-flex flex-column align-items-end gap-2">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="input-group" style="width: 160px">
+                                            <span class="input-group-text text-muted">shares</span>
+                                            <input type="number" name="quantity"
+                                                   value="10" step="10" min="0" 
+                                                   class="form-control" 
+                                                   autofocus={isSellFormOpen} 
+                                                   oninput="updateSellInfo(this)"
+                                                   data-info-id={"sell-info-" <> show asset.id}
+                                                   data-a={show (assetSum / assetTotal)}
+                                                   data-beta={show market.beta} />
+                                        </div>
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">SELL</button>
+                                    </div>
+                                    <div id={"sell-info-" <> show asset.id} 
+                                         class="trade-info-container text-end w-100 d-none"
+                                         style="max-width: 320px;">
                                     </div>
                                 </div>
                             </form>

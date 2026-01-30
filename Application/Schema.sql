@@ -44,7 +44,7 @@ CREATE TABLE markets (
     slug TEXT NOT NULL,
     description TEXT NOT NULL,
     category_id UUID NOT NULL,
-    beta DOUBLE PRECISION DEFAULT 140.0 NOT NULL,
+    beta DOUBLE PRECISION DEFAULT 300 NOT NULL,
     status market_status DEFAULT 'market_status_draft' NOT NULL,
     opened_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     closed_at TIMESTAMP WITH TIME ZONE NOT NULL,
