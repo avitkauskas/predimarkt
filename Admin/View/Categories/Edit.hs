@@ -21,6 +21,7 @@ renderForm :: Category -> Html
 renderForm category = formFor category [hsx|
     {(textField #name)}
     {(textField #slug)}
+    {(numberField #sortIdx) { fieldLabel = "Sort Index", additionalAttributes = [("step", "10")] }}
     {submitButton}
 
 |]

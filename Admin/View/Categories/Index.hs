@@ -11,6 +11,7 @@ instance View IndexView where
             <table class="table">
                 <thead>
                     <tr>
+                        <th>Sort</th>
                         <th>Name</th>
                         <th>Slug</th>
                         <th></th>
@@ -31,6 +32,7 @@ instance View IndexView where
 renderCategory :: Category -> Html
 renderCategory category = [hsx|
     <tr>
+        <td>{category.sortIdx}</td>
         <td>{category.name}</td>
         <td>{category.slug}</td>
         <td><a href={EditCategoryAction category.id} class="text-muted">Edit</a></td>

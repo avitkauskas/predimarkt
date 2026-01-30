@@ -9,7 +9,9 @@ instance Controller CategoriesController where
     beforeAction = notFoundWhen (isNothing currentAdminOrNothing)
 
     action CategoriesAction = do
-        categories <- query @Category |> fetch
+        categories <- query @Category 
+            |> orderByAsc #sortIdx
+            |> fetch
         render IndexView { .. }
 
     action NewCategoryAction = do
@@ -49,4 +51,4 @@ instance Controller CategoriesController where
         redirectTo CategoriesAction
 
 buildCategory category = category
-    |> fill @'["name", "slug"]
+    |> fill @'["name", "slug", "sortIdx"]

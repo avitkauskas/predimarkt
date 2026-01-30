@@ -30,7 +30,7 @@ instance Controller MarketsController where
                 >>= collectionFetchRelated #assets . map (modify #assets (orderByDesc #quantity))
                 >>= collectionFetchRelated #categoryId
 
-        categories <- query @Category |> fetch
+        categories <- fetchCategories
         render IndexView { .. }
 
     action NewMarketAction = do
@@ -42,7 +42,7 @@ instance Controller MarketsController where
         let assets = [ newRecord @Asset |> set #name "Yes" |> set #symbol "Yes"
                      , newRecord @Asset |> set #name "No" |> set #symbol "No"
                      ]
-        categories <- query @Category |> fetch
+        categories <- fetchCategories
         render NewView { .. }
 
     action ShowMarketAction { marketId, tradingAssetId, tradingAction } = autoRefresh do
@@ -61,8 +61,11 @@ instance Controller MarketsController where
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
-        assets <- query @Asset |> filterWhere (#marketId, mId) |> fetch
-        categories <- query @Category |> fetch
+        assets <- query @Asset 
+            |> filterWhere (#marketId, mId)
+            |> orderByAsc #quantity
+            |> fetch
+        categories <- fetchCategories
         render EditView { .. }
 
     action UpdateMarketAction { marketId } = do
@@ -76,14 +79,14 @@ instance Controller MarketsController where
         if length assets < 2
             then do
                 setErrorMessage "Market must have at least 2 assets"
-                categories <- query @Category |> fetch
+                categories <- fetchCategories
                 render EditView { .. }
             else do
                 market
                     |> buildMarket now
                     |> ifValid \case
                         Left market -> do
-                            categories <- query @Category |> fetch
+                            categories <- fetchCategories
                             render EditView { .. }
                         Right market -> do
                             uniqueSlug <- constructUniqueSlug
@@ -121,7 +124,7 @@ instance Controller MarketsController where
         if length assets < 2
             then do
                 setErrorMessage "Market must have at least 2 assets"
-                categories <- query @Category |> fetch
+                categories <- fetchCategories
                 render NewView { .. }
             else do
                 market
@@ -129,7 +132,7 @@ instance Controller MarketsController where
                     |> set #userId (Just currentUserId)
                     |> ifValid \case
                         Left market -> do
-                            categories <- query @Category |> fetch
+                            categories <- fetchCategories
                             render NewView { .. }
                         Right market -> do
                             withTransaction do
@@ -177,3 +180,6 @@ buildMarket now market = market
     |> validateField #description nonEmpty
     |> validateField #categoryId nonEmpty
     |> validateField #closedAt (isGreaterThan now)
+
+fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
+fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch

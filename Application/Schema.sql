@@ -34,7 +34,8 @@ CREATE TRIGGER update_admins_updated_at BEFORE UPDATE ON admins FOR EACH ROW EXE
 CREATE TABLE categories (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE
+    slug TEXT NOT NULL UNIQUE,
+    sort_idx INT
 );
 CREATE TABLE markets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
