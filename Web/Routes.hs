@@ -36,6 +36,7 @@ instance CanRoute MarketsController where
 
 instance HasPath DashboardController where
     pathTo DashboardHoldingsAction = "/DashboardHoldings"
+    pathTo DashboardWalletsAction = "/DashboardWallets"
     pathTo DashboardMarketsAction { statusFilter } = 
         case statusFilter of
             Just s -> "/DashboardMarkets?statusFilter=" <> inputValue s
@@ -48,5 +49,6 @@ instance HasPath DashboardController where
 instance CanRoute DashboardController where
     parseRoute' = 
         (string "/DashboardHoldings" >> pure DashboardHoldingsAction)
+        <|> (string "/DashboardWallets" >> pure DashboardWalletsAction)
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction { statusFilter = Nothing }))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction { marketId = Nothing, status = Nothing }))

@@ -8,6 +8,7 @@ import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
 import Web.View.Markets.Show
+import Web.Types
 
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do

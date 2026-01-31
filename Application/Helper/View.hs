@@ -1,36 +1,12 @@
-module Application.Helper.View where
+module Application.Helper.View 
+    ( module Application.Helper.LMSR
+    , module Application.Helper.View
+    ) where
 
 import Generated.Enums
 import Generated.Types
 import IHP.ViewPrelude
-import Data.Maybe
-
-import qualified Data.Map as M
-
-data LMSRState = LMSRState
-    { sMap :: M.Map (Id Asset) Double
-    , sSum :: !Double
-    }
-
-precompute :: Double -> [Asset] -> LMSRState
-precompute beta assets =
-    let quantities = map (.quantity) assets
-        m = if null quantities then 0 else maximum quantities
-        sMap = M.fromList
-            [ (asset.id, exp ((asset.quantity - m) / beta))
-            | asset <- assets
-            ]
-        sSum = sum (M.elems sMap)
-    in LMSRState sMap sSum
-
-sumItem :: Id Asset -> LMSRState -> Double
-sumItem aid st = Data.Maybe.fromMaybe 0.0 (M.lookup aid (sMap st))
-
-sumTotal :: LMSRState -> Double
-sumTotal = sSum
-
-price :: Id Asset -> LMSRState -> Double
-price aid st = sumItem aid st / sumTotal st
+import Application.Helper.LMSR
 
 marketStatusLabel :: MarketStatus -> Text
 marketStatusLabel = \case

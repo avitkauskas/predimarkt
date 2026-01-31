@@ -5,8 +5,10 @@ BEGIN
     RETURN NEW;
 END;
 $$ language plpgsql;
+
 CREATE TYPE market_status AS ENUM ('market_status_draft', 'market_status_open', 'market_status_closed', 'market_status_resolved', 'market_status_refunded');
 CREATE TYPE asset_status AS ENUM ('asset_status_open', 'asset_status_resolved', 'asset_status_refunded');
+
 CREATE TABLE users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
@@ -20,6 +22,7 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+
 CREATE TABLE admins (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
@@ -31,12 +34,14 @@ CREATE TABLE admins (
 );
 CREATE UNIQUE INDEX admins_email_index ON admins (LOWER(email));
 CREATE TRIGGER update_admins_updated_at BEFORE UPDATE ON admins FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+
 CREATE TABLE categories (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     sort_idx INT
 );
+
 CREATE TABLE markets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     user_id UUID,
@@ -60,6 +65,9 @@ CREATE INDEX markets_opened_at_index ON markets (opened_at);
 CREATE INDEX markets_closed_at_index ON markets (closed_at);
 CREATE UNIQUE INDEX markets_category_id_slug_index ON markets (category_id, slug);
 CREATE TRIGGER update_markets_updated_at BEFORE UPDATE ON markets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
+ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
+
 CREATE TABLE assets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     market_id UUID NOT NULL,
@@ -75,5 +83,11 @@ CREATE TABLE assets (
 CREATE INDEX assets_market_id_index ON assets (market_id);
 CREATE TRIGGER update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
-ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
-ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
+
+CREATE TABLE wallets (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    user_id UUID NOT NULL UNIQUE,
+    balance_cents BIGINT DEFAULT 0 NOT NULL
+);
+CREATE INDEX wallets_user_id_index ON wallets (user_id);
+ALTER TABLE wallets ADD CONSTRAINT wallets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;

@@ -86,8 +86,10 @@ navbar = [hsx|
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a  class="dropdown-item" href={DashboardHoldingsAction}>My Holdings</a></li>
-                    <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>My Markets</a></li>
+                    <li><a  class="dropdown-item" href={DashboardWalletsAction}>Balance</a></li>
+                    <li><a  class="dropdown-item" href={DashboardHoldingsAction}>Holdings</a></li>
+                    <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>Markets</a></li>
+                    <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href={EditUserAction user.id}>Profile</a></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li>
@@ -108,10 +110,17 @@ dashboardLayout inner = [hsx|
                     <div class="mb-2">
                         <h5>Dashboard</h5>
                     </div>
-                    <ul class="nav flex-column gap-2">
+                    <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class={
-                                classes
+                            <a class={classes
+                                    ["nav-link",
+                                    ("active", isActivePath (pathTo DashboardWalletsAction))]}
+                               href={DashboardWalletsAction}>
+                              Balance
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class={classes
                                     ["nav-link",
                                     ("active", isActivePath (pathTo DashboardHoldingsAction))]}
                                href={DashboardHoldingsAction}>
@@ -121,7 +130,9 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", any (\s -> isActivePath (pathTo (DashboardMarketsAction s))) (Nothing : map Just allEnumValues))]}
+                                    ("active", any (\s -> 
+                                        isActivePath (pathTo (DashboardMarketsAction s))
+                                    ) (Nothing : map Just allEnumValues))]}
                                href={DashboardMarketsAction (Just MarketStatusOpen)}>
                               Markets
                             </a>

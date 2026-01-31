@@ -3,11 +3,18 @@ module Web.Controller.Dashboard where
 import Web.Controller.Prelude
 import Web.View.Dashboard.Holdings
 import Web.View.Dashboard.Markets
+import Web.View.Dashboard.Wallets
 
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
     action DashboardHoldingsAction = render HoldingsView
+
+    action DashboardWalletsAction = do
+        wallet <- query @Wallet
+            |> filterWhere (#userId, currentUserId)
+            |> fetchOne
+        render WalletsView { .. }
 
     action DashboardMarketsAction { statusFilter } = do
         let activeStatus = fromMaybe MarketStatusDraft $ statusFilter <|> paramOrNothing @MarketStatus "statusFilter"

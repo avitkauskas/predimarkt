@@ -1,5 +1,7 @@
 module Web.Types where
 
+import Web.Types.Money
+
 import Generated.Types
 import IHP.LoginSupport.Types
 import IHP.ModelSupport
@@ -60,6 +62,7 @@ data AssetsController
 
 data DashboardController
     = DashboardHoldingsAction
+    | DashboardWalletsAction
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
     | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
     deriving (Eq, Show, Data)
