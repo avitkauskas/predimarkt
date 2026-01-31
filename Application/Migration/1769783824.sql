@@ -1,1 +1,0 @@
-ALTER TABLE categories ALTER COLUMN sort_idx DROP NOT NULL;

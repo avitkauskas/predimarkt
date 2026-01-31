@@ -1,1 +1,0 @@
-ALTER TABLE categories ADD COLUMN sort_idx INT DEFAULT 1 NOT NULL;

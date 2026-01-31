@@ -110,7 +110,7 @@ instance View ShowView where
                                         <div class="input-group" style="width: 160px">
                                             <span class="input-group-text text-muted">shares</span>
                                             <input type="number" name="quantity"
-                                                   value="10" step="10" min="0" 
+                                                   value="10" step="1" min="0" 
                                                    class="form-control" 
                                                    autofocus={isBuyFormOpen}
                                                    oninput="updateBuyInfo(this)"
@@ -138,7 +138,7 @@ instance View ShowView where
                                         <div class="input-group" style="width: 160px">
                                             <span class="input-group-text text-muted">shares</span>
                                             <input type="number" name="quantity"
-                                                   value="10" step="10" min="0" 
+                                                   value="10" step="1" min="0" 
                                                    class="form-control" 
                                                    autofocus={isSellFormOpen} 
                                                    oninput="updateSellInfo(this)"

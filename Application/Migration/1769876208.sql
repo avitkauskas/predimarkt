@@ -1,1 +1,0 @@
-ALTER TABLE wallets ALTER COLUMN balance_cents SET DEFAULT 100000;

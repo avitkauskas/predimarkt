@@ -33,7 +33,7 @@ instance Controller AssetsController where
         market <- fetch asset.marketId
         
         -- Get trade parameters
-        let quantity = param @Int "quantity"
+        let paramQty = param @Int "quantity"
         let tradeType = param @Text "type"
         
         -- Fetch all assets for LMSR calculation
@@ -51,24 +51,20 @@ instance Controller AssetsController where
         wallet <- query @Wallet
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
-        
+
         -- Calculate money amount and new quantities
-        let (moneyAmount, newQuantity, newBalance) = 
+        let (deltaCents, deltaQty) = 
                 if tradeType == "buy"
                 then 
                     -- BUY: Calculate cost and deduct from wallet
-                    let cost = calculateBuyCost quantity currentPrice market.beta assetTotal
+                    let cost = calculateBuyCost paramQty currentPrice market.beta assetTotal
                         costCents = round (cost * 100)
-                        newBal = wallet.amountCents - costCents
-                        newQty = asset.quantity + quantity
-                    in (cost, newQty, newBal)
+                    in (-costCents, paramQty)
                 else 
                     -- SELL: Calculate revenue and add to wallet
-                    let revenue = calculateSellRevenue quantity currentPrice market.beta assetTotal
+                    let revenue = calculateSellRevenue paramQty currentPrice market.beta assetTotal
                         revenueCents = round (revenue * 100)
-                        newBal = wallet.amountCents + revenueCents
-                        newQty = asset.quantity - quantity
-                    in (revenue, newQty, newBal)
+                    in (revenueCents, -paramQty)
         
         -- Validate sufficient funds for buying
         -- when (tradeType == "buy" && newBalance < 0) $ do
@@ -82,16 +78,46 @@ instance Controller AssetsController where
         
         -- Update asset quantity
         asset 
-            |> set #quantity newQuantity
+            |> set #quantity (asset.quantity + deltaQty)
             |> updateRecord
         
         -- Update wallet balance
         wallet
-            |> set #amountCents newBalance
+            |> set #amountCents (wallet.amountCents + deltaCents)
             |> updateRecord
+
+        -- Create transaction
+        transaction <- newRecord @Transaction
+            |> set #userId currentUserId
+            |> set #assetId assetId
+            |> set #marketId market.id
+            |> set #quantity deltaQty
+            |> set #amountCents (abs deltaCents)
+            |> createRecord
+
+        -- Create or update holding
+        maybeHolding <- query @Holding
+            |> filterWhere (#userId, currentUserId)
+            |> filterWhere (#assetId, assetId)
+            |> fetchOneOrNothing
+
+        case maybeHolding of
+            Just holding ->
+                holding
+                    |> set #quantity (holding.quantity + deltaQty)
+                    |> set #amountCents (holding.amountCents - deltaCents)
+                    |> updateRecord
+            Nothing ->
+                newRecord @Holding
+                    |> set #userId currentUserId
+                    |> set #marketId market.id
+                    |> set #assetId assetId
+                    |> set #quantity deltaQty
+                    |> set #amountCents (-deltaCents)
+                    |> createRecord
         
         -- Set success message
         let action = if tradeType == "buy" then "bought" else "sold"
-        setSuccessMessage $ "Successfully " <> action <> " " <> show quantity <> " shares for " <> formatMoney (moneyFromDouble moneyAmount)
+        setSuccessMessage $ "Successfully " <> action <> " " <> show (abs deltaQty) <> " shares for " <> formatMoney (moneyFromCents (abs deltaCents))
         
         redirectTo (ShowMarketAction asset.marketId Nothing Nothing)

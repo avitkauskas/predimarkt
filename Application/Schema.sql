@@ -105,6 +105,7 @@ CREATE TABLE holdings (
 CREATE INDEX holdings_user_id_index ON holdings (user_id);
 CREATE INDEX holdings_market_id_index ON holdings (market_id);
 CREATE INDEX holdings_asset_id_index ON holdings (asset_id);
+CREATE UNIQUE INDEX holdings_user_id_asset_id_index ON holdings (user_id, asset_id);
 CREATE TRIGGER update_holdings_updated_at BEFORE UPDATE ON holdings FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
 ALTER TABLE holdings ADD CONSTRAINT holdings_ref_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
