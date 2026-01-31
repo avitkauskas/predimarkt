@@ -9,6 +9,6 @@ instance View WalletsView where
     html WalletsView { wallet } = dashboardLayout [hsx|
         <div class="h-100">
             <h3>Balance</h3>
-            <p class="fs-3">{formatMoney (moneyFromCents wallet.balanceCents)}</p>
+            <p class="fs-3">{formatMoney (moneyFromCents wallet.amountCents)}</p>
         </div>
     |]

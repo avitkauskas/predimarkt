@@ -19,12 +19,13 @@ data LMSRState = LMSRState
     , sSum :: !Double
     }
 
-precompute :: Double -> [Asset] -> LMSRState
+precompute :: Int -> [Asset] -> LMSRState
 precompute beta assets =
     let quantities = map (.quantity) assets
         m = if null quantities then 0 else maximum quantities
+        betaD = fromIntegral beta
         sMap = M.fromList
-            [ (asset.id, exp ((asset.quantity - m) / beta))
+            [ (asset.id, exp (fromIntegral (asset.quantity - m) / betaD))
             | asset <- assets
             ]
         sSum = sum (M.elems sMap)
@@ -50,24 +51,24 @@ lmsrCore a z sign =
         pNew = exp (la - logD)
     in (logD, pNew)
 
-lmsrPreview :: Double -> Double -> Double -> Double -> (Double, Double, Double)
-lmsrPreview x a beta sign =
-    let z = x / beta
+lmsrPreview :: Int -> Double -> Int -> Double -> (Double, Double, Double)
+lmsrPreview quantity a beta sign =
+    let betaD = fromIntegral beta
+        quantityD = fromIntegral quantity
+        z = quantityD / betaD
         (logD, pNew) = lmsrCore a z sign
         money = if sign < 0
-                then x + beta * logD  -- BUY: invested
-                else x - beta * logD  -- SELL: received
-        net = x - money
+                then quantityD + betaD * logD  -- BUY: invested
+                else quantityD - betaD * logD  -- SELL: received
+        net = quantityD - money
     in (money, pNew, net)
 
-calculateBuyCost :: Double -> Double -> Double -> Double -> Double
+calculateBuyCost :: Int -> Double -> Int -> Double -> Double
 calculateBuyCost quantity currentPrice beta totalSum =
-    let a = currentPrice
-        (money, _, _) = lmsrPreview quantity a beta (-1)
+    let (money, _, _) = lmsrPreview quantity currentPrice beta (-1)
     in money
 
-calculateSellRevenue :: Double -> Double -> Double -> Double -> Double
+calculateSellRevenue :: Int -> Double -> Int -> Double -> Double
 calculateSellRevenue quantity currentPrice beta totalSum =
-    let a = currentPrice
-        (money, _, _) = lmsrPreview quantity a beta 1
+    let (money, _, _) = lmsrPreview quantity currentPrice beta 1
     in money

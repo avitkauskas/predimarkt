@@ -33,7 +33,7 @@ instance Controller AssetsController where
         market <- fetch asset.marketId
         
         -- Get trade parameters
-        let quantity = param @Double "quantity"
+        let quantity = param @Int "quantity"
         let tradeType = param @Text "type"
         
         -- Fetch all assets for LMSR calculation
@@ -59,20 +59,20 @@ instance Controller AssetsController where
                     -- BUY: Calculate cost and deduct from wallet
                     let cost = calculateBuyCost quantity currentPrice market.beta assetTotal
                         costCents = round (cost * 100)
-                        newBal = wallet.balanceCents - costCents
+                        newBal = wallet.amountCents - costCents
                         newQty = asset.quantity + quantity
                     in (cost, newQty, newBal)
                 else 
                     -- SELL: Calculate revenue and add to wallet
                     let revenue = calculateSellRevenue quantity currentPrice market.beta assetTotal
                         revenueCents = round (revenue * 100)
-                        newBal = wallet.balanceCents + revenueCents
+                        newBal = wallet.amountCents + revenueCents
                         newQty = asset.quantity - quantity
                     in (revenue, newQty, newBal)
         
         -- Validate sufficient funds for buying
         -- when (tradeType == "buy" && newBalance < 0) $ do
-        --     setErrorMessage $ "Insufficient funds. This trade requires " <> formatMoney (moneyFromDouble moneyAmount) <> " but you only have " <> formatMoney (moneyFromCents wallet.balanceCents)
+        --     setErrorMessage $ "Insufficient funds. This trade requires " <> formatMoney (moneyFromDouble moneyAmount) <> " but you only have " <> formatMoney (moneyFromCents wallet.amountCents)
         --     redirectTo (ShowMarketAction asset.marketId (Just asset.id) (Just tradeType))
         
         -- Validate sufficient shares for selling
@@ -87,7 +87,7 @@ instance Controller AssetsController where
         
         -- Update wallet balance
         wallet
-            |> set #balanceCents newBalance
+            |> set #amountCents newBalance
             |> updateRecord
         
         -- Set success message
