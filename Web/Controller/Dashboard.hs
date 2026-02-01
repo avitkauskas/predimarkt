@@ -8,7 +8,13 @@ import Web.View.Dashboard.Wallets
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardHoldingsAction = render HoldingsView
+    action DashboardHoldingsAction = do
+        holdings <- query @Holding
+            |> filterWhere (#userId, currentUserId)
+            |> fetch
+            >>= collectionFetchRelated #assetId
+            >>= collectionFetchRelated #marketId
+        render HoldingsView { .. }
 
     action DashboardWalletsAction = do
         wallet <- query @Wallet
