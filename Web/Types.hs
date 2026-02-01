@@ -57,6 +57,7 @@ data MarketsController
 data AssetsController
     = DeleteAssetAction { assetId :: !(Id Asset) }
     | TradeAssetAction { assetId :: !(Id Asset) }
+    | ClosePositionAction { assetId :: !(Id Asset) }
     | NewAssetAction
     deriving (Eq, Show, Data)
 
@@ -66,5 +67,5 @@ data DashboardController
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
     | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
     deriving (Eq, Show, Data)
-    
+
 deriving instance Data MarketStatus
