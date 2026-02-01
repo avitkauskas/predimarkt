@@ -53,6 +53,14 @@
     --bs-body-color: #adb5bd; /* Dimmed white for comfort */
 }
 
+/* Table styling for dark theme */
+[data-bs-theme="dark"] .table {
+    --bs-table-color: #adb5bd;
+    --bs-table-striped-color: #adb5bd;
+    --bs-table-active-color: #adb5bd;
+    --bs-table-hover-color: #adb5bd;
+}
+
 /* Market status colors - Light theme */
 .market-status-closed-header {
     background-color: #dbeafe; /* blue-100 */

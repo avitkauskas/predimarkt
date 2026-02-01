@@ -110,7 +110,7 @@ instance Controller DashboardController where
         redirectTo $ DashboardMarketsAction { statusFilter = Just st }
 
     action DashboardTransactionsAction { page } = do
-        let currentPage = fromMaybe 1 page
+        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
         let itemsPerPage = 15
 
         -- Get total count for pagination
@@ -120,12 +120,14 @@ instance Controller DashboardController where
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
-        let offset = (validPage - 1) * itemsPerPage
+        let pageOffset = (validPage - 1) * itemsPerPage
 
-        -- Fetch transactions with pagination
+        -- Fetch transactions with pagination using IHP's limit and offset
         transactions <- query @Transaction
             |> filterWhere (#userId, currentUserId)
             |> orderByDesc #createdAt
+            |> limit itemsPerPage
+            |> offset pageOffset
             |> fetch
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #marketId

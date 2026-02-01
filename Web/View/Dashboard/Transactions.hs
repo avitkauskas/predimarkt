@@ -19,7 +19,7 @@ instance View TransactionsView where
         <div class="h-100">
             <h3>My Transactions</h3>
             <div class="table-responsive">
-                <table class="table table-hover table-borderless">
+                <table class="table table-sm table-responsive table-hover table-borderless">
                     <thead>
                         <tr>
                             <th>Time</th>
@@ -50,8 +50,8 @@ renderTransaction TransactionWithDetails { .. } =
         timeStr = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" txn.createdAt
     in [hsx|
         <tr>
-            <td>{timeStr}</td>
-            <td>{market.title} - {asset.name}</td>
+            <td class="text-nowrap">{timeStr}</td>
+            <td class="text-nowrap">{market.title} - {asset.name}</td>
             <td class={typeClass}>{txnType}</td>
             <td class="text-end">{show quantity}</td>
             <td class="text-end">{money}</td>
@@ -64,7 +64,7 @@ renderTxnPagination currentPage totalPages =
     then [hsx||]
     else [hsx|
         <nav aria-label="Transaction pagination">
-            <ul class="pagination justify-content-center">
+            <ul class="pagination pagination-sm justify-content-end">
                 {renderPrevButton}
                 {forEach [1..totalPages] renderPageButton}
                 {renderNextButton}
