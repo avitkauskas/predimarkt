@@ -65,6 +65,7 @@ data DashboardController
     = DashboardHoldingsAction
     | DashboardWalletsAction
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
+    | DashboardTransactionsAction { page :: Maybe Int }
     | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
     deriving (Eq, Show, Data)
 

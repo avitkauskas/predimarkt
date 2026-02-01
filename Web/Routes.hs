@@ -1,8 +1,8 @@
 module Web.Routes where
 import Generated.Types
-import IHP.RouterPrelude
 import IHP.ModelSupport
 import IHP.Prelude
+import IHP.RouterPrelude
 import Web.Types
 
 -- Generator Marker
@@ -25,7 +25,7 @@ instance HasPath MarketsController where
     pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
 
 instance CanRoute MarketsController where
-    parseRoute' = 
+    parseRoute' =
         (string "/Markets" >> pure MarketsAction)
         <|> (string "/NewMarket" >> pure NewMarketAction)
         <|> (string "/CreateMarket" >> pure CreateMarketAction)
@@ -37,18 +37,23 @@ instance CanRoute MarketsController where
 instance HasPath DashboardController where
     pathTo DashboardHoldingsAction = "/DashboardHoldings"
     pathTo DashboardWalletsAction = "/DashboardWallets"
-    pathTo DashboardMarketsAction { statusFilter } = 
+    pathTo DashboardMarketsAction { statusFilter } =
         case statusFilter of
-            Just s -> "/DashboardMarkets?statusFilter=" <> inputValue s
+            Just s  -> "/DashboardMarkets?statusFilter=" <> inputValue s
             Nothing -> "/DashboardMarkets"
-    pathTo ChangeMarketStatusAction { marketId, status } = 
+    pathTo ChangeMarketStatusAction { marketId, status } =
         "/ChangeMarketStatus"
         <> (case marketId of Just id -> "?marketId=" <> inputValue id; Nothing -> "")
         <> (case status of Just s -> (if isJust marketId then "&" else "?") <> "status=" <> inputValue s; Nothing -> "")
+    pathTo DashboardTransactionsAction { page } =
+        case page of
+            Just p  -> "/DashboardTransactions?page=" <> inputValue p
+            Nothing -> "/DashboardTransactions"
 
 instance CanRoute DashboardController where
-    parseRoute' = 
+    parseRoute' =
         (string "/DashboardHoldings" >> pure DashboardHoldingsAction)
         <|> (string "/DashboardWallets" >> pure DashboardWalletsAction)
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction { statusFilter = Nothing }))
+        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction { page = Nothing }))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction { marketId = Nothing, status = Nothing }))

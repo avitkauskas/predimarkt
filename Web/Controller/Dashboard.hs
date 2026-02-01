@@ -6,6 +6,7 @@ import Web.Controller.Prelude
 import Web.Types.Money
 import Web.View.Dashboard.Holdings
 import Web.View.Dashboard.Markets
+import Web.View.Dashboard.Transactions
 import Web.View.Dashboard.Wallets
 
 instance Controller DashboardController where
@@ -107,3 +108,32 @@ instance Controller DashboardController where
 
         setSuccessMessage "Market status updated"
         redirectTo $ DashboardMarketsAction { statusFilter = Just st }
+
+    action DashboardTransactionsAction { page } = do
+        let currentPage = fromMaybe 1 page
+        let itemsPerPage = 15
+
+        -- Get total count for pagination
+        totalCount <- query @Transaction
+            |> filterWhere (#userId, currentUserId)
+            |> fetchCount
+
+        let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
+        let validPage = max 1 (min currentPage totalPages)
+        let offset = (validPage - 1) * itemsPerPage
+
+        -- Fetch transactions with pagination
+        transactions <- query @Transaction
+            |> filterWhere (#userId, currentUserId)
+            |> orderByDesc #createdAt
+            |> fetch
+            >>= collectionFetchRelated #assetId
+            >>= collectionFetchRelated #marketId
+
+        let transactionsWithDetails = map (\t -> TransactionWithDetails { transaction = t }) transactions
+
+        render TransactionsView
+            { transactionsWithDetails = transactionsWithDetails
+            , currentPage = validPage
+            , totalPages = totalPages
+            }
