@@ -11,9 +11,10 @@ import Web.View.Dashboard.Wallets
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardHoldingsAction = do
+    action DashboardHoldingsAction = autoRefresh do
         holdings <- query @Holding
             |> filterWhere (#userId, currentUserId)
+            |> orderByDesc #updatedAt
             |> fetch
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #marketId
@@ -50,8 +51,12 @@ instance Controller DashboardController where
                             q -> Just $ moneyFromDouble $
                                 calculateBuyCost (abs q) currentPrice market.beta assetTotal
 
-                    return HoldingWithValue { holding = holding, currentValue = currentValue }
-                Nothing -> return HoldingWithValue { holding = holding, currentValue = Nothing }
+                        assetPrice = case qty of
+                            0 -> Nothing
+                            _ -> Just currentPrice
+
+                    return HoldingWithValue { holding = holding, currentValue = currentValue, assetPrice = assetPrice }
+                Nothing -> return HoldingWithValue { holding = holding, currentValue = Nothing, assetPrice = Nothing }
 
         render HoldingsView { .. }
 

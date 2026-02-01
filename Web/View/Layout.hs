@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
-            <li class="nav-item"><a class="nav-link" href={DashboardMarketsAction (Just MarketStatusOpen)}>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardHoldingsAction}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -130,7 +130,7 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", any (\s -> 
+                                    ("active", any (\s ->
                                         isActivePath (pathTo (DashboardMarketsAction s))
                                     ) (Nothing : map Just allEnumValues))]}
                                href={DashboardMarketsAction (Just MarketStatusOpen)}>
