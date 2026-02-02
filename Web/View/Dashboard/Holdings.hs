@@ -43,11 +43,13 @@ renderHolding HoldingWithValue { .. } =
         profitLossColor :: Text
         profitLossColor = if isProfitable then "text-success" else "text-danger"
 
-        profitLossLabel = if isProfitable then "profit" else "loss" :: Text
+        -- profitLossLabel = if isProfitable then "profit" else "loss" :: Text
+        profitLossLabel = if isProfitable then "+" else "-" :: Text
 
         profitLossHtml = [hsx|
             <div class={profitLossColor}>
-                <strong>{profitLossLabel} of {formatMoney profitLossMoney}</strong>
+                <!-- <strong>{profitLossLabel} of {formatMoney profitLossMoney}</strong> -->
+                <strong>{formatMoney profitLossMoney} {profitLossLabel}</strong>
             </div>
         |]
 
@@ -56,11 +58,11 @@ renderHolding HoldingWithValue { .. } =
             0 -> [hsx|closed|]
             n | n < 0 ->
                 case currentValue of
-                    Just value -> [hsx|open : short : {show (abs n)} shares : {money} : current value {formatMoney value}|]
+                    Just value -> [hsx|open : short : {show (abs n)} shares : {money} : current value {formatMoney value} : max profit {formatMoney (moneyFromCents (abs holding.amountCents))}|]
                     Nothing    -> [hsx|open : short : {show (abs n)} shares : {money}|]
             _ ->
                 case currentValue of
-                    Just value -> [hsx|open : long : {show holding.quantity} shares : {money} : current value {formatMoney value}|]
+                    Just value -> [hsx|open : long : {show holding.quantity} shares : {money} : current value {formatMoney value} : max profit {formatMoney (moneyFromCents (fromIntegral holding.quantity * 100 - holding.amountCents))}|]
                     Nothing    -> [hsx|open : long : {show holding.quantity} shares : {money}|]
 
         -- Navigation URL for the title link
@@ -94,7 +96,7 @@ renderHolding HoldingWithValue { .. } =
         <div class="card shadow-sm mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <a href={titleUrl} class="text-decoration-none d-flex align-items-center">
-                    <h5 class="mb-0">{market.title} - {asset.name}</h5>
+                    <h6 class="mb-0">{market.title} - {asset.name}</h6>
                     {pricePercentageHtml}
                 </a>
                 {closeButton}
