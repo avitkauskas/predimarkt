@@ -30,7 +30,7 @@ instance View ResolveView where
                         All user positions will be settled based on this selection.
                     </div>
 
-                    <form method="POST" action={ChangeMarketStatusWithResolutionAction market.id} class="ms-2">
+                    <form method="POST" action={ResolveMarketAction market.id} class="ms-2">
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Select Winning Asset</label>
                             <div class="assets-selection">

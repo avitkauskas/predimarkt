@@ -2,8 +2,7 @@
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
 
-import Application.Helper.LMSR
-import Data.List (groupBy, zipWith4)
+import Data.List (zipWith4)
 import Web.Controller.Prelude
 import Web.Types
 import Web.View.Markets.Edit
@@ -160,7 +159,7 @@ instance Controller MarketsController where
         setSuccessMessage "Market deleted"
         redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
 
-    action ResolveMarketAction { marketId } = do
+    action SetResolveAssetAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
@@ -171,31 +170,28 @@ instance Controller MarketsController where
             |> fetch
         render ResolveView { .. }
 
-    action ChangeMarketStatusWithResolutionAction { marketId } = do
+    action ResolveMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        accessDeniedUnless (market.status == MarketStatusOpen)
+        accessDeniedUnless (market.status == MarketStatusClosed)
 
         -- Get the selected outcome asset ID
-        let outcomeAssetIdParam = param @(Id Asset) "outcomeAssetId"
+        let outcomeAssetId = param @(Id Asset) "outcomeAssetId"
 
         -- Verify the asset belongs to this market
-        outcomeAsset <- fetch outcomeAssetIdParam
+        outcomeAsset <- fetch outcomeAssetId
         accessDeniedUnless (outcomeAsset.marketId == market.id)
 
-        -- Get all assets for LMSR calculation and all holdings
-        assets <- query @Asset
-            |> filterWhere (#marketId, market.id)
-            |> fetch
-
+        -- Get all open holdings and assets
         holdings <- query @Holding
             |> filterWhere (#marketId, market.id)
             |> filterWhereNot (#quantity, 0)
             |> fetch
 
-        -- Group holdings by user
-        let holdingsByUser = groupBy (\h1 h2 -> h1.userId == h2.userId) holdings
+        assets <- query @Asset
+            |> filterWhere (#marketId, market.id)
+            |> fetch
 
         now <- getCurrentTime
 
@@ -213,76 +209,50 @@ instance Controller MarketsController where
                     |> set #status AssetStatusResolved
                     |> updateRecord
 
-            -- Process each user's holdings
-            forM_ holdingsByUser \userHoldings -> do
-                processUserSettlement market assets userHoldings outcomeAsset
+            -- Process each holding and settle
+            forM_ holdings \holding -> do
+                -- Get user's wallet
+                wallet <- query @Wallet
+                    |> filterWhere (#userId, holding.userId)
+                    |> fetchOne
 
-        setSuccessMessage "Market resolved successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing
+                -- Determine settlement price
+                let settlePrice = if holding.assetId == outcomeAssetId then 1.0 else 0.0
 
-processUserSettlement :: (?modelContext :: ModelContext) => Market -> [Asset] -> [Holding] -> Asset -> IO ()
-processUserSettlement market assets userHoldings outcomeAsset = do
-    case userHoldings of
-        [] -> pure ()
-        (firstHolding:_) -> do
-            let userId = firstHolding.userId
-            wallet <- query @Wallet
-                |> filterWhere (#userId, userId)
-                |> fetchOne
-
-            -- Calculate LMSR state at settlement
-            let lmsrState = precompute market.beta assets
-
-            -- Process each holding for this user
-            forM_ userHoldings \holding -> do
-                -- Get the asset
-                asset <- fetch holding.assetId
-
-                -- Determine settlement price and action
-                let (settlePrice, tradeType) =
-                        if holding.assetId == outcomeAsset.id
-                        then (1.0, if holding.quantity > 0 then "sell" else "buy" :: Text)  -- Outcome asset: 1 for winners, 0 for losers
-                        else (0.0, if holding.quantity > 0 then "sell" else "buy" :: Text)  -- Other assets: 0
-
-                let settleQty = abs holding.quantity
-
-                -- Calculate settlement amount using LMSR at settlement price
-                let (settleCents, deltaQty) =
-                        if tradeType == "buy"
-                        then
-                            let cost = calculateBuyCost settleQty settlePrice market.beta (sumTotal lmsrState)
-                                costCents = round (cost * 100)
-                            in (-costCents, settleQty)
-                        else
-                            let revenue = calculateSellRevenue settleQty settlePrice market.beta (sumTotal lmsrState)
-                                revenueCents = round (revenue * 100)
-                            in (revenueCents, -settleQty)
+                -- Calculate settlement amount: quantity * price
+                let settleCents = round (fromIntegral (abs holding.quantity) * settlePrice * 100)
+                -- For closing: long positions (qty > 0) become negative (sell), short positions (qty < 0) become positive (buy)
+                let deltaQty = -holding.quantity
 
                 -- Update asset quantity
-                asset
-                    |> set #quantity (asset.quantity + deltaQty)
+                assetToUpdate <- fetch holding.assetId
+                assetToUpdate
+                    |> set #quantity (assetToUpdate.quantity + deltaQty)
                     |> updateRecord
 
                 -- Update wallet balance
+                let walletDelta = if holding.quantity > 0 then settleCents else -settleCents
                 wallet
-                    |> set #amountCents (wallet.amountCents + settleCents)
+                    |> set #amountCents (wallet.amountCents + walletDelta)
                     |> updateRecord
 
                 -- Create transaction record
                 _ <- newRecord @Transaction
-                    |> set #userId userId
+                    |> set #userId holding.userId
                     |> set #assetId holding.assetId
                     |> set #marketId market.id
                     |> set #quantity deltaQty
-                    |> set #amountCents (abs settleCents)
+                    |> set #amountCents settleCents
                     |> createRecord
 
                 -- Update holding - set quantity to 0 (closed)
                 holding
                     |> set #quantity 0
-                    |> set #amountCents (holding.amountCents - settleCents)
+                    |> set #amountCents (holding.amountCents - if holding.quantity > 0 then settleCents else -settleCents)
                     |> updateRecord
 
+        setSuccessMessage "Market resolved successfully"
+        redirectTo $ ShowMarketAction mId Nothing Nothing
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->

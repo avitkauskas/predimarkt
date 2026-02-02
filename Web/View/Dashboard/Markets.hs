@@ -3,7 +3,7 @@ module Web.View.Dashboard.Markets where
 import Web.View.Prelude
 
 data MarketsView = MarketsView
-    { markets :: [Market]
+    { markets      :: [Market]
     , activeStatus :: MarketStatus
     }
 
@@ -45,7 +45,7 @@ renderTabs activeStatus = [hsx|
         statuses = [MarketStatusDraft, MarketStatusOpen, MarketStatusClosed, MarketStatusRefunded, MarketStatusResolved]
         renderTab status = [hsx|
             <li class="nav-item">
-                <a class={classes [("nav-link", True), ("active", status == activeStatus)]} 
+                <a class={classes [("nav-link", True), ("active", status == activeStatus)]}
                    href={DashboardMarketsAction (Just status)}>
                     {statusLabel status}
                 </a>
@@ -53,9 +53,9 @@ renderTabs activeStatus = [hsx|
         |]
 
         statusLabel :: MarketStatus -> Text
-        statusLabel MarketStatusDraft = "Draft"
-        statusLabel MarketStatusOpen = "Open"
-        statusLabel MarketStatusClosed = "Closed"
+        statusLabel MarketStatusDraft    = "Draft"
+        statusLabel MarketStatusOpen     = "Open"
+        statusLabel MarketStatusClosed   = "Closed"
         statusLabel MarketStatusRefunded = "Refunded"
         statusLabel MarketStatusResolved = "Resolved"
 
@@ -71,11 +71,7 @@ renderActions market =
         |]
         MarketStatusOpen -> [hsx|
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed)} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Close</button>
-            </form>
-            <a href={ResolveMarketAction market.id} class="btn btn-sm btn-outline-success me-2">Resolve</a>
-            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusRefunded)} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-danger">Refund</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Close</button>
             </form>
         |]
         MarketStatusClosed -> [hsx|
@@ -85,7 +81,7 @@ renderActions market =
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusRefunded)} class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-danger me-2">Refund</button>
             </form>
-            <a href={ResolveMarketAction market.id} class="btn btn-sm btn-outline-success">Resolve</a>
+            <a href={SetResolveAssetAction market.id} class="btn btn-sm btn-outline-success">Resolve</a>
         |]
         MarketStatusRefunded -> [hsx|
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
