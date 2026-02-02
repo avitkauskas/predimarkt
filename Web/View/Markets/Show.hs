@@ -1,11 +1,11 @@
 module Web.View.Markets.Show where
-import Web.View.Prelude
 import Text.Printf (printf)
+import Web.View.Prelude
 
-data ShowView = ShowView 
-    { market :: Include' ["assets", "categoryId"] Market 
+data ShowView = ShowView
+    { market         :: Include' ["assets", "categoryId"] Market
     , tradingAssetId :: Maybe (Id Asset)
-    , tradingAction :: Maybe Text
+    , tradingAction  :: Maybe Text
     }
 
 instance View ShowView where
@@ -20,8 +20,8 @@ instance View ShowView where
                 </div>
                 <div class="card-body p-4">
                     <header class="mb-4">
-                        <button class="btn btn-outline-secondary back-button mb-3" 
-                                onclick="history.back()" 
+                        <button class="btn btn-outline-secondary back-button mb-3"
+                                onclick="history.back()"
                                 type="button"
                                 title="Go back">
                             ←
@@ -44,7 +44,7 @@ instance View ShowView where
             statusBadge =
                 when (market.status /= MarketStatusOpen)
                     [hsx|<span>{marketStatusLabel market.status}</span>|]
-            
+
             lmsrState = precompute market.beta market.assets
 
             renderAsset :: Asset -> Html
@@ -69,7 +69,7 @@ instance View ShowView where
                     isTradable = market.status == MarketStatusOpen && asset.status == AssetStatusOpen
                     isBuyFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "buy"
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
-                    
+
                     assetPrice :: Double
                     assetPrice = price asset.id lmsrState
 
@@ -87,13 +87,13 @@ instance View ShowView where
 
                     buySellButtons = [hsx|
                         <div class="btn-group shadow-sm" style="width: 140px">
-                            <button class="btn btn-soft-success btn-sm fw-bold w-50" 
-                                    type="button" 
+                            <button class="btn btn-soft-success btn-sm fw-bold w-50"
+                                    type="button"
                                     onclick={toggleForm (show asset.id) "buy"}>
                                 Buy
                             </button>
-                            <button class="btn btn-soft-danger btn-sm fw-bold w-50" 
-                                    type="button" 
+                            <button class="btn btn-soft-danger btn-sm fw-bold w-50"
+                                    type="button"
                                     onclick={toggleForm (show asset.id) "sell"}>
                                 Sell
                             </button>
@@ -110,8 +110,8 @@ instance View ShowView where
                                         <div class="input-group" style="width: 160px">
                                             <span class="input-group-text text-muted">shares</span>
                                             <input type="number" name="quantity"
-                                                   value="10" step="1" min="0" 
-                                                   class="form-control" 
+                                                   value="10" step="1" min="0"
+                                                   class="form-control"
                                                    autofocus={isBuyFormOpen}
                                                    oninput="updateBuyInfo(this)"
                                                    data-info-id={"buy-info-" <> show asset.id}
@@ -121,7 +121,7 @@ instance View ShowView where
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">BUY</button>
                                     </div>
-                                    <div id={"buy-info-" <> show asset.id} 
+                                    <div id={"buy-info-" <> show asset.id}
                                          class="trade-info-container text-end w-100 d-none"
                                          style="max-width: 320px;">
                                     </div>
@@ -138,9 +138,9 @@ instance View ShowView where
                                         <div class="input-group" style="width: 160px">
                                             <span class="input-group-text text-muted">shares</span>
                                             <input type="number" name="quantity"
-                                                   value="10" step="1" min="0" 
-                                                   class="form-control" 
-                                                   autofocus={isSellFormOpen} 
+                                                   value="10" step="1" min="0"
+                                                   class="form-control"
+                                                   autofocus={isSellFormOpen}
                                                    oninput="updateSellInfo(this)"
                                                    data-info-id={"sell-info-" <> show asset.id}
                                                    data-a={show (assetSum / assetTotal)}
@@ -149,7 +149,7 @@ instance View ShowView where
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">SELL</button>
                                     </div>
-                                    <div id={"sell-info-" <> show asset.id} 
+                                    <div id={"sell-info-" <> show asset.id}
                                          class="trade-info-container text-end w-100 d-none"
                                          style="max-width: 320px;">
                                     </div>

@@ -16,6 +16,7 @@ dist-newstyle
 build
 gen
 del
+plans
 static/prod.*
 Config/client_session_key.aes
 
