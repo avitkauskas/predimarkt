@@ -54,6 +54,8 @@ data MarketsController
     | DeleteMarketAction { marketId :: !(Id Market) }
     | SetResolveAssetAction { marketId :: !(Id Market) }
     | ResolveMarketAction { marketId :: !(Id Market) }
+    | ConfirmRefundMarketAction { marketId :: !(Id Market) }
+    | RefundMarketAction { marketId :: !(Id Market) }
     deriving (Eq, Show, Data)
 
 data AssetsController

@@ -9,6 +9,7 @@ import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
 import Web.View.Markets.Resolve
+import Web.View.Markets.ConfirmRefund
 import Web.View.Markets.Show
 
 instance Controller MarketsController where
@@ -253,6 +254,69 @@ instance Controller MarketsController where
 
         setSuccessMessage "Market resolved successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
+
+    action ConfirmRefundMarketAction { marketId } = do
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+        render ConfirmRefundView { .. }
+
+    action RefundMarketAction { marketId } = do
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+        
+        -- Get all holdings (both open and closed) for refunding
+        -- We include closed positions (quantity = 0) to refund any profits/losses from them
+        holdings <- query @Holding
+            |> filterWhere (#marketId, market.id)
+            |> fetch
+
+        now <- getCurrentTime
+
+        -- Perform all refund operations in a transaction
+        withTransaction do
+            -- Update market status
+            market <- market
+                |> set #status MarketStatusRefunded
+                |> set #refundedAt (Just now)
+                |> updateRecord
+
+            -- Process each holding and refund
+            forM_ holdings \holding -> do
+                -- Get user's wallet
+                wallet <- query @Wallet
+                    |> filterWhere (#userId, holding.userId)
+                    |> fetchOne
+
+                -- For refunds: return the amountCents that was in the holding
+                -- Long position: refund what they invested (positive amountCents means they invested)
+                -- Short position: charge what they received (negative amountCents means they received)
+                let refundAmount = holding.amountCents
+                
+                -- Create transaction record for the refund
+                _ <- newRecord @Transaction
+                    |> set #userId holding.userId
+                    |> set #assetId holding.assetId
+                    |> set #marketId market.id
+                    |> set #quantity 0  -- No quantity change for refunds
+                    |> set #amountCents refundAmount
+                    |> createRecord
+
+                -- Update wallet balance with refund
+                wallet
+                    |> set #amountCents (wallet.amountCents + refundAmount)
+                    |> updateRecord
+
+                -- Update holding - set quantity to 0 (closed)
+                holding
+                    |> set #quantity 0
+                    |> set #amountCents 0
+                    |> updateRecord
+
+        setSuccessMessage "Market refunded successfully"
+        redirectTo $ ShowMarketAction mId Nothing Nothing
+
 fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->

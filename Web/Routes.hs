@@ -25,6 +25,8 @@ instance HasPath MarketsController where
     pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
     pathTo SetResolveAssetAction { marketId } = "/SetResolveAsset?marketId=" <> inputValue marketId
     pathTo ResolveMarketAction { marketId } = "/ResolveMarket?marketId=" <> inputValue marketId
+    pathTo ConfirmRefundMarketAction { marketId } = "/ConfirmRefundMarket?marketId=" <> inputValue marketId
+    pathTo RefundMarketAction { marketId } = "/RefundMarket?marketId=" <> inputValue marketId
 
 instance CanRoute MarketsController where
     parseRoute' =
@@ -37,6 +39,8 @@ instance CanRoute MarketsController where
         <|> (string "/DeleteMarket" >> pure (DeleteMarketAction { marketId = def }))
         <|> (string "/SetResolveAsset" >> pure (SetResolveAssetAction { marketId = def }))
         <|> (string "/ResolveMarket" >> pure (ResolveMarketAction { marketId = def }))
+        <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction { marketId = def }))
+        <|> (string "/RefundMarket" >> pure (RefundMarketAction { marketId = def }))
 
 instance HasPath DashboardController where
     pathTo DashboardHoldingsAction = "/DashboardHoldings"
