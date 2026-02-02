@@ -50,7 +50,7 @@ renderTransaction TransactionWithDetails { .. } =
         timeStr = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" txn.createdAt
     in [hsx|
         <tr>
-            <td class="text-nowrap">{timeStr}</td>
+            <td class="text-nowrap small">{timeStr}</td>
             <td class="text-nowrap">{market.title} - {asset.name}</td>
             <td class={typeClass}>{txnType}</td>
             <td class="text-end">{show quantity}</td>

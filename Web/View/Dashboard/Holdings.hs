@@ -15,97 +15,110 @@ instance View HoldingsView where
     html HoldingsView { .. } = dashboardLayout [hsx|
         <div class="h-100">
             <h3>My Holdings</h3>
-            {forEach holdingsWithValue renderHolding}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-borderless">
+                    <thead>
+                        <tr>
+                            <th>Market & Asset</th>
+                            <th class="text-center">Probability</th>
+                            <th class="text-center">Position</th>
+                            <th class="text-center">Shares</th>
+                            <th class="text-end">Stake</th>
+                            <th class="text-end">Value</th>
+                            <th class="text-end">Potential</th>
+                            <th class="text-end pe-3">Now</th>
+                            <th class="text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {forEach holdingsWithValue renderHoldingRow}
+                    </tbody>
+                </table>
+            </div>
         </div>
     |]
 
-renderHolding :: (?context :: ControllerContext) => HoldingWithValue -> Html
-renderHolding HoldingWithValue { .. } =
+renderHoldingRow :: (?context :: ControllerContext) => HoldingWithValue -> Html
+renderHoldingRow HoldingWithValue { .. } =
     let asset = holding.assetId
         market = holding.marketId
-        money = formatMoney $ moneyFromCents (abs holding.amountCents)
-        holdingMoney = moneyFromCents (abs holding.amountCents)
+        stake = moneyFromCents (abs holding.amountCents)
 
-        -- Calculate profit/loss and determine color
-        -- For long positions: profit if current value > money
-        -- For short positions: profit if current value < money (cost to close is less than received)
-        (profitLossMoney, isProfitable) = case currentValue of
+        -- Position type and styling
+        (positionText, positionClass) = case holding.quantity of
+            0         -> ("closed" :: Text, "text-muted" :: Text)
+            n | n < 0 -> ("short" :: Text, "text-danger" :: Text)
+            _         -> ("long" :: Text, "text-success" :: Text)
+
+        shares = abs holding.quantity
+
+        -- Shares display: "-" for closed positions, number for open
+        sharesDisplay :: Text
+        sharesDisplay = if holding.quantity == 0 then "-" else show shares
+
+        -- Max gain calculation
+        maxGain = case holding.quantity of
+            0  -> Nothing
+            n | n < 0 -> Just stake  -- For short: max gain is the stake received
+            _  -> Just $ moneyFromCents (fromIntegral holding.quantity * 100 - holding.amountCents)
+
+        -- Current P&L calculation
+        (nowMoney, nowClass, isProfitable) = case currentValue of
             Just value ->
-                let diff = moneyToCents value - moneyToCents holdingMoney
+                let diff = moneyToCents value - moneyToCents stake
                     profit = moneyFromCents (abs diff)
-                    -- For long: profitable if value >= money
-                    -- For short: profitable if value <= money (negative diff means profit)
                     profitable = if holding.quantity > 0 then diff >= 0 else diff <= 0
-                in (profit, profitable)
-            Nothing    ->
-                (holdingMoney, holding.amountCents < 0)  -- For closed positions
+                    cls :: Text
+                    cls = if profitable then "text-success" else "text-danger"
+                in (profit, cls, profitable)
+            Nothing ->
+                let cls :: Text
+                    cls = if holding.amountCents <= 0 then "text-success" else "text-danger"
+                in (stake, cls, holding.amountCents <= 0)
 
-        profitLossColor :: Text
-        profitLossColor = if isProfitable then "text-success" else "text-danger"
+        nowSign :: Text
+        nowSign = if isProfitable then "+" else "-"
 
-        -- profitLossLabel = if isProfitable then "profit" else "loss" :: Text
-        profitLossLabel = if isProfitable then "+" else "-" :: Text
-
-        profitLossHtml = [hsx|
-            <div class={profitLossColor}>
-                <!-- <strong>{profitLossLabel} of {formatMoney profitLossMoney}</strong> -->
-                <strong>{formatMoney profitLossMoney} {profitLossLabel}</strong>
-            </div>
-        |]
-
-        -- Position line with current value (for open positions)
-        position = case holding.quantity of
-            0 -> [hsx|closed|]
-            n | n < 0 ->
-                case currentValue of
-                    Just value -> [hsx|open : short : {show (abs n)} shares : {money} : current value {formatMoney value} : max profit {formatMoney (moneyFromCents (abs holding.amountCents))}|]
-                    Nothing    -> [hsx|open : short : {show (abs n)} shares : {money}|]
-            _ ->
-                case currentValue of
-                    Just value -> [hsx|open : long : {show holding.quantity} shares : {money} : current value {formatMoney value} : max profit {formatMoney (moneyFromCents (fromIntegral holding.quantity * 100 - holding.amountCents))}|]
-                    Nothing    -> [hsx|open : long : {show holding.quantity} shares : {money}|]
-
-        -- Navigation URL for the title link
-        -- For long positions: open buy form, for short positions: open sell form
+        -- Navigation URL for the market/asset link
         tradeAction = case holding.quantity of
             q | q > 0 -> Just "buy"
             q | q < 0 -> Just "sell"
             _         -> Nothing
         titleUrl = ShowMarketAction market.id (Just asset.id) tradeAction
 
-        -- Asset price percentage display
-        pricePercentageHtml = case assetPrice of
-            Nothing -> [hsx||]
-            Just price ->
-                let percentage = round (price * 100) :: Int
-                in [hsx|<span class="badge bg-secondary ms-2">{show percentage}%</span>|]
+        -- Probability display as simple text (for all positions including closed)
+        probabilityText :: Text
+        probabilityText = case assetPrice of
+            Nothing    -> "-"
+            Just price -> show (round (price * 100) :: Int) <> "%"
 
-        closeButtonClass :: Text
-        closeButtonClass = if isProfitable then "btn-outline-success" else "btn-outline-danger"
-
+        -- Close button for open positions
         closeButton = case currentValue of
             Nothing -> [hsx||]
-            Just _ -> [hsx|
-                <form action={ClosePositionAction asset.id} method="POST" class="d-inline">
-                    <button type="submit" class={"btn " <> closeButtonClass <> " btn-sm"}>
-                        Close position
-                    </button>
-                </form>
-            |]
+            Just _ ->
+                let btnClass :: Text
+                    btnClass = if isProfitable then "btn-outline-success" else "btn-outline-danger"
+                in [hsx|
+                    <form action={ClosePositionAction asset.id} method="POST" class="d-inline">
+                        <button type="submit" class={"btn " <> btnClass <> " btn-sm"}>
+                            Close
+                        </button>
+                    </form>
+                |]
     in [hsx|
-        <div class="card shadow-sm mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <a href={titleUrl} class="text-decoration-none d-flex align-items-center">
-                    <h6 class="mb-0">{market.title} - {asset.name}</h6>
-                    {pricePercentageHtml}
-                </a>
-                {closeButton}
-            </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="text-muted">{position}</div>
-                    {profitLossHtml}
-                </div>
-            </div>
-        </div>
+        <tr>
+            <td>
+                <a href={titleUrl} class="text-decoration-none fs-6 lh-1">
+                    {market.title}
+                </a><br/>{asset.name}
+            </td>
+            <td class="text-center">{probabilityText}</td>
+            <td class={"text-center " <> positionClass}>{positionText}</td>
+            <td class="text-center">{sharesDisplay}</td>
+            <td class="text-end">{formatMoney stake}</td>
+            <td class="text-end">{maybe "-" formatMoney currentValue}</td>
+            <td class="text-end">{maybe "-" formatMoney maxGain}</td>
+            <td class={"text-end text-nowrap " <> nowClass}>{formatMoney nowMoney}{nowSign}</td>
+            <td class="text-center">{closeButton}</td>
+        </tr>
     |]
