@@ -1,6 +1,7 @@
 module Web.Controller.Assets where
 
 import Application.Helper.LMSR
+import Application.Helper.Money
 import Web.Controller.Prelude
 import Web.Types.Money
 import Web.View.Assets.New
@@ -83,7 +84,7 @@ instance Controller AssetsController where
 
         -- Update wallet balance
         wallet
-            |> set #amountCents (wallet.amountCents + deltaCents)
+            |> modifyWalletAmount (moneyFromCents deltaCents)
             |> updateRecord
 
         -- Create transaction
@@ -92,7 +93,7 @@ instance Controller AssetsController where
             |> set #assetId assetId
             |> set #marketId market.id
             |> set #quantity deltaQty
-            |> set #amountCents (abs deltaCents)
+            |> setTransactionAmount (moneyFromCents (abs deltaCents))
             |> createRecord
 
         -- Create or update holding
@@ -105,7 +106,7 @@ instance Controller AssetsController where
             Just holding ->
                 holding
                     |> set #quantity (holding.quantity + deltaQty)
-                    |> set #amountCents (holding.amountCents - deltaCents)
+                    |> modifyHoldingCost (moneyFromCents (-deltaCents))
                     |> updateRecord
             Nothing ->
                 newRecord @Holding
@@ -113,7 +114,7 @@ instance Controller AssetsController where
                     |> set #marketId market.id
                     |> set #assetId assetId
                     |> set #quantity deltaQty
-                    |> set #amountCents (-deltaCents)
+                    |> setHoldingCost (moneyFromCents (-deltaCents))
                     |> createRecord
 
         -- Set success message
@@ -174,7 +175,7 @@ instance Controller AssetsController where
 
         -- Update wallet balance
         wallet
-            |> set #amountCents (wallet.amountCents + deltaCents)
+            |> modifyWalletAmount (moneyFromCents deltaCents)
             |> updateRecord
 
         -- Create transaction
@@ -183,13 +184,13 @@ instance Controller AssetsController where
             |> set #assetId assetId
             |> set #marketId market.id
             |> set #quantity deltaQty
-            |> set #amountCents (abs deltaCents)
+            |> setTransactionAmount (moneyFromCents (abs deltaCents))
             |> createRecord
 
         -- Update holding - set quantity to 0 (closed)
         holding
             |> set #quantity 0
-            |> set #amountCents (holding.amountCents - deltaCents)
+            |> modifyHoldingCost (moneyFromCents (-deltaCents))
             |> updateRecord
 
         -- Set success message

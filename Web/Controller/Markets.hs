@@ -2,6 +2,7 @@
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
 
+import Application.Helper.Money
 import Data.List (zipWith4)
 import Web.Controller.Prelude
 import Web.Types
@@ -200,27 +201,25 @@ instance Controller MarketsController where
                     |> filterWhere (#userId, holding.userId)
                     |> fetchOne
 
-                let settlePrice = if holding.assetId == outcomeAssetId then 1.0 else 0.0
-
-                let settleCents = round (fromIntegral (abs holding.quantity) * settlePrice * 100)
-                let deltaQty = -holding.quantity
-                let walletDelta = if holding.quantity > 0 then settleCents else -settleCents
+                let walletDelta = if holding.assetId == outcomeAssetId
+                        then fromIntegral holding.quantity * 100
+                        else 0
 
                 wallet
-                    |> set #amountCents (wallet.amountCents + walletDelta)
+                    |> modifyWalletAmount (moneyFromCents walletDelta)
                     |> updateRecord
 
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
                     |> set #marketId market.id
-                    |> set #quantity deltaQty
-                    |> set #amountCents settleCents
+                    |> set #quantity (-holding.quantity)
+                    |> setTransactionAmount (moneyFromCents (abs walletDelta))
                     |> createRecord
 
                 holding
                     |> set #quantity 0
-                    |> set #amountCents (holding.amountCents - if holding.quantity > 0 then settleCents else -settleCents)
+                    |> setHoldingCost (moneyFromCents (holding.amountCents - walletDelta))
                     |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
@@ -267,18 +266,18 @@ instance Controller MarketsController where
                     |> set #assetId holding.assetId
                     |> set #marketId market.id
                     |> set #quantity (-holding.quantity)
-                    |> set #amountCents holding.amountCents
+                    |> setTransactionAmount (moneyFromCents (abs holding.amountCents))
                     |> createRecord
 
                 -- Update wallet balance with refund
                 wallet
-                    |> set #amountCents (wallet.amountCents - holding.amountCents)
+                    |> modifyWalletAmount (holdingCost holding)
                     |> updateRecord
 
                 -- Update holding - set quantity to 0 (closed)
                 holding
                     |> set #quantity 0
-                    |> set #amountCents 0
+                    |> setHoldingCost (moneyFromCents 0)
                     |> updateRecord
 
         setSuccessMessage "Market refunded successfully"

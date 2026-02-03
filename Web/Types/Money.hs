@@ -5,11 +5,12 @@ module Web.Types.Money
     , moneyToCents
     , giveMoney
     , takeMoney
+    , negateMoney
     , formatMoney
     ) where
 
-import IHP.Prelude
 import Data.Text (pack)
+import IHP.Prelude
 import Text.Printf (printf)
 
 newtype Money = Money { cents :: Integer }
@@ -30,6 +31,9 @@ giveMoney (Money a) (Money b) = Money (a + b)
 
 takeMoney :: Money -> Money -> Money
 takeMoney (Money a) (Money b) = Money (a - b)
+
+negateMoney :: Money -> Money
+negateMoney (Money a) = Money (negate a)
 
 formatMoney :: Money -> Text
 formatMoney (Money c) =

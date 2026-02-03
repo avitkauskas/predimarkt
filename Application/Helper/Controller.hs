@@ -1,7 +1,8 @@
 module Application.Helper.Controller where
 
-import IHP.ControllerPrelude
+import Application.Helper.Money
 import Generated.Types
+import IHP.ControllerPrelude
 
 -- Here you can add functions which are available in all your controllers
 
@@ -14,7 +15,7 @@ constructUniqueSlug categoryId baseSlug maybeExcludeId = loop 0
             let queryBuilder = query @Market
                     |> filterWhere (#categoryId, categoryId)
                     |> filterWhere (#slug, slug)
-            
+
             exists <- case maybeExcludeId of
                 Just excludeId -> queryBuilder |> filterWhereNot (#id, excludeId) |> fetchExists
                 Nothing -> queryBuilder |> fetchExists
