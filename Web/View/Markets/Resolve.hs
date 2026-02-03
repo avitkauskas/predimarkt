@@ -1,7 +1,7 @@
 module Web.View.Markets.Resolve where
 import Web.View.Prelude
 
-data ResolveView = ResolveView 
+data ResolveView = ResolveView
     { market :: Market
     , assets :: [Asset]
     }
@@ -15,8 +15,8 @@ instance View ResolveView where
                 </div>
                 <div class="card-body p-4">
                     <header class="mb-4">
-                        <button class="btn btn-outline-secondary back-button mb-3" 
-                                onclick="history.back()" 
+                        <button class="btn btn-outline-secondary back-button mb-3"
+                                onclick="history.back()"
                                 type="button"
                                 title="Go back">
                             ←
@@ -26,7 +26,8 @@ instance View ResolveView where
                     </header>
 
                     <div class="alert alert-info ms-2" role="alert">
-                        <strong>Select the outcome:</strong> Choose which asset represents what actually happened. 
+                        <strong>Select the outcome:</strong><br/>
+                        Choose which asset represents what actually happened.<br/>
                         All user positions will be settled based on this selection.
                     </div>
 
@@ -51,10 +52,10 @@ instance View ResolveView where
 renderAssetOption :: Asset -> Html
 renderAssetOption asset = [hsx|
     <div class="form-check p-3 border rounded mb-3">
-        <input 
-            class="form-check-input" 
-            type="radio" 
-            name="outcomeAssetId" 
+        <input
+            class="form-check-input"
+            type="radio"
+            name="outcomeAssetId"
             id={"asset-" <> show asset.id}
             value={show asset.id}
             required>

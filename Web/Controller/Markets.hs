@@ -5,10 +5,10 @@ module Web.Controller.Markets where
 import Data.List (zipWith4)
 import Web.Controller.Prelude
 import Web.Types
-import Web.View.Markets.ConfirmRefund
 import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
+import Web.View.Markets.Refund
 import Web.View.Markets.Resolve
 import Web.View.Markets.Show
 
@@ -164,7 +164,7 @@ instance Controller MarketsController where
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        accessDeniedUnless (market.status == MarketStatusOpen)
+        accessDeniedUnless (market.status == MarketStatusClosed)
         assets <- query @Asset
             |> filterWhere (#marketId, mId)
             |> orderByDesc #quantity
@@ -230,7 +230,7 @@ instance Controller MarketsController where
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        render ConfirmRefundView { .. }
+        render RefundView { .. }
 
     action RefundMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId

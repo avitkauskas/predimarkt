@@ -57,7 +57,6 @@ instance View ShowView where
                         </div>
                         <div class="asset-actions d-flex align-items-center gap-2">
                             {priceDisplay}
-                            {renderStatus asset.status}
                             {when (isTradable) buySellButtons}
                         </div>
                     </div>
@@ -155,14 +154,6 @@ instance View ShowView where
                                     </div>
                                 </div>
                             </form>
-                        </div>
-                    |]
-
-                    renderStatus :: AssetStatus -> Html
-                    renderStatus AssetStatusOpen = [hsx||]
-                    renderStatus status = [hsx|
-                        <div class="text-center small" style="width: 140px;">
-                            {assetStatusLabel status}
                         </div>
                     |]
 

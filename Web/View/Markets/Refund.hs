@@ -1,13 +1,11 @@
-module Web.View.Markets.ConfirmRefund where
+module Web.View.Markets.Refund where
 
 import Web.View.Prelude
 
-data ConfirmRefundView = ConfirmRefundView
-    { market :: Market
-    }
+data RefundView = RefundView { market :: Market }
 
-instance View ConfirmRefundView where
-    html ConfirmRefundView { .. } = [hsx|
+instance View RefundView where
+    html RefundView { .. } = [hsx|
         <div class="py-3" style="max-width: 800px; margin: 0 auto;">
             <div class="card shadow-sm">
                 <div class="card-header text-muted py-2">
