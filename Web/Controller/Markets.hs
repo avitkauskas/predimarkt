@@ -177,67 +177,39 @@ instance Controller MarketsController where
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusClosed)
 
-        -- Get the selected outcome asset ID
         let outcomeAssetId = param @(Id Asset) "outcomeAssetId"
 
-        -- Verify the asset belongs to this market
         outcomeAsset <- fetch outcomeAssetId
         accessDeniedUnless (outcomeAsset.marketId == market.id)
 
-        -- Get all open holdings and assets
         holdings <- query @Holding
             |> filterWhere (#marketId, market.id)
             |> filterWhereNot (#quantity, 0)
             |> fetch
 
-        assets <- query @Asset
-            |> filterWhere (#marketId, market.id)
-            |> fetch
-
         now <- getCurrentTime
 
-        -- Perform all settlement operations in a transaction
         withTransaction do
-            -- Update market status
             market <- market
                 |> set #status MarketStatusResolved
                 |> set #resolvedAt (Just now)
                 |> updateRecord
 
-            -- Update all assets to resolved status
-            forM_ assets \asset -> do
-                asset
-                    |> set #status AssetStatusResolved
-                    |> updateRecord
-
-            -- Process each holding and settle
             forM_ holdings \holding -> do
-                -- Get user's wallet
                 wallet <- query @Wallet
                     |> filterWhere (#userId, holding.userId)
                     |> fetchOne
 
-                -- Determine settlement price
                 let settlePrice = if holding.assetId == outcomeAssetId then 1.0 else 0.0
 
-                -- Calculate settlement amount: quantity * price
                 let settleCents = round (fromIntegral (abs holding.quantity) * settlePrice * 100)
-                -- For closing: long positions (qty > 0) become negative (sell), short positions (qty < 0) become positive (buy)
                 let deltaQty = -holding.quantity
-
-                -- Update asset quantity
-                assetToUpdate <- fetch holding.assetId
-                assetToUpdate
-                    |> set #quantity (assetToUpdate.quantity + deltaQty)
-                    |> updateRecord
-
-                -- Update wallet balance
                 let walletDelta = if holding.quantity > 0 then settleCents else -settleCents
+
                 wallet
                     |> set #amountCents (wallet.amountCents + walletDelta)
                     |> updateRecord
 
-                -- Create transaction record
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
@@ -246,7 +218,6 @@ instance Controller MarketsController where
                     |> set #amountCents settleCents
                     |> createRecord
 
-                -- Update holding - set quantity to 0 (closed)
                 holding
                     |> set #quantity 0
                     |> set #amountCents (holding.amountCents - if holding.quantity > 0 then settleCents else -settleCents)
