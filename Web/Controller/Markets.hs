@@ -5,11 +5,11 @@ module Web.Controller.Markets where
 import Data.List (zipWith4)
 import Web.Controller.Prelude
 import Web.Types
+import Web.View.Markets.ConfirmRefund
 import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
 import Web.View.Markets.Resolve
-import Web.View.Markets.ConfirmRefund
 import Web.View.Markets.Show
 
 instance Controller MarketsController where
@@ -265,7 +265,8 @@ instance Controller MarketsController where
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        
+        accessDeniedUnless (market.status == MarketStatusClosed)
+
         -- Get all holdings (both open and closed) for refunding
         -- We include closed positions (quantity = 0) to refund any profits/losses from them
         holdings <- query @Holding
@@ -289,23 +290,18 @@ instance Controller MarketsController where
                     |> filterWhere (#userId, holding.userId)
                     |> fetchOne
 
-                -- For refunds: return the amountCents that was in the holding
-                -- Long position: refund what they invested (positive amountCents means they invested)
-                -- Short position: charge what they received (negative amountCents means they received)
-                let refundAmount = holding.amountCents
-                
                 -- Create transaction record for the refund
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
                     |> set #marketId market.id
-                    |> set #quantity 0  -- No quantity change for refunds
-                    |> set #amountCents refundAmount
+                    |> set #quantity (-holding.quantity)
+                    |> set #amountCents holding.amountCents
                     |> createRecord
 
                 -- Update wallet balance with refund
                 wallet
-                    |> set #amountCents (wallet.amountCents + refundAmount)
+                    |> set #amountCents (wallet.amountCents - holding.amountCents)
                     |> updateRecord
 
                 -- Update holding - set quantity to 0 (closed)

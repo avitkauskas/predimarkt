@@ -26,8 +26,9 @@ instance View ConfirmRefundView where
                     </header>
 
                     <div class="alert alert-warning ms-2" role="alert">
-                        <strong>Refunding this market:</strong> All users will receive back their net position amounts.
-                        This will reverse all transactions and return the market to its initial state.
+                        <strong>Refunding this market:</strong><br/>
+                        All users will receive back their net position amounts.<br/>
+                        This will reverse all transactions and change the market status to "Refunded".
                     </div>
 
                     <div class="d-flex gap-2 ms-2">
