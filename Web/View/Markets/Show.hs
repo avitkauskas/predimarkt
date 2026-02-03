@@ -49,7 +49,7 @@ instance View ShowView where
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
-                <div class={classes ["py-3 border-bottom", (assetStatusClasses asset.status, True)]}
+                <div class="py-3 border-bottom"
                      id={"asset-" <> show asset.id}>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="asset-info ms-3">
@@ -65,7 +65,7 @@ instance View ShowView where
                 </div>
             |]
                 where
-                    isTradable = market.status == MarketStatusOpen && asset.status == AssetStatusOpen
+                    isTradable = market.status == MarketStatusOpen
                     isBuyFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "buy"
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
 

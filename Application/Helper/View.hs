@@ -1,12 +1,12 @@
-module Application.Helper.View 
+module Application.Helper.View
     ( module Application.Helper.LMSR
     , module Application.Helper.View
     ) where
 
+import Application.Helper.LMSR
 import Generated.Enums
 import Generated.Types
 import IHP.ViewPrelude
-import Application.Helper.LMSR
 
 marketStatusLabel :: MarketStatus -> Text
 marketStatusLabel = \case
@@ -15,18 +15,6 @@ marketStatusLabel = \case
     MarketStatusClosed -> "closed"
     MarketStatusResolved -> "resolved"
     MarketStatusRefunded -> "refunded"
-
-assetStatusLabel :: AssetStatus -> Text
-assetStatusLabel = \case
-    AssetStatusOpen -> "open"
-    AssetStatusResolved -> "resolved"
-    AssetStatusRefunded -> "refunded"
-
-assetStatusClasses :: AssetStatus -> Text
-assetStatusClasses = \case
-    AssetStatusResolved -> "market-status-resolved-body"
-    AssetStatusRefunded -> "market-status-refunded-body"
-    _ -> ""
 
 marketStatusClasses :: MarketStatus -> Text
 marketStatusClasses = \case

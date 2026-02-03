@@ -6,7 +6,6 @@ BEGIN
 END;
 $$ language plpgsql;
 CREATE TYPE market_status AS ENUM ('market_status_draft', 'market_status_open', 'market_status_closed', 'market_status_resolved', 'market_status_refunded');
-CREATE TYPE asset_status AS ENUM ('asset_status_open', 'asset_status_resolved', 'asset_status_refunded');
 CREATE TABLE users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
@@ -65,11 +64,7 @@ CREATE TABLE assets (
     market_id UUID NOT NULL,
     name TEXT NOT NULL,
     symbol TEXT NOT NULL,
-    status asset_status DEFAULT 'asset_status_open' NOT NULL,
     quantity INT DEFAULT 0 NOT NULL,
-    resolved_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    refunded_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 CREATE INDEX assets_market_id_index ON assets (market_id);
