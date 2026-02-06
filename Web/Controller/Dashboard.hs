@@ -68,7 +68,8 @@ instance Controller DashboardController where
         render WalletsView { .. }
 
     action DashboardMarketsAction { statusFilter } = do
-        let activeStatus = fromMaybe MarketStatusDraft $ statusFilter <|> paramOrNothing @MarketStatus "statusFilter"
+        let activeStatus = fromMaybe MarketStatusDraft $ statusFilter
+                <|> paramOrNothing @MarketStatus "statusFilter"
         let applySorting queryBuilder =
                 case activeStatus of
                     MarketStatusDraft -> queryBuilder |> orderByDesc #createdAt
@@ -79,7 +80,7 @@ instance Controller DashboardController where
 
         markets <- query @Market
             |> filterWhere (#userId, Just currentUserId)
-            |> filterWhere (#status, activeStatus)
+            -- |> filterWhere (#status, activeStatus)
             |> applySorting
             |> fetch
         render MarketsView { .. }

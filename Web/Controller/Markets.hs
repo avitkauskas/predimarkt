@@ -4,6 +4,7 @@ module Web.Controller.Markets where
 
 import Application.Helper.Money
 import Data.List (zipWith4)
+import Network.Wai (Request)
 import Web.Controller.Prelude
 import Web.Types
 import Web.View.Markets.Edit
@@ -28,7 +29,7 @@ instance Controller MarketsController where
         markets <-
             query @Market
                 |> applyCategoryFilter
-                |> applyStatusFilter
+                -- |> applyStatusFilter
                 |> orderByDesc #updatedAt
                 |> fetch
                 >>= collectionFetchRelated #assets . map (modify #assets (orderByDesc #quantity))
@@ -283,7 +284,7 @@ instance Controller MarketsController where
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
 
-fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
+fetchAssetsFromParams :: (?request :: Request) => IO [Asset]
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->
         let asset = newRecord @Asset

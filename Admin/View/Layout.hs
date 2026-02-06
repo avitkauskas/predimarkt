@@ -4,7 +4,6 @@ import Admin.Routes
 import Admin.Types
 import Application.Helper.View
 import Generated.Types
-import IHP.Controller.RequestContext
 import IHP.Environment
 import IHP.ViewPrelude
 

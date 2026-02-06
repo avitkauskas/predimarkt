@@ -2,7 +2,6 @@ module Web.View.Layout (defaultLayout, dashboardLayout, Html) where
 
 import Application.Helper.View
 import Generated.Types
-import IHP.Controller.RequestContext
 import IHP.Environment
 import IHP.ViewPrelude
 import Web.Routes
