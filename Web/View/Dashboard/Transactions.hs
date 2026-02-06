@@ -22,7 +22,7 @@ instance View TransactionsView where
                 <table class="table table-sm table-responsive table-hover table-borderless">
                     <thead>
                         <tr>
-                            <th>Time</th>
+                            <th>Date & Time</th>
                             <th>Market & Asset</th>
                             <th class="text-center">Type</th>
                             <th class="text-end">Qty</th>
@@ -49,8 +49,8 @@ renderTransaction TransactionWithDetails { .. } =
         money = formatMoney $ moneyFromCents txn.amountCents
         timeStr = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" txn.createdAt
     in [hsx|
-        <tr>
-            <td class="text-nowrap small">{timeStr}</td>
+        <tr class="small">
+            <td class="text-nowrap">{timeStr}</td>
             <td class="text-nowrap">{market.title} - {asset.name}</td>
             <td class={typeClass}>{txnType}</td>
             <td class="text-end">{show quantity}</td>

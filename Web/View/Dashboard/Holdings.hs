@@ -106,9 +106,9 @@ renderHoldingRow HoldingWithValue { .. } =
                     </form>
                 |]
     in [hsx|
-        <tr>
+        <tr class="small">
             <td>
-                <a href={titleUrl} class="text-decoration-none fs-6 lh-1">
+                <a href={titleUrl} class="text-decoration-none">
                     {market.title}
                 </a><br/>{asset.name}
             </td>

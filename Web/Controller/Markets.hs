@@ -29,7 +29,7 @@ instance Controller MarketsController where
         markets <-
             query @Market
                 |> applyCategoryFilter
-                -- |> applyStatusFilter
+                |> applyStatusFilter
                 |> orderByDesc #updatedAt
                 |> fetch
                 >>= collectionFetchRelated #assets . map (modify #assets (orderByDesc #quantity))
