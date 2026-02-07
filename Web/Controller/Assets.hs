@@ -2,10 +2,10 @@ module Web.Controller.Assets where
 
 import Application.Adapter.Position
 import Application.Adapter.Transaction
-import qualified Domain.Logic as Domain
-import qualified Domain.LMSR as LMSR
-import qualified Domain.Types as Domain
 import Application.Helper.View (formatMoney)
+import qualified Domain.LMSR as LMSR
+import qualified Domain.Logic as Domain
+import qualified Domain.Types as Domain
 import Web.Controller.Prelude
 import Web.View.Assets.New
 
@@ -73,15 +73,13 @@ instance Controller AssetsController where
             |> filterWhere (#assetId, assetId)
             |> fetchOneOrNothing
 
-        let currentPosition = case maybeHolding of
-                Just h -> toDomainPosition h
-                Nothing -> Domain.emptyPosition
+        let currentPosition = maybe Domain.emptyPosition toDomainPosition maybeHolding
 
         -- Build domain transaction
         let domainTx = Domain.Transaction
                 { Domain.txSide = side
                 , Domain.txQuantity = case Domain.mkQuantity paramQty of
-                    Just q -> q
+                    Just q  -> q
                     Nothing -> error "Invalid quantity"
                 , Domain.txCashFlow = Domain.Balance deltaCents
                 , Domain.txPriceBefore = currentPrice

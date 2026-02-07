@@ -10,8 +10,9 @@ module Domain.LMSR
     , calculateSellRevenue
     ) where
 
-import IHP.Prelude
+import qualified Data.List
 import qualified Data.Map as M
+import IHP.Prelude
 
 -- | LMSR state for efficient calculations
 data LMSRState = LMSRState

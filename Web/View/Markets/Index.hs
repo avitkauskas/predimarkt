@@ -81,15 +81,15 @@ renderMarket market = [hsx|
 
             <!-- Footer (not clickable) -->
             <div class="card-footer text-muted small d-flex align-items-center py-1 border-top-0">
-                <span class="me-2" title="Number of trades">
+                <span class="me-3" title="Number of trades">
                     <i class="bi bi-arrow-left-right"></i>
                     {market.trades}
                 </span>
-                <span class="me-2" title="Total shares traded">
+                <span class="me-3" title="Total shares traded">
                     <i class="bi bi-layers"></i>
                     {market.volume}
                 </span>
-                <span class="me-2" title="Total money turnover">
+                <span class="me-3" title="Total money turnover">
                     <i class="bi bi-cash-stack"></i>
                     {formatMoney market.turnover}
                 </span>

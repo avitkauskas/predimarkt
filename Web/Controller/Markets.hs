@@ -7,7 +7,6 @@ import Application.Helper.View (formatMoney)
 import Data.List (zipWith4)
 import qualified Domain.Logic as Domain
 import qualified Domain.Types as Domain
-import Network.Wai (Request)
 import Web.Controller.Prelude
 import Web.Types
 import Web.View.Markets.Edit
@@ -308,7 +307,7 @@ instance Controller MarketsController where
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
 
-fetchAssetsFromParams :: (?request :: Request) => IO [Asset]
+fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->
         let asset = newRecord @Asset
