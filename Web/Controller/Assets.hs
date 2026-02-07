@@ -77,45 +77,53 @@ instance Controller AssetsController where
         --     setErrorMessage $ "Insufficient shares. You are trying to sell " <> show quantity <> " shares but only have " <> show asset.quantity
         --     redirectTo (ShowMarketAction asset.marketId (Just asset.id) (Just tradeType))
 
-        -- Update asset quantity
-        asset
-            |> set #quantity (asset.quantity + deltaQty)
-            |> updateRecord
+        withTransaction do
+            -- Update asset quantity
+            asset
+                |> set #quantity (asset.quantity + deltaQty)
+                |> updateRecord
 
-        -- Update wallet balance
-        wallet
-            |> modifyWalletAmount (moneyFromCents deltaCents)
-            |> updateRecord
+            -- Update market statistics
+            market
+                |> set #trades (market.trades + 1)
+                |> set #volume (market.volume + (abs deltaQty))
+                |> set #turnover (market.turnover + (abs deltaCents))
+                |> updateRecord
 
-        -- Create transaction
-        transaction <- newRecord @Transaction
-            |> set #userId currentUserId
-            |> set #assetId assetId
-            |> set #marketId market.id
-            |> set #quantity deltaQty
-            |> setTransactionAmount (moneyFromCents (abs deltaCents))
-            |> createRecord
+            -- Update wallet balance
+            wallet
+                |> modifyWalletAmount (moneyFromCents deltaCents)
+                |> updateRecord
 
-        -- Create or update holding
-        maybeHolding <- query @Holding
-            |> filterWhere (#userId, currentUserId)
-            |> filterWhere (#assetId, assetId)
-            |> fetchOneOrNothing
+            -- Create transaction
+            transaction <- newRecord @Transaction
+                |> set #userId currentUserId
+                |> set #assetId assetId
+                |> set #marketId market.id
+                |> set #quantity deltaQty
+                |> setTransactionAmount (moneyFromCents (abs deltaCents))
+                |> createRecord
 
-        case maybeHolding of
-            Just holding ->
-                holding
-                    |> set #quantity (holding.quantity + deltaQty)
-                    |> modifyHoldingCost (moneyFromCents (-deltaCents))
-                    |> updateRecord
-            Nothing ->
-                newRecord @Holding
-                    |> set #userId currentUserId
-                    |> set #marketId market.id
-                    |> set #assetId assetId
-                    |> set #quantity deltaQty
-                    |> setHoldingCost (moneyFromCents (-deltaCents))
-                    |> createRecord
+            -- Create or update holding
+            maybeHolding <- query @Holding
+                |> filterWhere (#userId, currentUserId)
+                |> filterWhere (#assetId, assetId)
+                |> fetchOneOrNothing
+
+            case maybeHolding of
+                Just holding ->
+                    holding
+                        |> set #quantity (holding.quantity + deltaQty)
+                        |> modifyHoldingCost (moneyFromCents (-deltaCents))
+                        |> updateRecord
+                Nothing ->
+                    newRecord @Holding
+                        |> set #userId currentUserId
+                        |> set #marketId market.id
+                        |> set #assetId assetId
+                        |> set #quantity deltaQty
+                        |> setHoldingCost (moneyFromCents (-deltaCents))
+                        |> createRecord
 
         -- Set success message
         let action = if tradeType == "buy" then "bought" else "sold"
@@ -168,30 +176,38 @@ instance Controller AssetsController where
                         revenueCents = round (revenue * 100)
                     in (revenueCents, -closeQty)
 
-        -- Update asset quantity
-        asset
-            |> set #quantity (asset.quantity + deltaQty)
-            |> updateRecord
+        withTransaction do
+            -- Update asset quantity
+            asset
+                |> set #quantity (asset.quantity + deltaQty)
+                |> updateRecord
 
-        -- Update wallet balance
-        wallet
-            |> modifyWalletAmount (moneyFromCents deltaCents)
-            |> updateRecord
+            -- Update market statistics
+            market
+                |> set #trades (market.trades + 1)
+                |> set #volume (market.volume + (abs deltaQty))
+                |> set #turnover (market.turnover + (abs deltaCents))
+                |> updateRecord
 
-        -- Create transaction
-        transaction <- newRecord @Transaction
-            |> set #userId currentUserId
-            |> set #assetId assetId
-            |> set #marketId market.id
-            |> set #quantity deltaQty
-            |> setTransactionAmount (moneyFromCents (abs deltaCents))
-            |> createRecord
+            -- Update wallet balance
+            wallet
+                |> modifyWalletAmount (moneyFromCents deltaCents)
+                |> updateRecord
 
-        -- Update holding - set quantity to 0 (closed)
-        holding
-            |> set #quantity 0
-            |> modifyHoldingCost (moneyFromCents (-deltaCents))
-            |> updateRecord
+            -- Create transaction
+            transaction <- newRecord @Transaction
+                |> set #userId currentUserId
+                |> set #assetId assetId
+                |> set #marketId market.id
+                |> set #quantity deltaQty
+                |> setTransactionAmount (moneyFromCents (abs deltaCents))
+                |> createRecord
+
+            -- Update holding - set quantity to 0 (closed)
+            holding
+                |> set #quantity 0
+                |> modifyHoldingCost (moneyFromCents (-deltaCents))
+                |> updateRecord
 
         -- Set success message
         let action = if tradeType == "buy" then "bought" else "sold"

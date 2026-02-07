@@ -50,7 +50,10 @@ CREATE TABLE markets (
     resolved_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     refunded_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    trades INT DEFAULT 0 NOT NULL,
+    volume INT DEFAULT 0 NOT NULL,
+    turnover BIGINT DEFAULT 0 NOT NULL
 );
 CREATE INDEX markets_user_id_index ON markets (user_id);
 CREATE INDEX markets_status_index ON markets (status);

@@ -1,4 +1,5 @@
 module Web.View.Markets.Index where
+import Application.Helper.Money (formatMoney)
 import Web.View.Prelude
 
 data IndexView = IndexView
@@ -38,24 +39,61 @@ renderCategoryTab categoryFilter category = [hsx|
 
 renderMarket :: (?context :: ControllerContext) => Include' ["categoryId", "assets"] Market -> Html
 renderMarket market = [hsx|
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="col-12 col-sm-6 col-lg-4">
         <div class="card h-100">
-            <a href={ShowMarketAction market.id Nothing Nothing} class="stretched-link" aria-hidden="true"></a>
-            <div class={classes [("card-header", True), ("text-muted", True), ("small", True), ("d-flex", True), ("justify-content-between", True), ("align-items-center", True), ("py-1", True), (headerClass, True)]}>
-                <span>{category.name}</span>
-                {statusBadge}
-            </div>
-            <div class={classes [("card-body", True), ("position-relative", True), ("d-flex", True), ("flex-column", True), (bodyClass, True)]}>
-                <h6 class="card-title scroll-no-bar fs-6 position-relative mb-2" style="z-index: 2;">
-                    <a href={ShowMarketAction market.id Nothing Nothing}
-                       class="text-decoration-none text-reset stretched-link">
-                        {market.title}
-                    </a>
-                </h6>
-                <div class="scroll-no-bar position-relative pt-1" style="overflow-y: auto; max-height: 54px; z-index: 3;">
-                    {forEach market.assets renderAsset}
+
+            <!-- Clickable header -->
+            <div class="position-relative">
+                <a href={ShowMarketAction market.id Nothing Nothing}
+                    class="stretched-link" aria-hidden="true">
+                </a>
+                <div class={classes [
+                        "card-header position-relative text-muted small d-flex",
+                        "justify-content-between align-items-center py-1",
+                        (headerClass, True)
+                    ]}>
+                    <span>{category.name}</span>
+                    {statusBadge}
                 </div>
             </div>
+
+            <!-- Card body -->
+            <div class={classes ["card-body d-flex flex-column position-relative", (bodyClass, True)]}>
+
+                <!-- Scrollable, clickable title -->
+                <div class="position-relative scroll-no-bar mb-2">
+                    <a href={ShowMarketAction market.id Nothing Nothing}
+                       class="stretched-link" aria-hidden="true">
+                    </a>
+                    <h6 class="card-title fs-6 mb-0 d-inline-block">
+                        {market.title}
+                    </h6>
+                </div>
+
+                <!-- Assets container -->
+                <div class="scroll-no-bar position-relative pt-1" style="overflow-y: auto; max-height: 54px;">
+                    <div class="pe-auto">
+                        {forEach market.assets renderAsset}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer (not clickable) -->
+            <div class="card-footer text-muted small d-flex align-items-center py-1 border-top-0">
+                <span class="me-2" title="Number of trades">
+                    <i class="bi bi-arrow-left-right"></i>
+                    {market.trades}
+                </span>
+                <span class="me-2" title="Total shares traded">
+                    <i class="bi bi-layers"></i>
+                    {market.volume}
+                </span>
+                <span class="me-2" title="Total money turnover">
+                    <i class="bi bi-cash-stack"></i>
+                    €{(market.turnover + 50) `div` 100}
+                </span>
+            </div>
+
         </div>
     </div>
 |]
@@ -65,7 +103,7 @@ renderMarket market = [hsx|
         statusBadge =
             when (market.status /= MarketStatusOpen)
                 [hsx|<span>{marketStatusLabel market.status}</span>|]
-        
+
         bodyClass = marketStatusClasses market.status
         headerClass = marketStatusHeaderClasses market.status
 
@@ -98,7 +136,7 @@ renderMarket market = [hsx|
                    {asset.name}
                 </div>
                 <div class="d-flex align-items-center gap-1 ps-1 flex-shrink-0">
-                    <span class="me-1" style="font-size: 0.75rem;">
+                    <span class="me-1">
                         {assetPrice}%
                     </span>
                     {buttons}
