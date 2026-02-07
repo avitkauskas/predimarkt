@@ -1,11 +1,11 @@
 module Web.View.Dashboard.Holdings where
 
-import Web.Types.Money
+import Application.Helper.View (formatMoney)
 import Web.View.Prelude
 
 data HoldingWithValue = HoldingWithValue
     { holding      :: Include' ["marketId", "assetId"] Holding
-    , currentValue :: Maybe Money
+    , currentValue :: Maybe Integer  -- Current value in cents
     , assetPrice   :: Maybe Double  -- Current asset price as percentage (0-1)
     }
 
@@ -42,13 +42,14 @@ renderHoldingRow :: (?context :: ControllerContext) => HoldingWithValue -> Html
 renderHoldingRow HoldingWithValue { .. } =
     let asset = holding.assetId
         market = holding.marketId
-        stake = moneyFromCents (abs holding.amountCents)
+        stake = abs (holding.costBasis) :: Integer
 
-        -- Position type and styling
-        (positionText, positionClass) = case holding.quantity of
-            0         -> ("closed" :: Text, "text-muted" :: Text)
-            n | n < 0 -> ("short" :: Text, "text-danger" :: Text)
-            _         -> ("long" :: Text, "text-success" :: Text)
+        -- Position type and styling (determined by side field)
+        (positionText, positionClass) = case holding.side of
+            Nothing          -> ("closed" :: Text, "text-muted" :: Text)
+            Just "short"     -> ("short" :: Text, "text-danger" :: Text)
+            Just "long"      -> ("long" :: Text, "text-success" :: Text)
+            Just _           -> ("unknown" :: Text, "text-warning" :: Text)
 
         shares = abs holding.quantity
 
@@ -57,33 +58,37 @@ renderHoldingRow HoldingWithValue { .. } =
         sharesDisplay = if holding.quantity == 0 then "-" else show shares
 
         -- Max gain calculation
-        maxGain = case holding.quantity of
-            0  -> Nothing
-            n | n < 0 -> Just stake  -- For short: max gain is the stake received
-            _  -> Just $ moneyFromCents (fromIntegral holding.quantity * 100 - holding.amountCents)
+        maxGainCents :: Maybe Integer
+        maxGainCents = case holding.side of
+            Just "short" -> Just stake  -- For short: max gain is the stake received
+            Just "long"  -> Just (fromIntegral holding.quantity * 100 - holding.costBasis)
+            _            -> Nothing
 
         -- Current P&L calculation
-        (nowMoney, nowClass, isProfitable) = case currentValue of
-            Just value ->
-                let diff = moneyToCents value - moneyToCents stake
-                    profit = moneyFromCents (abs diff)
-                    profitable = if holding.quantity > 0 then diff >= 0 else diff <= 0
+        (nowMoneyCents, nowClass, isProfitable) = case currentValue of
+            Just valueCents ->
+                let diff = valueCents - stake
+                    profit = abs diff
+                    profitable = case holding.side of
+                        Just "long"  -> diff >= 0
+                        Just "short" -> diff <= 0
+                        _            -> diff >= 0
                     cls :: Text
                     cls = if profitable then "text-success" else "text-danger"
                 in (profit, cls, profitable)
             Nothing ->
                 let cls :: Text
-                    cls = if holding.amountCents <= 0 then "text-success" else "text-danger"
-                in (stake, cls, holding.amountCents <= 0)
+                    cls = if holding.costBasis <= 0 then "text-success" else "text-danger"
+                in (stake, cls, holding.costBasis <= 0)
 
         nowSign :: Text
         nowSign = if isProfitable then "+" else "-"
 
         -- Navigation URL for the market/asset link
-        tradeAction = case holding.quantity of
-            q | q > 0 -> Just "buy"
-            q | q < 0 -> Just "sell"
-            _         -> Nothing
+        tradeAction = case holding.side of
+            Just "long"  -> Just "buy"
+            Just "short" -> Just "sell"
+            _            -> Nothing
         titleUrl = ShowMarketAction market.id (Just asset.id) tradeAction
 
         -- Probability display as simple text (for all positions including closed)
@@ -117,8 +122,8 @@ renderHoldingRow HoldingWithValue { .. } =
             <td class="text-center">{sharesDisplay}</td>
             <td class="text-end">{formatMoney stake}</td>
             <td class="text-end">{maybe "-" formatMoney currentValue}</td>
-            <td class="text-end">{maybe "-" formatMoney maxGain}</td>
-            <td class={"text-end text-nowrap " <> nowClass}>{formatMoney nowMoney}{nowSign}</td>
+            <td class="text-end">{maybe "-" formatMoney maxGainCents}</td>
+            <td class={"text-end text-nowrap " <> nowClass}>{formatMoney nowMoneyCents}{nowSign}</td>
             <td class="text-center">{closeButton}</td>
         </tr>
     |]

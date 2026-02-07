@@ -1,4 +1,5 @@
 module Web.View.Markets.Show where
+import qualified Domain.LMSR as LMSR
 import Text.Printf (printf)
 import Web.View.Prelude
 
@@ -45,7 +46,7 @@ instance View ShowView where
                 when (market.status /= MarketStatusOpen)
                     [hsx|<span>{marketStatusLabel market.status}</span>|]
 
-            lmsrState = precompute market.beta market.assets
+            lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- market.assets]
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
@@ -70,13 +71,13 @@ instance View ShowView where
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
 
                     assetPrice :: Double
-                    assetPrice = price asset.id lmsrState
+                    assetPrice = LMSR.price asset.symbol lmsrState
 
                     assetSum :: Double
-                    assetSum = sumItem asset.id lmsrState
+                    assetSum = LMSR.sumItem asset.symbol lmsrState
 
                     assetTotal :: Double
-                    assetTotal = sumTotal lmsrState
+                    assetTotal = LMSR.sumTotal lmsrState
 
                     priceDisplay = [hsx|
                         <div class="text-end fw-medium pe-4" style="width: 100px;">

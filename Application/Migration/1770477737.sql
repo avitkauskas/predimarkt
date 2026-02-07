@@ -1,0 +1,14 @@
+ALTER TABLE holdings RENAME COLUMN amount_cents TO cost_basis;
+ALTER TABLE holdings ADD COLUMN side TEXT DEFAULT null;
+ALTER TABLE holdings ADD COLUMN realized_pnl BIGINT DEFAULT 0 NOT NULL;
+ALTER TABLE transactions DROP COLUMN amount_cents;
+ALTER TABLE transactions ADD COLUMN cash_flow BIGINT DEFAULT 0 NOT NULL;
+ALTER TABLE transactions ADD COLUMN side TEXT DEFAULT 'long' NOT NULL;
+ALTER TABLE transactions ADD COLUMN market_q_before INT DEFAULT 0 NOT NULL;
+ALTER TABLE transactions ADD COLUMN market_q_after INT DEFAULT 0 NOT NULL;
+ALTER TABLE transactions ADD COLUMN price_before DOUBLE PRECISION DEFAULT 0 NOT NULL;
+ALTER TABLE transactions ADD COLUMN price_after DOUBLE PRECISION DEFAULT 0 NOT NULL;
+ALTER TABLE transactions ADD COLUMN realized_pnl BIGINT DEFAULT 0 NOT NULL;
+ALTER TABLE wallets RENAME COLUMN amount_cents TO amount;
+ALTER TABLE transactions ADD CONSTRAINT chk_txn_side CHECK (side IN ('long', 'short'));
+ALTER TABLE holdings ADD CONSTRAINT chk_holding_side CHECK (side IS NULL OR (side IN ('long', 'short')));

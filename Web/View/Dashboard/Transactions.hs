@@ -1,7 +1,7 @@
 module Web.View.Dashboard.Transactions where
 
+import Application.Helper.View (formatMoney)
 import Data.Time.Format (defaultTimeLocale, formatTime)
-import Web.Types.Money
 import Web.View.Prelude
 
 data TransactionWithDetails = TransactionWithDetails
@@ -43,10 +43,13 @@ renderTransaction TransactionWithDetails { .. } =
     let txn = transaction
         asset = txn.assetId
         market = txn.marketId
-        txnType = if txn.quantity > 0 then "buy" else "sell" :: Text
-        typeClass = if txn.quantity > 0 then "text-center text-success" else "text-center text-danger" :: Text
+        txnType = case txn.side of
+            "long"  -> "buy" :: Text
+            "short" -> "sell" :: Text
+            _       -> txn.side
+        typeClass = if txn.side == "long" then "text-center text-success" else "text-center text-danger" :: Text
         quantity = abs txn.quantity
-        money = formatMoney $ moneyFromCents txn.amountCents
+        money = formatMoney $ abs txn.cashFlow
         timeStr = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" txn.createdAt
     in [hsx|
         <tr class="small">

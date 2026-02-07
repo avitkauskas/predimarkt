@@ -1,6 +1,5 @@
 module Application.Helper.Controller where
 
-import Application.Helper.Money
 import Generated.Types
 import IHP.ControllerPrelude
 

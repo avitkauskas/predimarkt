@@ -1,7 +1,5 @@
 module Web.Types where
 
-import Web.Types.Money
-
 import Generated.Types
 import IHP.LoginSupport.Types
 import IHP.ModelSupport

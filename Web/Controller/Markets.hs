@@ -2,8 +2,11 @@
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
 
-import Application.Helper.Money
+import Application.Adapter.Position
+import Application.Helper.View (formatMoney)
 import Data.List (zipWith4)
+import qualified Domain.Logic as Domain
+import qualified Domain.Types as Domain
 import Network.Wai (Request)
 import Web.Controller.Prelude
 import Web.Types
@@ -202,26 +205,35 @@ instance Controller MarketsController where
                     |> filterWhere (#userId, holding.userId)
                     |> fetchOne
 
-                let walletDelta = if holding.assetId == outcomeAssetId
-                        then fromIntegral holding.quantity * 100
-                        else 0
+                -- Convert to domain position and resolve
+                let position = toDomainPosition holding
+                let resolvedPosition = Domain.resolvePosition (holding.assetId == outcomeAssetId) position
+                let Domain.Balance refundAmount = Domain.refundPosition resolvedPosition
 
+                -- Update wallet
                 wallet
-                    |> modifyWalletAmount (moneyFromCents walletDelta)
+                    |> set #amount (wallet.amount + refundAmount)
                     |> updateRecord
 
+                -- Create transaction for resolution
+                let Domain.Balance realizedPnlValue = Domain.posRealizedPnL resolvedPosition
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
                     |> set #marketId market.id
                     |> set #quantity (-holding.quantity)
-                    |> setTransactionAmount (moneyFromCents (abs walletDelta))
+                    |> set #cashFlow refundAmount
+                    |> set #side "long"  -- Resolution is treated as closing long position
+                    |> set #marketQBefore 0
+                    |> set #marketQAfter 0
+                    |> set #priceBefore 0
+                    |> set #priceAfter 0
+                    |> set #realizedPnl realizedPnlValue
                     |> createRecord
 
-                holding
-                    |> set #quantity 0
-                    |> setHoldingCost (moneyFromCents (holding.amountCents - walletDelta))
-                    |> updateRecord
+                -- Update holding to reflect resolved state
+                let updatedHolding = fromDomainPosition resolvedPosition holding
+                updatedHolding |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
@@ -239,14 +251,12 @@ instance Controller MarketsController where
         accessDeniedUnless (market.status == MarketStatusClosed)
 
         -- Get all holdings (both open and closed) for refunding
-        -- We include closed positions (quantity = 0) to refund any profits/losses from them
         holdings <- query @Holding
             |> filterWhere (#marketId, market.id)
             |> fetch
 
         now <- getCurrentTime
 
-        -- Perform all refund operations in a transaction
         withTransaction do
             -- Update market status
             market <- market
@@ -256,30 +266,44 @@ instance Controller MarketsController where
 
             -- Process each holding and refund
             forM_ holdings \holding -> do
-                -- Get user's wallet
                 wallet <- query @Wallet
                     |> filterWhere (#userId, holding.userId)
                     |> fetchOne
 
+                -- Calculate refund amount (cost basis + realized PnL)
+                let position = toDomainPosition holding
+                let Domain.Balance refundAmount = Domain.refundPosition position
+
                 -- Create transaction record for the refund
+                let Domain.Balance realizedPnlValue = Domain.posRealizedPnL position
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
                     |> set #marketId market.id
                     |> set #quantity (-holding.quantity)
-                    |> setTransactionAmount (moneyFromCents (abs holding.amountCents))
+                    |> set #cashFlow refundAmount
+                    |> set #side (fromMaybe "long" holding.side)
+                    |> set #marketQBefore 0
+                    |> set #marketQAfter 0
+                    |> set #priceBefore 0
+                    |> set #priceAfter 0
+                    |> set #realizedPnl realizedPnlValue
                     |> createRecord
 
                 -- Update wallet balance with refund
                 wallet
-                    |> modifyWalletAmount (holdingCost holding)
+                    |> set #amount (wallet.amount + refundAmount)
                     |> updateRecord
 
-                -- Update holding - set quantity to 0 (closed)
-                holding
-                    |> set #quantity 0
-                    |> setHoldingCost (moneyFromCents 0)
-                    |> updateRecord
+                -- Close the position
+                let closedPosition = Domain.Position
+                        { Domain.posSide = Nothing
+                        , Domain.posQuantity = Domain.Quantity 0
+                        , Domain.posCostBasis = Domain.Balance 0
+                        , Domain.posRealizedPnL = Domain.posRealizedPnL position
+                        }
+                let updatedHolding = fromDomainPosition closedPosition holding
+                updatedHolding |> updateRecord
 
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing

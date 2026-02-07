@@ -1,9 +1,12 @@
 module Web.Controller.Assets where
 
-import Application.Helper.LMSR
-import Application.Helper.Money
+import Application.Adapter.Position
+import Application.Adapter.Transaction
+import qualified Domain.Logic as Domain
+import qualified Domain.LMSR as LMSR
+import qualified Domain.Types as Domain
+import Application.Helper.View (formatMoney)
 import Web.Controller.Prelude
-import Web.Types.Money
 import Web.View.Assets.New
 
 instance Controller AssetsController where
@@ -34,7 +37,7 @@ instance Controller AssetsController where
         market <- fetch asset.marketId
 
         -- Get trade parameters
-        let paramQty = param @Int "quantity"
+        let paramQty = fromIntegral (param @Int "quantity") :: Integer
         let tradeType = param @Text "type"
 
         -- Fetch all assets for LMSR calculation
@@ -43,91 +46,97 @@ instance Controller AssetsController where
             |> fetch
 
         -- Calculate LMSR state
-        let lmsrState = precompute market.beta assets
-        let assetSum = sumItem asset.id lmsrState
-        let assetTotal = sumTotal lmsrState
-        let currentPrice = assetSum / assetTotal
+        let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
+        let currentPrice = LMSR.price asset.symbol lmsrState
 
         -- Get user's wallet
         wallet <- query @Wallet
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
 
-        -- Calculate money amount and new quantities
-        let (deltaCents, deltaQty) =
-                if tradeType == "buy"
-                then
-                    -- BUY: Calculate cost and deduct from wallet
-                    let cost = calculateBuyCost paramQty currentPrice market.beta assetTotal
-                        costCents = round (cost * 100)
-                    in (-costCents, paramQty)
-                else
-                    -- SELL: Calculate revenue and add to wallet
-                    let revenue = calculateSellRevenue paramQty currentPrice market.beta assetTotal
-                        revenueCents = round (revenue * 100)
-                    in (revenueCents, -paramQty)
+        -- Calculate trade details using domain logic
+        let (side, deltaQty) = if tradeType == "buy"
+                then (Domain.Long, paramQty)
+                else (Domain.Short, paramQty)
 
-        -- Validate sufficient funds for buying
-        -- when (tradeType == "buy" && newBalance < 0) $ do
-        --     setErrorMessage $ "Insufficient funds. This trade requires " <> formatMoney (moneyFromDouble moneyAmount) <> " but you only have " <> formatMoney (moneyFromCents wallet.amountCents)
-        --     redirectTo (ShowMarketAction asset.marketId (Just asset.id) (Just tradeType))
+        let tradeAmount = if tradeType == "buy"
+                then LMSR.calculateBuyCost paramQty currentPrice market.beta
+                else LMSR.calculateSellRevenue paramQty currentPrice market.beta
 
-        -- Validate sufficient shares for selling
-        -- when (tradeType == "sell" && newQuantity < 0) $ do
-        --     setErrorMessage $ "Insufficient shares. You are trying to sell " <> show quantity <> " shares but only have " <> show asset.quantity
-        --     redirectTo (ShowMarketAction asset.marketId (Just asset.id) (Just tradeType))
+        let deltaCents = if tradeType == "buy"
+                then -tradeAmount  -- User pays
+                else tradeAmount   -- User receives
+
+        -- Get or create holding
+        maybeHolding <- query @Holding
+            |> filterWhere (#userId, currentUserId)
+            |> filterWhere (#assetId, assetId)
+            |> fetchOneOrNothing
+
+        let currentPosition = case maybeHolding of
+                Just h -> toDomainPosition h
+                Nothing -> Domain.emptyPosition
+
+        -- Build domain transaction
+        let domainTx = Domain.Transaction
+                { Domain.txSide = side
+                , Domain.txQuantity = case Domain.mkQuantity paramQty of
+                    Just q -> q
+                    Nothing -> error "Invalid quantity"
+                , Domain.txCashFlow = Domain.Balance deltaCents
+                , Domain.txPriceBefore = currentPrice
+                , Domain.txPriceAfter = currentPrice  -- Will be updated after trade
+                , Domain.txMarketQBefore = 0  -- TODO: track proper LMSR state
+                , Domain.txMarketQAfter = 0
+                }
+
+        -- Apply transaction to get new position
+        let newPosition = Domain.applyTransaction domainTx currentPosition
 
         withTransaction do
             -- Update asset quantity
+            let assetDeltaQty = if side == Domain.Long then paramQty else (-paramQty)
             asset
-                |> set #quantity (asset.quantity + deltaQty)
+                |> set #quantity (asset.quantity + assetDeltaQty)
                 |> updateRecord
 
             -- Update market statistics
             market
                 |> set #trades (market.trades + 1)
-                |> set #volume (market.volume + (abs deltaQty))
-                |> set #turnover (market.turnover + (abs deltaCents))
+                |> set #volume (market.volume + paramQty)
+                |> set #turnover (market.turnover + tradeAmount)
                 |> updateRecord
 
             -- Update wallet balance
             wallet
-                |> modifyWalletAmount (moneyFromCents deltaCents)
+                |> set #amount (wallet.amount + deltaCents)
                 |> updateRecord
 
-            -- Create transaction
-            transaction <- newRecord @Transaction
-                |> set #userId currentUserId
-                |> set #assetId assetId
-                |> set #marketId market.id
-                |> set #quantity deltaQty
-                |> setTransactionAmount (moneyFromCents (abs deltaCents))
+            -- Create transaction record
+            let txnBase = newRecord @Transaction
+                    |> set #userId currentUserId
+                    |> set #assetId assetId
+                    |> set #marketId market.id
+            let domainTxnWithPrice = domainTx { Domain.txPriceAfter = currentPrice }
+            _ <- fromDomainTransaction domainTxnWithPrice txnBase
                 |> createRecord
 
-            -- Create or update holding
-            maybeHolding <- query @Holding
-                |> filterWhere (#userId, currentUserId)
-                |> filterWhere (#assetId, assetId)
-                |> fetchOneOrNothing
-
+            -- Update or create holding
             case maybeHolding of
-                Just holding ->
-                    holding
-                        |> set #quantity (holding.quantity + deltaQty)
-                        |> modifyHoldingCost (moneyFromCents (-deltaCents))
-                        |> updateRecord
-                Nothing ->
-                    newRecord @Holding
-                        |> set #userId currentUserId
-                        |> set #marketId market.id
-                        |> set #assetId assetId
-                        |> set #quantity deltaQty
-                        |> setHoldingCost (moneyFromCents (-deltaCents))
-                        |> createRecord
+                Just holding -> do
+                    let updatedHolding = fromDomainPosition newPosition holding
+                    updatedHolding |> updateRecord
+                Nothing -> do
+                    let newHoldingBase = newRecord @Holding
+                            |> set #userId currentUserId
+                            |> set #marketId market.id
+                            |> set #assetId assetId
+                    let newHolding = fromDomainPosition newPosition newHoldingBase
+                    newHolding |> createRecord
 
         -- Set success message
         let action = if tradeType == "buy" then "bought" else "sold"
-        setSuccessMessage $ "Successfully " <> action <> " " <> show (abs deltaQty) <> " shares for " <> formatMoney (moneyFromCents (abs deltaCents))
+        setSuccessMessage $ "Successfully " <> action <> " " <> show paramQty <> " shares for " <> formatMoney tradeAmount
 
         redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
 
@@ -138,9 +147,8 @@ instance Controller AssetsController where
             |> filterWhere (#assetId, assetId)
             |> fetchOne
 
-        -- Determine the action needed to close the position
-        let closeQty = abs holding.quantity
-        let tradeType = if holding.quantity > 0 then "sell" else "buy" :: Text
+        -- Convert to domain position
+        let currentPosition = toDomainPosition holding
 
         -- Fetch asset and market
         asset <- fetch assetId
@@ -152,65 +160,76 @@ instance Controller AssetsController where
             |> fetch
 
         -- Calculate LMSR state
-        let lmsrState = precompute market.beta assets
-        let assetSum = sumItem asset.id lmsrState
-        let assetTotal = sumTotal lmsrState
-        let currentPrice = assetSum / assetTotal
+        let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
+        let currentPrice = LMSR.price asset.symbol lmsrState
 
         -- Get user's wallet
         wallet <- query @Wallet
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
 
-        -- Calculate money amount for closing the position
-        let (deltaCents, deltaQty) =
-                if tradeType == "buy"
-                then
-                    -- BUY: Calculate cost and deduct from wallet
-                    let cost = calculateBuyCost closeQty currentPrice market.beta assetTotal
-                        costCents = round (cost * 100)
-                    in (-costCents, closeQty)
-                else
-                    -- SELL: Calculate revenue and add to wallet
-                    let revenue = calculateSellRevenue closeQty currentPrice market.beta assetTotal
-                        revenueCents = round (revenue * 100)
-                    in (revenueCents, -closeQty)
+        -- Determine close transaction based on current position
+        let (closeSide, closeQty) = case Domain.posSide currentPosition of
+                Just Domain.Long -> (Domain.Short, Domain.posQuantity currentPosition)
+                Just Domain.Short -> (Domain.Long, Domain.posQuantity currentPosition)
+                Nothing -> error "No position to close"
+
+        let Domain.Quantity qty = closeQty
+        let tradeAmount = if closeSide == Domain.Short
+                then LMSR.calculateSellRevenue qty currentPrice market.beta
+                else LMSR.calculateBuyCost qty currentPrice market.beta
+
+        let deltaCents = if closeSide == Domain.Short
+                then tradeAmount   -- User receives
+                else -tradeAmount  -- User pays
+
+        -- Build domain transaction to close position
+        let domainTx = Domain.Transaction
+                { Domain.txSide = closeSide
+                , Domain.txQuantity = closeQty
+                , Domain.txCashFlow = Domain.Balance deltaCents
+                , Domain.txPriceBefore = currentPrice
+                , Domain.txPriceAfter = currentPrice
+                , Domain.txMarketQBefore = 0
+                , Domain.txMarketQAfter = 0
+                }
+
+        -- Apply transaction to close position
+        let closedPosition = Domain.applyTransaction domainTx currentPosition
 
         withTransaction do
             -- Update asset quantity
+            let assetDeltaQty = if closeSide == Domain.Long then qty else (-qty)
             asset
-                |> set #quantity (asset.quantity + deltaQty)
+                |> set #quantity (asset.quantity + assetDeltaQty)
                 |> updateRecord
 
             -- Update market statistics
             market
                 |> set #trades (market.trades + 1)
-                |> set #volume (market.volume + (abs deltaQty))
-                |> set #turnover (market.turnover + (abs deltaCents))
+                |> set #volume (market.volume + qty)
+                |> set #turnover (market.turnover + tradeAmount)
                 |> updateRecord
 
             -- Update wallet balance
             wallet
-                |> modifyWalletAmount (moneyFromCents deltaCents)
+                |> set #amount (wallet.amount + deltaCents)
                 |> updateRecord
 
-            -- Create transaction
-            transaction <- newRecord @Transaction
-                |> set #userId currentUserId
-                |> set #assetId assetId
-                |> set #marketId market.id
-                |> set #quantity deltaQty
-                |> setTransactionAmount (moneyFromCents (abs deltaCents))
+            -- Create transaction record
+            let txnBase = newRecord @Transaction
+                    |> set #userId currentUserId
+                    |> set #assetId assetId
+                    |> set #marketId market.id
+            _ <- fromDomainTransaction domainTx txnBase
                 |> createRecord
 
-            -- Update holding - set quantity to 0 (closed)
-            holding
-                |> set #quantity 0
-                |> modifyHoldingCost (moneyFromCents (-deltaCents))
-                |> updateRecord
+            -- Update holding - position is now flat
+            let updatedHolding = fromDomainPosition closedPosition holding
+            updatedHolding |> updateRecord
 
         -- Set success message
-        let action = if tradeType == "buy" then "bought" else "sold"
-        setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show closeQty <> " shares for " <> formatMoney (moneyFromCents (abs deltaCents))
+        let action = if closeSide == Domain.Short then "sold" else "bought"
+        setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show qty <> " shares for " <> formatMoney tradeAmount
 
         redirectTo DashboardHoldingsAction

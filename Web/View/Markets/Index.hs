@@ -1,5 +1,6 @@
 module Web.View.Markets.Index where
-import Application.Helper.Money (formatMoney)
+import Application.Helper.View (formatMoney)
+import qualified Domain.LMSR as LMSR
 import Web.View.Prelude
 
 data IndexView = IndexView
@@ -90,7 +91,7 @@ renderMarket market = [hsx|
                 </span>
                 <span class="me-2" title="Total money turnover">
                     <i class="bi bi-cash-stack"></i>
-                    €{(market.turnover + 50) `div` 100}
+                    {formatMoney market.turnover}
                 </span>
             </div>
 
@@ -107,12 +108,12 @@ renderMarket market = [hsx|
         bodyClass = marketStatusClasses market.status
         headerClass = marketStatusHeaderClasses market.status
 
-        lmsrState = precompute market.beta market.assets
+        lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- market.assets]
 
         renderAsset asset =
             let
                 assetPrice :: Int
-                assetPrice = round (price asset.id lmsrState * 100)
+                assetPrice = round (LMSR.price asset.symbol lmsrState * 100)
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|

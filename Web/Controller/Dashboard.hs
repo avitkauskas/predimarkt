@@ -1,9 +1,8 @@
 module Web.Controller.Dashboard where
 
-import Application.Helper.LMSR
+import qualified Domain.LMSR as LMSR
 import qualified Data.Map as M
 import Web.Controller.Prelude
-import Web.Types.Money
 import Web.View.Dashboard.Holdings
 import Web.View.Dashboard.Markets
 import Web.View.Dashboard.Transactions
@@ -29,7 +28,7 @@ instance Controller DashboardController where
             assets <- query @Asset
                 |> filterWhere (#marketId, mId)
                 |> fetch
-            let lmsrState = precompute market.beta assets
+            let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
             return (mId, market, assets, lmsrState)
 
         let marketDataMap = M.fromList [(marketId, (market, lmsrState)) | (marketId, market, _, lmsrState) <- marketsWithAssets]
@@ -40,23 +39,19 @@ instance Controller DashboardController where
             case M.lookup mId marketDataMap of
                 Just (market, lmsrState) -> do
                     let asset = get #assetId holding
-                        assetSum = sumItem asset.id lmsrState
-                        assetTotal = sumTotal lmsrState
-                        currentPrice = assetSum / assetTotal
+                        currentPrice = LMSR.price asset.symbol lmsrState
                         qty = holding.quantity
 
-                    let currentValue = case qty of
+                    let currentValueCents = case qty of
                             0 -> Nothing
-                            q | q > 0 -> Just $ moneyFromDouble $
-                                calculateSellRevenue q currentPrice market.beta assetTotal
-                            q -> Just $ moneyFromDouble $
-                                calculateBuyCost (abs q) currentPrice market.beta assetTotal
+                            q | q > 0 -> Just $ LMSR.calculateSellRevenue q currentPrice market.beta
+                            q -> Just $ LMSR.calculateBuyCost (abs q) currentPrice market.beta
 
                         assetPrice = case qty of
                             0 -> Nothing
                             _ -> Just currentPrice
 
-                    return HoldingWithValue { holding = holding, currentValue = currentValue, assetPrice = assetPrice }
+                    return HoldingWithValue { holding = holding, currentValue = currentValueCents, assetPrice = assetPrice }
                 Nothing -> return HoldingWithValue { holding = holding, currentValue = Nothing, assetPrice = Nothing }
 
         render HoldingsView { .. }

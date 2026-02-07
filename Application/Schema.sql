@@ -43,7 +43,7 @@ CREATE TABLE markets (
     slug TEXT NOT NULL,
     description TEXT NOT NULL,
     category_id UUID NOT NULL,
-    beta INT DEFAULT 300 NOT NULL,
+    beta BIGINT DEFAULT 300 NOT NULL,
     status market_status DEFAULT 'market_status_draft' NOT NULL,
     opened_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     closed_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -51,8 +51,8 @@ CREATE TABLE markets (
     refunded_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    trades INT DEFAULT 0 NOT NULL,
-    volume INT DEFAULT 0 NOT NULL,
+    trades BIGINT DEFAULT 0 NOT NULL,
+    volume BIGINT DEFAULT 0 NOT NULL,
     turnover BIGINT DEFAULT 0 NOT NULL
 );
 CREATE INDEX markets_user_id_index ON markets (user_id);
@@ -67,7 +67,7 @@ CREATE TABLE assets (
     market_id UUID NOT NULL,
     name TEXT NOT NULL,
     symbol TEXT NOT NULL,
-    quantity INT DEFAULT 0 NOT NULL,
+    quantity BIGINT DEFAULT 0 NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 CREATE INDEX assets_market_id_index ON assets (market_id);
@@ -75,7 +75,7 @@ CREATE TRIGGER update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXE
 CREATE TABLE wallets (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL UNIQUE,
-    amount_cents BIGINT DEFAULT 100000 NOT NULL
+    amount BIGINT DEFAULT 100000 NOT NULL
 );
 CREATE INDEX wallets_user_id_index ON wallets (user_id);
 CREATE TABLE transactions (
@@ -83,9 +83,15 @@ CREATE TABLE transactions (
     user_id UUID NOT NULL,
     market_id UUID NOT NULL,
     asset_id UUID NOT NULL,
-    quantity INT NOT NULL,
-    amount_cents BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+    quantity BIGINT DEFAULT 0 NOT NULL,
+    cash_flow BIGINT DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    side TEXT DEFAULT 'long' NOT NULL,
+    market_q_before BIGINT DEFAULT 0 NOT NULL,
+    market_q_after BIGINT DEFAULT 0 NOT NULL,
+    price_before DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    price_after DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    realized_pnl BIGINT DEFAULT 0 NOT NULL
 );
 CREATE INDEX transactions_user_id_index ON transactions (user_id);
 CREATE INDEX transactions_market_id_index ON transactions (market_id);
@@ -96,9 +102,11 @@ CREATE TABLE holdings (
     user_id UUID NOT NULL,
     market_id UUID NOT NULL,
     asset_id UUID NOT NULL,
-    quantity INT NOT NULL,
-    amount_cents BIGINT NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+    quantity BIGINT DEFAULT 0 NOT NULL,
+    cost_basis BIGINT DEFAULT 0 NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    side TEXT,
+    realized_pnl BIGINT DEFAULT 0 NOT NULL
 );
 CREATE INDEX holdings_user_id_index ON holdings (user_id);
 CREATE INDEX holdings_market_id_index ON holdings (market_id);
@@ -106,6 +114,7 @@ CREATE INDEX holdings_asset_id_index ON holdings (asset_id);
 CREATE UNIQUE INDEX holdings_user_id_asset_id_index ON holdings (user_id, asset_id);
 CREATE TRIGGER update_holdings_updated_at BEFORE UPDATE ON holdings FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
+ALTER TABLE transactions ADD CONSTRAINT chk_txn_side CHECK (side IN ('long', 'short'));
 ALTER TABLE holdings ADD CONSTRAINT holdings_ref_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE holdings ADD CONSTRAINT holdings_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE NO ACTION;
 ALTER TABLE holdings ADD CONSTRAINT holdings_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
