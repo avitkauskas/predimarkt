@@ -89,6 +89,11 @@ instance Controller AssetsController where
         -- Apply transaction to get new position
         let newPosition = Domain.applyTransaction domainTx currentPosition
 
+        -- Calculate realized PnL from this specific transaction
+        let Domain.Balance oldRealizedPnL = Domain.posRealizedPnL currentPosition
+        let Domain.Balance newRealizedPnL = Domain.posRealizedPnL newPosition
+        let txRealizedPnL = newRealizedPnL - oldRealizedPnL
+
         withTransaction do
             -- Update asset quantity
             let assetDeltaQty = if side == Domain.Long then paramQty else (-paramQty)
@@ -115,6 +120,7 @@ instance Controller AssetsController where
                     |> set #marketId market.id
             let domainTxnWithPrice = domainTx { Domain.txPriceAfter = currentPrice }
             _ <- fromDomainTransaction domainTxnWithPrice txnBase
+                    |> set #realizedPnl txRealizedPnL
                 |> createRecord
 
             -- Update or create holding
@@ -191,6 +197,11 @@ instance Controller AssetsController where
         -- Apply transaction to close position
         let closedPosition = Domain.applyTransaction domainTx currentPosition
 
+        -- Calculate realized PnL from this closing transaction
+        let Domain.Balance oldRealizedPnL = Domain.posRealizedPnL currentPosition
+        let Domain.Balance newRealizedPnL = Domain.posRealizedPnL closedPosition
+        let txRealizedPnL = newRealizedPnL - oldRealizedPnL
+
         withTransaction do
             -- Update asset quantity
             let assetDeltaQty = if closeSide == Domain.Long then qty else (-qty)
@@ -216,6 +227,7 @@ instance Controller AssetsController where
                     |> set #assetId assetId
                     |> set #marketId market.id
             _ <- fromDomainTransaction domainTx txnBase
+                    |> set #realizedPnl txRealizedPnL
                 |> createRecord
 
             -- Update holding - position is now flat

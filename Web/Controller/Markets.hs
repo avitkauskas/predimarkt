@@ -222,7 +222,7 @@ instance Controller MarketsController where
                     |> set #marketId market.id
                     |> set #quantity (-holding.quantity)
                     |> set #cashFlow refundAmount
-                    |> set #side "long"  -- Resolution is treated as closing long position
+                    |> set #side (fromMaybe "long" holding.side)  -- Use actual position side
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> set #realizedPnl realizedPnlValue
