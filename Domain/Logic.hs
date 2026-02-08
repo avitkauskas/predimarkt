@@ -80,23 +80,33 @@ reduceOrFlipPosition tx pos =
         Quantity txQ = txQuantity tx
         Balance oldCost = posCostBasis pos
         Balance cf = txCashFlow tx
+        Just side = posSide pos
 
-        -- How many shares are being closed
+        -- How many shares are being closed from original position
         closedQ = min oldQ txQ
 
         -- Cost basis released (proportional to closed quantity)
         releasedCost :: Integer
         releasedCost = (oldCost * closedQ) `quot` oldQ
 
-        -- Realized PnL from this trade
-        -- For long: received - released cost
-        -- For short: released cost - paid (but cf is negative when shorting)
+        -- Realized PnL from closing portion of original position
+        -- For long: received - released cost = cf - releasedCost (cf is positive when selling)
+        -- For short: released cost - paid = cf + releasedCost (cf is negative when buying to close)
         realized :: Integer
-        realized = cf + releasedCost
-
-        remainingQ = txQ - closedQ
+        realized = case side of
+            Long  -> cf - releasedCost
+            Short -> cf + releasedCost
     in
-        if remainingQ == 0
+        if txQ < oldQ
+        then
+            -- Partial reduction: reduce position size, keep same side
+            let remainingQ = oldQ - txQ
+            in pos
+                { posQuantity = Quantity remainingQ
+                , posCostBasis = Balance (oldCost - releasedCost)
+                , posRealizedPnL = posRealizedPnL pos + Balance realized
+                }
+        else if txQ == oldQ
         then
             -- Fully closed
             pos
@@ -106,12 +116,21 @@ reduceOrFlipPosition tx pos =
                 , posRealizedPnL = posRealizedPnL pos + Balance realized
                 }
         else
-            -- Flipped to opposite side
-            pos
+            -- Flip to opposite side: close old position, open new on opposite side
+            let newQ = txQ - oldQ
+                -- Cash flow allocated to closing old position (proportional to closed quantity)
+                cfForClosed = (cf * closedQ) `quot` txQ
+                -- Cash flow allocated to new position (proportional to new quantity)
+                cfForNew = (cf * newQ) `quot` txQ
+                -- Realized PnL from closed portion only
+                realizedFromClose = case side of
+                    Long  -> cfForClosed - releasedCost
+                    Short -> cfForClosed + releasedCost
+            in pos
                 { posSide = Just (txSide tx)
-                , posQuantity = Quantity remainingQ
-                , posCostBasis = Balance (abs (cf + releasedCost))
-                , posRealizedPnL = posRealizedPnL pos + Balance realized
+                , posQuantity = Quantity newQ
+                , posCostBasis = Balance (abs cfForNew)
+                , posRealizedPnL = posRealizedPnL pos + Balance realizedFromClose
                 }
 
 -- | Resolve a position when market closes

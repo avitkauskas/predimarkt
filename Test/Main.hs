@@ -361,17 +361,20 @@ main = hspec do
     describe "Property Tests" do
         describe "Position invariants" do
             it "quantity is always non-negative after any operation" $ do
-                property $ \ (qty1 :: Integer) (qty2 :: Integer) (cf1 :: Integer) (cf2 :: Integer) ->
-                    qty1 > 0 && qty2 > 0 && cf1 > 0 && cf2 > 0 ==>
-                    let pos1 = mkLongPosition (abs qty1) (abs cf1)
+                property $ \ (qty1' :: Word) (qty2' :: Word) (cf1' :: Word) (cf2' :: Word) ->
+                    let qty1 = max 1 (fromIntegral qty1')  -- Ensure at least 1
+                        qty2 = fromIntegral qty2'
+                        cf1 = fromIntegral cf1'
+                        cf2 = fromIntegral cf2'
+                        pos1 = mkLongPosition qty1 cf1
                         tx = Transaction
                             { txSide = Short
-                            , txQuantity = Quantity (abs qty2)
-                            , txCashFlow = Balance (abs cf2)
+                            , txQuantity = Quantity qty2
+                            , txCashFlow = Balance cf2
                             , txPriceBefore = 0.5
                             , txPriceAfter = 0.5
-                            , txMarketQBefore = abs qty1
-                            , txMarketQAfter = abs qty1 - abs qty2
+                            , txMarketQBefore = qty1
+                            , txMarketQAfter = qty1 - qty2
                             }
                         pos2 = applyTransaction tx pos1
                         Quantity finalQty = posQuantity pos2
