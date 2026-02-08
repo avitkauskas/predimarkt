@@ -51,29 +51,42 @@ applyTransaction tx pos =
                 reduceOrFlipPosition tx pos
 
 -- | Open a new position from flat
+-- For Long: cost basis = money paid (positive)
+-- For Short: cost basis = potential obligation - received = q * 100 - abs(cf)
 openPosition :: Transaction -> Position -> Position
 openPosition tx pos =
     let Balance cf = txCashFlow tx
         Quantity q = txQuantity tx
+        cost = case txSide tx of
+            Long  -> abs cf           -- Money paid
+            Short -> q * 100 - abs cf  -- Net risk: obligation - received
     in pos
         { posSide = Just (txSide tx)
         , posQuantity = txQuantity tx
-        , posCostBasis = Balance (abs cf)  -- Store as positive cost basis
+        , posCostBasis = Balance cost
         }
 
 -- | Increase existing position (same side)
+-- For Long: add money paid to cost basis
+-- For Short: add net risk (new obligation - received) to cost basis
 increasePosition :: Transaction -> Position -> Position
 increasePosition tx pos =
     let Quantity oldQ = posQuantity pos
         Quantity newQ = txQuantity tx
         Balance oldCost = posCostBasis pos
         Balance cf = txCashFlow tx
+        Just side = posSide pos
+        additionalCost = case side of
+            Long  -> abs cf                -- Additional money paid
+            Short -> newQ * 100 - abs cf   -- Additional net risk
     in pos
         { posQuantity = Quantity (oldQ + newQ)
-        , posCostBasis = Balance (oldCost + abs cf)
+        , posCostBasis = Balance (oldCost + additionalCost)
         }
 
 -- | Reduce or flip position (opposite side transaction)
+-- Uses unified formula: realized = cf - releasedCost for both longs and shorts
+-- (cost basis for shorts represents net risk, so same formula applies)
 reduceOrFlipPosition :: Transaction -> Position -> Position
 reduceOrFlipPosition tx pos =
     let Quantity oldQ = posQuantity pos
@@ -89,13 +102,13 @@ reduceOrFlipPosition tx pos =
         releasedCost :: Integer
         releasedCost = (oldCost * closedQ) `quot` oldQ
 
-        -- Realized PnL from closing portion of original position
-        -- For long: received - released cost = cf - releasedCost (cf is positive when selling)
-        -- For short: released cost - paid = cf + releasedCost (cf is negative when buying to close)
+        -- Realized PnL calculation
+        -- For long: received - cost = cf - releasedCost (cf positive, releasedCost positive)
+        -- For short: net risk released + cf = releasedCost + cf (cf negative when paying to close)
         realized :: Integer
         realized = case side of
             Long  -> cf - releasedCost
-            Short -> cf + releasedCost
+            Short -> releasedCost + cf
     in
         if txQ < oldQ
         then
@@ -125,11 +138,15 @@ reduceOrFlipPosition tx pos =
                 -- Realized PnL from closed portion only
                 realizedFromClose = case side of
                     Long  -> cfForClosed - releasedCost
-                    Short -> cfForClosed + releasedCost
+                    Short -> releasedCost + cfForClosed
+                -- Cost basis for new position depends on side
+                newCost = case txSide tx of
+                    Long  -> abs cfForNew                -- Money paid for long
+                    Short -> newQ * 100 - abs cfForNew   -- Net risk for short
             in pos
                 { posSide = Just (txSide tx)
                 , posQuantity = Quantity newQ
-                , posCostBasis = Balance (abs cfForNew)
+                , posCostBasis = Balance newCost
                 , posRealizedPnL = posRealizedPnL pos + Balance realizedFromClose
                 }
 
@@ -143,20 +160,19 @@ resolvePosition longWon pos =
             let Quantity q = posQuantity pos
                 Balance cost = posCostBasis pos
 
-                -- Calculate payout
-                payout :: Integer
-                payout = case side of
+                -- Calculate realized PnL
+                -- For Long: cost basis is money paid
+                -- For Short: cost basis = q * 100 - received, so received = q * 100 - cost
+                realized :: Integer
+                realized = case side of
                     Long ->
                         if longWon
-                        then q * 100  -- Each share pays 100 cents
-                        else 0
+                        then q * 100 - cost  -- Received q*100, paid cost
+                        else negate cost        -- Received 0, paid cost
                     Short ->
                         if longWon
-                        then 0  -- Short loses, pays nothing (already paid when opening)
-                        else q * 100  -- Short wins, keeps the obligation money
-
-                -- Realized PnL = payout - cost basis
-                realized = payout - cost
+                        then negate cost           -- Lose: pay q*100 but had received (q*100 - cost), net = -cost
+                        else q * 100 - cost  -- Win: keep received = q*100 - cost
             in
                 pos
                     { posSide = Nothing

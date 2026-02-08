@@ -1,4 +1,4 @@
-module Main where
+module Test.Main where
 
 import Domain.LMSR
 import Domain.Logic
@@ -62,11 +62,13 @@ main = hspec do
                 posRealizedPnL pos `shouldBe` Balance 0
 
             it "opens a Short position with correct cost basis" $ do
+                -- Sell 100 shares, receive $40
+                -- Cost basis = potential obligation - received = 100*100 - 4000 = 6000
                 let tx = mkSellTx 100 4000 0.60 0.58
                     pos = applyTransaction tx emptyPosition
                 posSide pos `shouldBe` Just Short
                 posQuantity pos `shouldBe` Quantity 100
-                posCostBasis pos `shouldBe` Balance 4000
+                posCostBasis pos `shouldBe` Balance 6000  -- Net risk
                 posRealizedPnL pos `shouldBe` Balance 0
 
         describe "increasePosition" do
@@ -80,12 +82,16 @@ main = hspec do
                 posRealizedPnL pos2 `shouldBe` Balance 0
 
             it "increases Short position accumulating cost basis" $ do
-                let pos1 = mkShortPosition 100 4000
+                -- Already short 100 shares with cost basis 6000 (10000 - 4000 received)
+                -- Sell 50 more shares, receive $20
+                -- Additional cost = 50*100 - 2000 = 3000
+                -- New cost basis = 6000 + 3000 = 9000
+                let pos1 = mkShortPosition 100 6000
                     tx = mkSellTx 50 2000 0.40 0.38
                     pos2 = applyTransaction tx pos1
                 posSide pos2 `shouldBe` Just Short
                 posQuantity pos2 `shouldBe` Quantity 150
-                posCostBasis pos2 `shouldBe` Balance 6000
+                posCostBasis pos2 `shouldBe` Balance 9000
                 posRealizedPnL pos2 `shouldBe` Balance 0
 
         describe "reducePosition (partial close)" do
@@ -132,11 +138,11 @@ main = hspec do
                 posRealizedPnL pos2 `shouldBe` Balance (-500)
 
             it "reduces Short position with correct PnL when profitable" $ do
-                -- Short 100 shares, receive $40 (cost basis = $40)
-                -- Buy 50 shares to close at $30 (pay $15)
-                -- Cost basis released = $40 * (50/100) = $20
-                -- Realized PnL = -$15 + $20 = $5 profit
-                let pos1 = mkShortPosition 100 4000
+                -- Short 100 shares, received $40, cost basis = 10000 - 4000 = 6000
+                -- Buy 50 shares to close at $30 (pay $15, cf = -1500)
+                -- Cost basis released = 6000 * (50/100) = 3000
+                -- Realized PnL = releasedCost + cf = 3000 + (-1500) = 1500 profit
+                let pos1 = mkShortPosition 100 6000
                     tx = Transaction
                         { txSide = Long  -- Buying to close Short
                         , txQuantity = Quantity 50
@@ -149,15 +155,16 @@ main = hspec do
                     pos2 = applyTransaction tx pos1
                 posSide pos2 `shouldBe` Just Short
                 posQuantity pos2 `shouldBe` Quantity 50
-                posCostBasis pos2 `shouldBe` Balance 2000
-                posRealizedPnL pos2 `shouldBe` Balance 500
+                posCostBasis pos2 `shouldBe` Balance 3000
+                posRealizedPnL pos2 `shouldBe` Balance 1500
 
             it "reduces Short position with correct PnL when losing" $ do
-                -- Short 100 shares, receive $40
-                -- Buy 50 shares to close at $50 (pay $25)
-                -- Cost basis released = $20
-                -- Realized PnL = -$25 + $20 = -$5 loss
-                let pos1 = mkShortPosition 100 4000
+                -- Short 100 shares, cost basis = 6000
+                -- Buy 50 shares to close at $50 (pay $25, cf = -2500)
+                -- Released cost = 3000
+                -- Realized = releasedCost + cf = 3000 + (-2500) = 500 profit
+                -- (Still profitable because paid less than net risk released)
+                let pos1 = mkShortPosition 100 6000
                     tx = Transaction
                         { txSide = Long
                         , txQuantity = Quantity 50
@@ -169,8 +176,8 @@ main = hspec do
                         }
                     pos2 = applyTransaction tx pos1
                 posQuantity pos2 `shouldBe` Quantity 50
-                posCostBasis pos2 `shouldBe` Balance 2000
-                posRealizedPnL pos2 `shouldBe` Balance (-500)
+                posCostBasis pos2 `shouldBe` Balance 3000
+                posRealizedPnL pos2 `shouldBe` Balance 500
 
         describe "closePosition (full close)" do
             it "closes Long position with correct PnL" $ do
@@ -191,7 +198,11 @@ main = hspec do
                 posRealizedPnL pos2 `shouldBe` Balance 1000  -- $10 profit
 
             it "closes Short position with correct PnL" $ do
-                let pos1 = mkShortPosition 100 4000
+                -- Short 100 shares, cost basis = 6000 (10000 - 4000 received)
+                -- Buy back 100 shares at $30 (pay $30, cf = -3000)
+                -- Released cost = 6000
+                -- Realized = releasedCost + cf = 6000 + (-3000) = 3000 profit
+                let pos1 = mkShortPosition 100 6000
                     tx = Transaction
                         { txSide = Long
                         , txQuantity = Quantity 100
@@ -205,7 +216,7 @@ main = hspec do
                 posSide pos2 `shouldBe` Nothing
                 posQuantity pos2 `shouldBe` Quantity 0
                 posCostBasis pos2 `shouldBe` Balance 0
-                posRealizedPnL pos2 `shouldBe` Balance 1000  -- $10 profit
+                posRealizedPnL pos2 `shouldBe` Balance 3000
 
         describe "flipPosition" do
             it "flips from Long to Short with correct PnL and cost basis" $ do
@@ -215,7 +226,8 @@ main = hspec do
                 -- Proportional CF for closed: $90 * 100/150 = $60
                 -- Released cost: $50
                 -- Realized PnL: $60 - $50 = $10 profit
-                -- Remaining Short 50 shares, cost basis: $90 * 50/150 = $30
+                -- Remaining Short 50 shares:
+                --   New cost basis = 50*100 - $30 received = 5000 - 3000 = $20
                 let pos1 = mkLongPosition 100 5000
                     tx = Transaction
                         { txSide = Short
@@ -229,19 +241,19 @@ main = hspec do
                     pos2 = applyTransaction tx pos1
                 posSide pos2 `shouldBe` Just Short
                 posQuantity pos2 `shouldBe` Quantity 50
-                -- BUG: Current implementation gives wrong cost basis
-                posCostBasis pos2 `shouldBe` Balance 3000
+                -- Cost basis = obligation - received = 5000 - 3000 = 2000
+                posCostBasis pos2 `shouldBe` Balance 2000
                 posRealizedPnL pos2 `shouldBe` Balance 1000
 
             it "flips from Short to Long with correct PnL and cost basis" $ do
-                -- Short 100 shares, cost basis $40 (received $40)
+                -- Short 100 shares, cost basis $60 (10000 - 4000 received)
                 -- Buy 150 shares total, pay $90
                 -- Closed portion: 100 shares
                 -- Proportional CF for closed: -$90 * 100/150 = -$60
-                -- Released cost: $40
-                -- Realized PnL: -$60 + $40 = -$20 loss
+                -- Released cost: $60
+                -- Realized PnL: releasedCost + cfForClosed = 6000 + (-6000) = $0
                 -- Remaining Long 50 shares, cost basis: $90 * 50/150 = $30
-                let pos1 = mkShortPosition 100 4000
+                let pos1 = mkShortPosition 100 6000
                     tx = Transaction
                         { txSide = Long
                         , txQuantity = Quantity 150
@@ -254,9 +266,8 @@ main = hspec do
                     pos2 = applyTransaction tx pos1
                 posSide pos2 `shouldBe` Just Long
                 posQuantity pos2 `shouldBe` Quantity 50
-                -- BUG: Current implementation gives wrong cost basis
                 posCostBasis pos2 `shouldBe` Balance 3000
-                posRealizedPnL pos2 `shouldBe` Balance (-2000)
+                posRealizedPnL pos2 `shouldBe` Balance 0
 
         describe "resolvePosition" do
             it "resolves Long winner correctly" $ do
@@ -278,22 +289,27 @@ main = hspec do
                 posRealizedPnL resolved `shouldBe` Balance (-5000)
 
             it "resolves Short winner (Long loses) correctly" $ do
-                let pos = mkShortPosition 100 4000
+                -- Short 100 shares, received $40
+                -- Cost basis = 10000 - 4000 = 6000
+                -- Short wins: Keep money received, no obligation
+                -- Realized = q * 100 - cost = 10000 - 6000 = 4000 (received)
+                let pos = mkShortPosition 100 6000
                     resolved = resolvePosition False pos
                 posSide resolved `shouldBe` Nothing
                 posQuantity resolved `shouldBe` Quantity 0
                 posCostBasis resolved `shouldBe` Balance 0
-                -- Payout = 100 * 100 = 10000, Profit = 10000 - 4000 = 6000
-                posRealizedPnL resolved `shouldBe` Balance 6000
+                posRealizedPnL resolved `shouldBe` Balance 4000
 
             it "resolves Short loser (Long wins) correctly" $ do
-                let pos = mkShortPosition 100 4000
+                -- Short 100 shares, cost basis = 6000
+                -- Short loses: Must pay 100 * 100 = 10000 to cover
+                -- Realized = 0 - cost = -6000
+                let pos = mkShortPosition 100 6000
                     resolved = resolvePosition True pos
                 posSide resolved `shouldBe` Nothing
                 posQuantity resolved `shouldBe` Quantity 0
                 posCostBasis resolved `shouldBe` Balance 0
-                -- Payout = 0, Loss = 0 - 4000 = -4000
-                posRealizedPnL resolved `shouldBe` Balance (-4000)
+                posRealizedPnL resolved `shouldBe` Balance (-6000)
 
             it "resolves flat position as unchanged" $ do
                 let resolved = resolvePosition True emptyPosition
