@@ -36,20 +36,18 @@ type Price = Double
 
 -- | Transaction represents a trade executed by a user
 data Transaction = Transaction
-    { txSide :: Side
-    , txQuantity :: Quantity
-    , txCashFlow :: Balance
+    { txSide        :: Side
+    , txQuantity    :: Quantity
+    , txCashFlow    :: Balance
     , txPriceBefore :: Price
-    , txPriceAfter :: Price
-    , txMarketQBefore :: Integer
-    , txMarketQAfter :: Integer
+    , txPriceAfter  :: Price
     } deriving (Eq, Show)
 
 -- | Position represents a user's current holdings in an asset
 data Position = Position
-    { posSide :: Maybe Side
-    , posQuantity :: Quantity
-    , posCostBasis :: Balance
+    { posSide        :: Maybe Side
+    , posQuantity    :: Quantity
+    , posCostBasis   :: Balance
     , posRealizedPnL :: Balance
     } deriving (Eq, Show)
 

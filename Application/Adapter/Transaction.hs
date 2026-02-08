@@ -7,8 +7,8 @@ module Application.Adapter.Transaction
 
 import qualified Domain.Types as Domain
 import Generated.Types
-import IHP.Prelude
 import IHP.ModelSupport
+import IHP.Prelude
 
 -- | Parse side from database text (required, throws on invalid)
 parseSideRequired :: Text -> Domain.Side
@@ -19,7 +19,7 @@ parseSideRequired invalid =
 
 -- | Format side for database storage
 formatSideRequired :: Domain.Side -> Text
-formatSideRequired Domain.Long = "long"
+formatSideRequired Domain.Long  = "long"
 formatSideRequired Domain.Short = "short"
 
 -- | Convert database Transaction to domain Transaction
@@ -32,8 +32,6 @@ toDomainTransaction tx =
         cashFlow = fromIntegral (get #cashFlow tx)
         priceBefore = get #priceBefore tx
         priceAfter = get #priceAfter tx
-        qBefore = get #marketQBefore tx
-        qAfter = get #marketQAfter tx
     in case Domain.mkQuantity qty of
         Nothing ->
             error $ "Invalid negative quantity in transaction: " ++ show qty
@@ -44,8 +42,6 @@ toDomainTransaction tx =
                 , Domain.txCashFlow = Domain.Balance cashFlow
                 , Domain.txPriceBefore = priceBefore
                 , Domain.txPriceAfter = priceAfter
-                , Domain.txMarketQBefore = qBefore
-                , Domain.txMarketQAfter = qAfter
                 }
 
 -- | Create a database Transaction from domain Transaction and base record
@@ -60,5 +56,3 @@ fromDomainTransaction domainTx tx =
         |> set #cashFlow (fromIntegral cf)
         |> set #priceBefore (Domain.txPriceBefore domainTx)
         |> set #priceAfter (Domain.txPriceAfter domainTx)
-        |> set #marketQBefore (Domain.txMarketQBefore domainTx)
-        |> set #marketQAfter (Domain.txMarketQAfter domainTx)

@@ -223,8 +223,6 @@ instance Controller MarketsController where
                     |> set #quantity (-holding.quantity)
                     |> set #cashFlow refundAmount
                     |> set #side "long"  -- Resolution is treated as closing long position
-                    |> set #marketQBefore 0
-                    |> set #marketQAfter 0
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> set #realizedPnl realizedPnlValue
@@ -282,8 +280,6 @@ instance Controller MarketsController where
                     |> set #quantity (-holding.quantity)
                     |> set #cashFlow refundAmount
                     |> set #side (fromMaybe "long" holding.side)
-                    |> set #marketQBefore 0
-                    |> set #marketQAfter 0
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> set #realizedPnl realizedPnlValue

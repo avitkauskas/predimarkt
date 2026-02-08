@@ -84,8 +84,6 @@ instance Controller AssetsController where
                 , Domain.txCashFlow = Domain.Balance deltaCents
                 , Domain.txPriceBefore = currentPrice
                 , Domain.txPriceAfter = currentPrice  -- Will be updated after trade
-                , Domain.txMarketQBefore = 0  -- TODO: track proper LMSR state
-                , Domain.txMarketQAfter = 0
                 }
 
         -- Apply transaction to get new position
@@ -188,8 +186,6 @@ instance Controller AssetsController where
                 , Domain.txCashFlow = Domain.Balance deltaCents
                 , Domain.txPriceBefore = currentPrice
                 , Domain.txPriceAfter = currentPrice
-                , Domain.txMarketQBefore = 0
-                , Domain.txMarketQAfter = 0
                 }
 
         -- Apply transaction to close position

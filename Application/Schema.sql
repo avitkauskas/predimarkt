@@ -87,8 +87,6 @@ CREATE TABLE transactions (
     cash_flow BIGINT DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     side TEXT DEFAULT 'long' NOT NULL,
-    market_q_before BIGINT DEFAULT 0 NOT NULL,
-    market_q_after BIGINT DEFAULT 0 NOT NULL,
     price_before DOUBLE PRECISION DEFAULT 0 NOT NULL,
     price_after DOUBLE PRECISION DEFAULT 0 NOT NULL,
     realized_pnl BIGINT DEFAULT 0 NOT NULL
