@@ -102,13 +102,15 @@ reduceOrFlipPosition tx pos =
         releasedCost :: Integer
         releasedCost = (oldCost * closedQ) `quot` oldQ
 
+        cfForClosed = (cf * closedQ) `quot` txQ
+
         -- Realized PnL calculation
         -- For long: received - cost = cf - releasedCost (cf positive, releasedCost positive)
-        -- For short: net risk released + cf = releasedCost + cf (cf negative when paying to close)
+        -- For short: received when shorting + cf = (q * 100) - releasedCost + cf (cf negative when paying to close)
         realized :: Integer
         realized = case side of
-            Long  -> cf - releasedCost
-            Short -> releasedCost + cf
+            Long  -> cfForClosed - releasedCost
+            Short -> closedQ * 100 - releasedCost + cfForClosed
     in
         if txQ < oldQ
         then
@@ -131,14 +133,8 @@ reduceOrFlipPosition tx pos =
         else
             -- Flip to opposite side: close old position, open new on opposite side
             let newQ = txQ - oldQ
-                -- Cash flow allocated to closing old position (proportional to closed quantity)
-                cfForClosed = (cf * closedQ) `quot` txQ
-                -- Cash flow allocated to new position (proportional to new quantity)
-                cfForNew = (cf * newQ) `quot` txQ
-                -- Realized PnL from closed portion only
-                realizedFromClose = case side of
-                    Long  -> cfForClosed - releasedCost
-                    Short -> releasedCost + cfForClosed
+                -- Remaining cash flow for new position
+                cfForNew = cf - cfForClosed
                 -- Cost basis for new position depends on side
                 newCost = case txSide tx of
                     Long  -> abs cfForNew                -- Money paid for long
@@ -147,7 +143,7 @@ reduceOrFlipPosition tx pos =
                 { posSide = Just (txSide tx)
                 , posQuantity = Quantity newQ
                 , posCostBasis = Balance newCost
-                , posRealizedPnL = posRealizedPnL pos + Balance realizedFromClose
+                , posRealizedPnL = posRealizedPnL pos + Balance realized
                 }
 
 -- | Resolve a position when market closes
