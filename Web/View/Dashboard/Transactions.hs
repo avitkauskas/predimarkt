@@ -6,6 +6,7 @@ module Web.View.Dashboard.Transactions where
 import Application.Helper.View (formatPricePercent)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
+import Database.PostgreSQL.Simple.TypeInfo.Static (money)
 import Text.Printf (printf)
 import Web.View.Prelude
 
@@ -51,55 +52,60 @@ renderTransactionCard twd =
         cashFlow = get #cashFlow txn
         realizedPnL = get #realizedPnl txn
 
-        timeStr = formatTime defaultTimeLocale "%H:%M" (get #createdAt txn)
-        dateStr = formatTime defaultTimeLocale "%d/%m/%Y" (get #createdAt txn)
+        timestampStr = formatTime defaultTimeLocale "%F %R" (get #createdAt txn)
 
         priceBefore = get #priceBefore txn
         priceAfter = get #priceAfter txn
-        priceImpact = if priceBefore > 0 && priceAfter > 0
-            then formatPricePercent priceBefore <> " → " <> formatPricePercent priceAfter
-            else "-"
+        priceImpact = formatPricePercent priceBefore <> " → " <> formatPricePercent priceAfter
 
         nextAction = if isBuy then Just "buy" else Just "sell"
         marketUrl = ShowMarketAction market.id (Just asset.id) nextAction
 
         typeText = if isBuy then "bought" else "sold" :: Text
         typeColor = if isBuy then "text-success" else "text-danger" :: Text
-        amountPrefix = if isBuy then "-" :: Text else "+" :: Text
-        pnlClass = if realizedPnL >= 0 then "text-success fw-bold" else "text-danger fw-bold" :: Text
-        pnlSign = if realizedPnL >= 0 then "+" else "-" :: Text
+        pnlText = if realizedPnL /= 0
+            then formatMoneySigned realizedPnL
+            else "--"
+        moneyClass :: Integer -> Text
+        moneyClass money = case money of
+             n | n > 0 -> "text-success fw-bold"
+               | n < 0 -> "text-danger fw-bold"
+               | otherwise -> "text-muted fw-medium"
     in [hsx|
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-body p-3">
+                <div class="card-body px-3 py-2">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
                             <a href={marketUrl} class="text-decoration-none">
-                                <h6 class="mb-0 fw-bold">{get #title market}</h6>
-                                <small class="text-muted">{get #name asset}</small>
+                                <span class="h6 mb-0 fw-bold">{get #title market}</span> -
+                                <span class="text-muted">{get #name asset}</span>
                             </a>
-                        </div>
-                        <div class="text-end">
-                            <span class={typeColor}>{typeText} {show qty}</span>
-                            <div class="small text-muted">{timeStr} {dateStr}</div>
                         </div>
                     </div>
 
-                    <div class="row text-center small border-top border-bottom py-2">
-                        <div class="col-4 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">Amount</div>
-                            <div class="fw-medium">
-                                {amountPrefix}€{formatMoneyAmount (abs cashFlow)}
+                    <div class="row text-center small border-top pt-2">
+                        <div class="col-3 border-end">
+                            <div class="small text-muted fw-medium"
+                                 style="font-size: 0.7rem;">
+                                {timestampStr}
+                            </div>
+                            <div class={typeColor <> " fw-bold"}>{typeText} {show qty}</div>
+                        </div>
+                        <div class="col-3 border-end">
+                            <div class="text-muted" style="font-size: 0.7rem;">Cash Flow</div>
+                            <div class={moneyClass cashFlow}>
+                                {formatMoneySigned cashFlow}
                             </div>
                         </div>
-                        <div class="col-4 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">P&L</div>
-                            <div class={pnlClass}>
-                                {pnlSign}€{formatMoneyAmount (abs realizedPnL)}
+                        <div class="col-3 border-end">
+                            <div class="text-muted" style="font-size: 0.7rem;">Realized P&L</div>
+                            <div class={moneyClass realizedPnL}>
+                                {pnlText}
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="text-muted" style="font-size: 0.7rem;">Price Impact</div>
+                        <div class="col-3">
+                            <div class="text-muted" style="font-size: 0.7rem;">Probability Impact</div>
                             <div class="fw-medium">{priceImpact}</div>
                         </div>
                     </div>
@@ -107,11 +113,6 @@ renderTransactionCard twd =
             </div>
         </div>
     |]
-
-formatMoneyAmount :: Integer -> Text
-formatMoneyAmount cents =
-    let euros = fromIntegral cents / 100 :: Double
-    in pack (printf "%.2f" euros)
 
 renderTxnPagination :: Int -> Int -> Html
 renderTxnPagination currentPage totalPages =

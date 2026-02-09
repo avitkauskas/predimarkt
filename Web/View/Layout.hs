@@ -124,7 +124,7 @@ dashboardLayout inner = [hsx|
                                     ["nav-link",
                                     ("active", isActivePath (pathTo DashboardHoldingsAction))]}
                                href={DashboardHoldingsAction}>
-                              Holdings
+                              Positions
                             </a>
                         </li>
                         <li class="nav-item">

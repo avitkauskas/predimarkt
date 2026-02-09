@@ -111,9 +111,8 @@ renderHoldingCard hwd =
                             <div class="fw-medium">{realizedDisplay}</div>
                         </div>
                         <div class="col-2">
-                            <div class="text-muted" style="font-size: 0.7rem;">Max Open P&L</div>
-                            <span class="fw-medium">{formatMoneySigned (negate costBasis)}</span>&nbsp;
-                            <span class="fw-medium">{formatMoneySigned maxProfit}</span>
+                            <div class="text-muted" style="font-size: 0.7rem;">Open P&L Range</div>
+                            {renderPnLRange isOpen costBasis maxProfit}
                         </div>
                     </div>
 
@@ -169,3 +168,12 @@ renderActionButton True isProfitable _ assetId =
             <button type="submit" class={"btn btn-sm " <> cls}>{txt}</button>
         </form>
     |]
+
+renderPnLRange :: Bool -> Integer -> Integer -> Html
+renderPnLRange isOpen costBasis maxProfit =
+    if isOpen
+    then [hsx|
+        <span class="fw-medium">{formatMoneySigned (negate costBasis)}</span>&nbsp;
+        <span class="fw-medium">{formatMoneySigned maxProfit}</span>
+    |]
+    else [hsx|<span class="fw-medium">--</span>|]
