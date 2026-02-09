@@ -60,5 +60,6 @@ formatMoney cents =
 -- | Format cents as signed money (e.g., "+€10.23" or "-€5.00")
 formatMoneySigned :: Integral a => a -> Text
 formatMoneySigned cents
-    | cents >= 0 = "+" <> formatMoney cents
+    | cents == 0 = "€0.00"
+    | cents > 0 = "+" <> formatMoney cents
     | otherwise = "-" <> formatMoney (abs cents)

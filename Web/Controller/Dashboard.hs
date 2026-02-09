@@ -1,7 +1,7 @@
 module Web.Controller.Dashboard where
 
-import qualified Domain.LMSR as LMSR
 import qualified Data.Map as M
+import qualified Domain.LMSR as LMSR
 import Web.Controller.Prelude
 import Web.View.Dashboard.Holdings
 import Web.View.Dashboard.Markets
@@ -31,7 +31,9 @@ instance Controller DashboardController where
             let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
             return (mId, market, assets, lmsrState)
 
-        let marketDataMap = M.fromList [(marketId, (market, lmsrState)) | (marketId, market, _, lmsrState) <- marketsWithAssets]
+        let marketDataMap = M.fromList [
+                      (marketId, (market, lmsrState))
+                    | (marketId, market, _, lmsrState) <- marketsWithAssets ]
 
         -- Calculate current value for each holding
         holdingsWithValue <- forM holdings $ \holding -> do
@@ -42,17 +44,16 @@ instance Controller DashboardController where
                         currentPrice = LMSR.price asset.symbol lmsrState
                         qty = holding.quantity
 
-                    let currentValueCents = case qty of
+                    let currentValue = case qty of
                             0 -> Nothing
                             q | q > 0 -> Just $ LMSR.calculateSellRevenue q currentPrice market.beta
                             q -> Just $ LMSR.calculateBuyCost (abs q) currentPrice market.beta
 
-                        assetPrice = case qty of
-                            0 -> Nothing
-                            _ -> Just currentPrice
+                        assetPrice = Just currentPrice
 
-                    return HoldingWithValue { holding = holding, currentValue = currentValueCents, assetPrice = assetPrice }
-                Nothing -> return HoldingWithValue { holding = holding, currentValue = Nothing, assetPrice = Nothing }
+                    return HoldingWithValue { .. }
+                Nothing -> return HoldingWithValue
+                    { holding = holding, currentValue = Nothing, assetPrice = Nothing }
 
         render HoldingsView { .. }
 
