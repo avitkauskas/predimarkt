@@ -1,6 +1,6 @@
 {
     inputs = {
-        ihp.url = "github:digitallyinduced/ihp/v1.4.1";
+        ihp.url = "github:digitallyinduced/ihp";
         nixpkgs.follows = "ihp/nixpkgs";
         flake-parts.follows = "ihp/flake-parts";
         devenv.follows = "ihp/devenv";
@@ -43,6 +43,7 @@
                 devenv.shells.default = {
                     # Start Mailhog on local development to catch outgoing emails
                     # services.mailhog.enable = true;
+                    services.postgres.package = pkgs.postgresql_18;
 
                     # Custom processes that don't appear in https://devenv.sh/reference/options/
                     processes = {

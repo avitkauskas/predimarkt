@@ -303,7 +303,7 @@ instance Controller MarketsController where
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
 
-fetchAssetsFromParams :: (?context :: ControllerContext) => IO [Asset]
+fetchAssetsFromParams :: (?context :: ControllerContext, ?request :: Request) => IO [Asset]
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->
         let asset = newRecord @Asset

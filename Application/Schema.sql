@@ -7,7 +7,7 @@ END;
 $$ language plpgsql;
 CREATE TYPE market_status AS ENUM ('market_status_draft', 'market_status_open', 'market_status_closed', 'market_status_resolved', 'market_status_refunded');
 CREATE TABLE users (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
     nickname TEXT NOT NULL,
     password_hash TEXT NOT NULL,
@@ -20,7 +20,7 @@ CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 CREATE TABLE admins (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
     password_hash TEXT NOT NULL,
     locked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
@@ -31,13 +31,13 @@ CREATE TABLE admins (
 CREATE UNIQUE INDEX admins_email_index ON admins (LOWER(email));
 CREATE TRIGGER update_admins_updated_at BEFORE UPDATE ON admins FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 CREATE TABLE categories (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     sort_idx INT
 );
 CREATE TABLE markets (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     user_id UUID,
     title TEXT NOT NULL,
     slug TEXT NOT NULL,
@@ -63,7 +63,7 @@ CREATE INDEX markets_closed_at_index ON markets (closed_at);
 CREATE UNIQUE INDEX markets_category_id_slug_index ON markets (category_id, slug);
 CREATE TRIGGER update_markets_updated_at BEFORE UPDATE ON markets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 CREATE TABLE assets (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     market_id UUID NOT NULL,
     name TEXT NOT NULL,
     symbol TEXT NOT NULL,
@@ -73,13 +73,13 @@ CREATE TABLE assets (
 CREATE INDEX assets_market_id_index ON assets (market_id);
 CREATE TRIGGER update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 CREATE TABLE wallets (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL UNIQUE,
     amount BIGINT DEFAULT 100000 NOT NULL
 );
 CREATE INDEX wallets_user_id_index ON wallets (user_id);
 CREATE TABLE transactions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL,
     market_id UUID NOT NULL,
     asset_id UUID NOT NULL,
@@ -96,7 +96,7 @@ CREATE INDEX transactions_market_id_index ON transactions (market_id);
 CREATE INDEX transactions_asset_id_index ON transactions (asset_id);
 CREATE INDEX transactions_created_at_index ON transactions (created_at);
 CREATE TABLE holdings (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL,
     market_id UUID NOT NULL,
     asset_id UUID NOT NULL,
