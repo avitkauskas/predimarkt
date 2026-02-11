@@ -120,7 +120,7 @@ renderTxnPagination currentPage totalPages =
     then [hsx||]
     else [hsx|
         <nav aria-label="Transaction pagination" class="mt-3">
-            <ul class="pagination pagination-sm justify-content-center">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
                 {renderPrev currentPage}
                 {renderPages currentPage totalPages}
                 {renderNext currentPage totalPages}
@@ -129,12 +129,45 @@ renderTxnPagination currentPage totalPages =
     |]
     where
         renderPrev cp = if cp <= 1
-            then [hsx|<li class="page-item disabled"><span class="page-link">←</span></li>|]
-            else [hsx|<li class="page-item"><a class="page-link" href={DashboardTransactionsAction (Just (cp - 1))}>←</a></li>|]
+            then [hsx|
+                    <li class="page-item disabled prevent-select">
+                        <span class="page-link">←</span>
+                    </li>
+            |]
+            else [hsx|
+                    <li class="page-item">
+                        <a class="page-link prevent-select" style="box-shadow: none;"
+                           href={DashboardTransactionsAction (Just (cp - 1))}>
+                           ←
+                        </a>
+                    </li>
+            |]
         renderNext cp tp = if cp >= tp
-            then [hsx|<li class="page-item disabled"><span class="page-link">→</span></li>|]
-            else [hsx|<li class="page-item"><a class="page-link" href={DashboardTransactionsAction (Just (cp + 1))}>→</a></li>|]
+            then [hsx|
+                    <li class="page-item disabled prevent-select">
+                        <span class="page-link">→</span>
+                    </li>
+            |]
+            else [hsx|
+                    <li class="page-item">
+                        <a class="page-link prevent-select" style="box-shadow: none;"
+                           href={DashboardTransactionsAction (Just (cp + 1))}>
+                           →
+                        </a>
+                    </li>
+            |]
         renderPages cp tp = forEach [1..tp] $ \n ->
             if n == cp
-            then [hsx|<li class="page-item active"><span class="page-link">{show n}</span></li>|]
-            else [hsx|<li class="page-item"><a class="page-link" href={DashboardTransactionsAction (Just n)}>{show n}</a></li>|]
+            then [hsx|
+                    <li class="page-item active prevent-select">
+                        <span class="page-link">{show n}</span>
+                    </li>
+            |]
+            else [hsx|
+                    <li class="page-item">
+                        <a class="page-link prevent-select" style="box-shadow: none;"
+                           href={DashboardTransactionsAction (Just n)}>
+                            {show n}
+                        </a>
+                    </li>
+            |]

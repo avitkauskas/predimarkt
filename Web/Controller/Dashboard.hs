@@ -109,7 +109,7 @@ instance Controller DashboardController where
 
     action DashboardTransactionsAction { page } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
-        let itemsPerPage = 15
+        let itemsPerPage = 5
 
         -- Get total count for pagination
         totalCount <- query @Transaction
