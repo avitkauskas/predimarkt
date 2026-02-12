@@ -50,9 +50,8 @@ renderMarket market = [hsx|
                 </a>
                 <div class={classes [
                         "card-header position-relative text-muted small d-flex",
-                        "justify-content-between align-items-center py-1",
-                        (headerClass, True)
-                    ]}>
+                        "justify-content-between align-items-center py-1 border-bottom-0",
+                        (headerClass, True)]}>
                     <span>{category.name}</span>
                     {statusBadge}
                 </div>
@@ -80,14 +79,16 @@ renderMarket market = [hsx|
             </div>
 
             <!-- Footer (not clickable) -->
-            <div class="card-footer text-muted small d-flex align-items-center py-1 border-top-0">
+            <div class={classes ["card-footer text-muted small",
+                                 "d-flex align-items-center py-1 border-top-0",
+                                 (footerClass, True)]}>
                 <span class="me-3" title="Number of trades">
                     <i class="bi bi-arrow-left-right"></i>
-                    {market.trades}
+                    {formatWithSep market.trades}
                 </span>
                 <span class="me-3" title="Total shares traded">
                     <i class="bi bi-layers"></i>
-                    {market.volume}
+                    {formatWithSep market.volume}
                 </span>
                 <span class="me-3" title="Total money turnover">
                     <i class="bi bi-cash-stack"></i>
@@ -107,6 +108,7 @@ renderMarket market = [hsx|
 
         bodyClass = marketStatusClasses market.status
         headerClass = marketStatusHeaderClasses market.status
+        footerClass = marketStatusFooterClasses market.status
 
         lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- market.assets]
 

@@ -45,10 +45,6 @@
     display: none;
 }
 
-.card-header {
-    border-bottom: 0 !important;
-}
-
 [data-bs-theme="dark"] {
     --bs-body-color: #adb5bd; /* Dimmed white for comfort */
 }
@@ -63,27 +59,39 @@
 
 /* Market status colors - Light theme */
 .market-status-closed-header {
-    background-color: #dbeafe; /* blue-100 */
+    background-color: rgba(219, 234, 254, 1); /* blue-100 */
+}
+
+.market-status-closed-footer {
+    background-color: rgba(219, 234, 254, 0.75);
 }
 
 .market-status-closed-body {
-    background-color: #eff6ff; /* blue-50 */
+    background-color: rgba(239, 246, 255, 1); /* blue-50 */
 }
 
 .market-status-resolved-header {
-    background-color: #dcfce7; /* green-100 */
+    background-color: rgba(220, 252, 231, 1); /* green-100 */
+}
+
+.market-status-resolved-footer {
+    background-color: rgba(220, 252, 231, 0.75);
 }
 
 .market-status-resolved-body {
-    background-color: #f0fdf4; /* green-50 */
+    background-color: rgba(240, 253, 244, 1); /* green-50 */
 }
 
 .market-status-refunded-header {
-    background-color: #fee2e2; /* red-100 */
+    background-color: rgba(254, 226, 226, 1); /* red-100 */
+}
+
+.market-status-refunded-footer {
+    background-color: rgba(254, 226, 226, 0.75);
 }
 
 .market-status-refunded-body {
-    background-color: #fef2f2; /* red-50 */
+    background-color: rgba(254, 242, 242, 1); /* red-50 */
 }
 
 /* Market status colors - Dark theme (Pastel Dark) */
@@ -97,6 +105,10 @@
     background-color: rgba(94, 158, 255, 0.14); /* Brighter pastel blue overlay */
 }
 
+[data-bs-theme="dark"] .market-status-closed-footer {
+    background-color: rgba(94, 158, 255, 0.10);
+}
+
 [data-bs-theme="dark"] .market-status-closed-body {
     background-color: rgba(94, 158, 255, 0.06);
 }
@@ -105,12 +117,20 @@
     background-color: rgba(74, 222, 128, 0.14); /* Brighter pastel green overlay */
 }
 
+[data-bs-theme="dark"] .market-status-resolved-footer {
+    background-color: rgba(74, 222, 128, 0.10);
+}
+
 [data-bs-theme="dark"] .market-status-resolved-body {
     background-color: rgba(74, 222, 128, 0.06);
 }
 
 [data-bs-theme="dark"] .market-status-refunded-header {
     background-color: rgba(248, 113, 113, 0.14); /* Brighter pastel red overlay */
+}
+
+[data-bs-theme="dark"] .market-status-refunded-footer {
+    background-color: rgba(248, 113, 113, 0.10);
 }
 
 [data-bs-theme="dark"] .market-status-refunded-body {

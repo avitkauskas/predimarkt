@@ -61,6 +61,7 @@ instance Controller MarketsController where
         market <- fetch mId
             >>= fetchRelated #assets . modify #assets (orderByDesc #quantity)
             >>= fetchRelated #categoryId
+
         render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction }
 
     action EditMarketAction { marketId } = do
