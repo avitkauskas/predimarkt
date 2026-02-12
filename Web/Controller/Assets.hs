@@ -257,4 +257,4 @@ instance Controller AssetsController where
         let action = if closeSide == Domain.Short then "sold" else "bought"
         setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show qty <> " shares for " <> formatMoney tradeAmount
 
-        redirectTo DashboardHoldingsAction
+        redirectTo (DashboardHoldingsAction Nothing)

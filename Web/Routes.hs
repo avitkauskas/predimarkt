@@ -43,7 +43,10 @@ instance CanRoute MarketsController where
         <|> (string "/RefundMarket" >> pure (RefundMarketAction { marketId = def }))
 
 instance HasPath DashboardController where
-    pathTo DashboardHoldingsAction = "/DashboardHoldings"
+    pathTo DashboardHoldingsAction { page } =
+        case page of
+            Just p  -> "/DashboardHoldings?page=" <> inputValue p
+            Nothing -> "/DashboardHoldings"
     pathTo DashboardWalletsAction = "/DashboardWallets"
     pathTo DashboardMarketsAction { statusFilter } =
         case statusFilter of
@@ -60,7 +63,7 @@ instance HasPath DashboardController where
 
 instance CanRoute DashboardController where
     parseRoute' =
-        (string "/DashboardHoldings" >> pure DashboardHoldingsAction)
+        (string "/DashboardHoldings" >> pure (DashboardHoldingsAction { page = Nothing }))
         <|> (string "/DashboardWallets" >> pure DashboardWalletsAction)
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction { statusFilter = Nothing }))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction { page = Nothing }))

@@ -16,26 +16,31 @@ data HoldingWithValue = HoldingWithValue
     , assetPrice   :: Maybe Double
     }
 
-data HoldingsView = HoldingsView { holdingsWithValue :: [HoldingWithValue] }
+data HoldingsView = HoldingsView
+    { holdingsWithValue :: [HoldingWithValue]
+    , currentPage       :: Int
+    , totalPages        :: Int
+    }
 
 instance View HoldingsView where
     html HoldingsView { .. } = dashboardLayout [hsx|
         <div class="container-fluid py-3">
             <h5 class="mb-3 text-muted">Positions</h5>
-            {renderHoldingsContent holdingsWithValue}
+            {renderHoldingsContent holdingsWithValue currentPage totalPages}
         </div>
     |]
 
-renderHoldingsContent :: (?context :: ControllerContext) => [HoldingWithValue] -> Html
-renderHoldingsContent [] = [hsx|
+renderHoldingsContent :: (?context :: ControllerContext) => [HoldingWithValue] -> Int -> Int -> Html
+renderHoldingsContent [] _ _ = [hsx|
     <div class="alert alert-info">
         No active positions. <a href={MarketsAction} class="alert-link">Browse markets</a> to trade.
     </div>
 |]
-renderHoldingsContent holdings = [hsx|
+renderHoldingsContent holdings currentPage totalPages = [hsx|
     <div class="row g-3">
         {forEach holdings renderHoldingCard}
     </div>
+    {renderHoldingsPagination currentPage totalPages}
 |]
 
 renderHoldingCard :: (?context :: ControllerContext) => HoldingWithValue -> Html
@@ -177,3 +182,8 @@ renderPnLRange isOpen costBasis maxProfit =
         <span class="fw-medium">{formatMoneySigned maxProfit}</span>
     |]
     else [hsx|<span class="fw-medium">--</span>|]
+
+renderHoldingsPagination :: Int -> Int -> Html
+renderHoldingsPagination currentPage totalPages =
+    renderSmartPagination currentPage totalPages "Positions pagination"
+        (\pageNum -> pathTo (DashboardHoldingsAction (Just pageNum)))

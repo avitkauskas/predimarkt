@@ -87,3 +87,118 @@ formatWithSep n =
   where
     chunksOf3 [] = []
     chunksOf3 xs = take 3 xs : chunksOf3 (drop 3 xs)
+
+-- Pagination Helpers
+
+-- | Data type representing a pagination link item
+data PaginationItem
+    = PageNumber Int
+    | Ellipsis Int
+    deriving (Eq, Show)
+
+-- | Generate the list of pagination items for smart pagination
+-- Shows up to 15 items total: [1,2,3,...,window,...,last-2,last-1,last]
+-- When on early pages: [1..11], ellipsis, [last-2,last-1,last]
+-- When on late pages: [1,2,3], ellipsis, [last-10..last]
+-- When in middle: [1,2,3], ellipsis, window around current, ellipsis, [last-2,last-1,last]
+generatePaginationItems :: Int -> Int -> [PaginationItem]
+generatePaginationItems currentPage totalPages
+    | totalPages <= 15 = map PageNumber [1..totalPages]
+    | currentPage < 9 =
+        let firstEllipsisPage = (10 + totalPages) `div` 2
+        in map PageNumber [1..11] ++ [Ellipsis firstEllipsisPage] ++ map PageNumber [totalPages - 2, totalPages - 1, totalPages]
+    | currentPage > totalPages - 8 =
+        let lastEllipsisPage = (totalPages - 6) `div` 2
+        in map PageNumber [1, 2, 3] ++ [Ellipsis lastEllipsisPage] ++ map PageNumber [totalPages - 10..totalPages]
+    | otherwise =
+        let firstPages = [1, 2, 3]
+            lastPages = [totalPages - 2, totalPages - 1, totalPages]
+            windowStart = max 4 (currentPage - 3)
+            windowEnd = min (totalPages - 3) (currentPage + 3)
+            middlePages = [windowStart..windowEnd]
+            firstEllipsisMid = (3 + windowStart) `div` 2
+            lastEllipsisMid = (windowEnd + totalPages - 2) `div` 2
+        in concat [
+            map PageNumber firstPages,
+            [Ellipsis firstEllipsisMid],
+            map PageNumber middlePages,
+            [Ellipsis lastEllipsisMid],
+            map PageNumber lastPages
+           ]
+
+-- | Render a full pagination component with prev/next buttons
+-- Takes the current page, total pages, aria label, and a function to generate page URLs
+renderSmartPagination
+    :: (?context :: ControllerContext)
+    => Int
+    -> Int
+    -> Text
+    -> (Int -> Text)
+    -> Html
+renderSmartPagination currentPage totalPages ariaLabel pageUrlFn =
+    if totalPages <= 1
+    then [hsx||]
+    else [hsx|
+        <nav aria-label={ariaLabel} class="mt-3">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {renderPrev}
+                {renderPages}
+                {renderNext}
+            </ul>
+        </nav>
+    |]
+    where
+        renderPrev = if currentPage <= 1
+            then [hsx|
+                    <li class="page-item disabled prevent-select">
+                        <span class="page-link">←</span>
+                    </li>
+            |]
+            else [hsx|
+                    <li class="page-item">
+                        <a class="page-link prevent-select" style="box-shadow: none;"
+                           href={pageUrlFn (currentPage - 1)}>
+                           ←
+                        </a>
+                    </li>
+            |]
+        renderNext = if currentPage >= totalPages
+            then [hsx|
+                    <li class="page-item disabled prevent-select">
+                        <span class="page-link">→</span>
+                    </li>
+            |]
+            else [hsx|
+                    <li class="page-item">
+                        <a class="page-link prevent-select" style="box-shadow: none;"
+                           href={pageUrlFn (currentPage + 1)}>
+                           →
+                        </a>
+                    </li>
+            |]
+        renderPages = mconcat $ map renderPageLink (generatePaginationItems currentPage totalPages)
+
+        renderPageLink :: PaginationItem -> Html
+        renderPageLink (Ellipsis midPage) = [hsx|
+                <li class="page-item">
+                    <a class="page-link prevent-select" style="box-shadow: none;"
+                       href={pageUrlFn midPage}>
+                        …
+                    </a>
+                </li>
+        |]
+        renderPageLink (PageNumber n) =
+            if n == currentPage
+            then [hsx|
+                    <li class="page-item active prevent-select">
+                        <span class="page-link">{show n}</span>
+                    </li>
+            |]
+            else [hsx|
+                    <li class="page-item">
+                        <a class="page-link prevent-select" style="box-shadow: none;"
+                           href={pageUrlFn n}>
+                            {show n}
+                        </a>
+                    </li>
+            |]

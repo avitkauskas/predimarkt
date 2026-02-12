@@ -11,10 +11,24 @@ import Web.View.Dashboard.Wallets
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardHoldingsAction = autoRefresh do
+    action DashboardHoldingsAction { page } = autoRefresh do
+        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
+        let itemsPerPage = 4
+
+        -- Get total count for pagination
+        totalCount <- query @Holding
+            |> filterWhere (#userId, currentUserId)
+            |> fetchCount
+
+        let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
+        let validPage = max 1 (min currentPage totalPages)
+        let pageOffset = (validPage - 1) * itemsPerPage
+
         holdings <- query @Holding
             |> filterWhere (#userId, currentUserId)
             |> orderByDesc #updatedAt
+            |> limit itemsPerPage
+            |> offset pageOffset
             |> fetch
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #marketId
@@ -56,7 +70,11 @@ instance Controller DashboardController where
                 Nothing -> return HoldingWithValue
                     { holding = holding, currentValue = Nothing, assetPrice = Nothing }
 
-        render HoldingsView { .. }
+        render HoldingsView
+            { holdingsWithValue = holdingsWithValue
+            , currentPage = validPage
+            , totalPages = totalPages
+            }
 
     action DashboardWalletsAction = do
         wallet <- query @Wallet
