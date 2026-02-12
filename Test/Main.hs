@@ -173,9 +173,9 @@ main = hspec do
             -- Verify results
             Domain.posSide pos2 `shouldBe` Just Domain.Short
             Domain.posQuantity pos2 `shouldBe` Domain.Quantity 30
-            -- Verify realized PnL (negative due to costs)
+            -- Verify realized PnL is now positive (profit from closing at lower price)
             let Domain.Balance realized = Domain.posRealizedPnL pos2
-            realized `shouldBe` (-2220)  -- Actual LMSR-calculated value
+            realized `shouldBe` 86  -- Actual LMSR-calculated profit
 
     describe "Scenario 3: Long to Short Flip" $ do
         it "correctly calculates realized PnL and new short cost basis" $ do
@@ -271,9 +271,9 @@ main = hspec do
             Domain.posSide pos2 `shouldBe` Nothing
             Domain.posQuantity pos2 `shouldBe` Domain.Quantity 0
             Domain.posCostBasis pos2 `shouldBe` Domain.Balance 0
-            -- Realized PnL = cashReceived - buyCost (expected negative due to spread)
+            -- When shorting and closing at same price: profit = cashReceived - buyCost ≈ 0
             let Domain.Balance realized = Domain.posRealizedPnL pos2
-            realized `shouldBe` (-11648)  -- Actual LMSR-calculated value
+            realized `shouldBe` 0  -- Now correctly shows break-even when closing at same price
 
     describe "Resolve Position" do
         describe "Long positions" $ do

@@ -128,13 +128,14 @@ reduceOrFlipPosition ctx trade pos =
         -- Proportional cash flow for closed portion
         cfForClosed = (cf * closedQ) `quot` tradeQ
 
-        -- Unified realized PnL calculation for both long and short
-        -- For long: cf is positive (received), cost is positive (paid earlier)
-        --   realized = received - releasedCost = profit/loss
-        -- For short: cf is negative (paying to close), cost is positive (received earlier)
-        --   realized = cf - releasedCost = -costPaid - costReceivedEarlier = loss/profit
+        -- Realized PnL calculation
+        -- For long: received (cf) - cost basis released = profit/loss
+        -- For short: cost basis released - paid (abs cf) = profit/loss
+        -- Note: cf is positive for long sells, negative for short buys
         realized :: Integer
-        realized = cfForClosed - releasedCost
+        realized = case side of
+            Long  -> cfForClosed - releasedCost
+            Short -> releasedCost + cfForClosed  -- cfForClosed is negative
     in
         if tradeQ < oldQ
         then
