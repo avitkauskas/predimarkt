@@ -175,7 +175,7 @@ main = hspec do
             Domain.posQuantity pos2 `shouldBe` Domain.Quantity 30
             -- Verify realized PnL is now positive (profit from closing at lower price)
             let Domain.Balance realized = Domain.posRealizedPnL pos2
-            realized `shouldBe` 86  -- Actual LMSR-calculated profit
+            realized `shouldBe` 31  -- Corrected LMSR-calculated profit
 
     describe "Scenario 3: Long to Short Flip" $ do
         it "correctly calculates realized PnL and new short cost basis" $ do
@@ -344,17 +344,17 @@ main = hspec do
     describe "Release Proportion Calculation" $ do
         it "returns 1.0 when closing full position" $ do
             let ctx = mkBinaryMarketContext testYesAsset 100 50
-                ratio = Logic.calculateReleaseProportion ctx 100 100
+                ratio = Logic.calculateReleaseProportion ctx Domain.Long 100 100
             ratio `shouldBe` 1.0
 
         it "returns 0.0 when closing 0 shares" $ do
             let ctx = mkBinaryMarketContext testYesAsset 100 50
-                ratio = Logic.calculateReleaseProportion ctx 0 100
+                ratio = Logic.calculateReleaseProportion ctx Domain.Long 0 100
             ratio `shouldBe` 0.0
 
         it "returns proportional value for partial close" $ do
             let ctx = mkBinaryMarketContext testYesAsset 100 50
-                ratio = Logic.calculateReleaseProportion ctx 30 100
+                ratio = Logic.calculateReleaseProportion ctx Domain.Long 30 100
             -- With LMSR, selling 30/100 shares doesn't give exactly 0.3 of value
             ratio > 0 && ratio < 1 `shouldBe` True
 

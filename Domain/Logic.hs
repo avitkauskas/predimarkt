@@ -46,8 +46,8 @@ positionValue pos currentPrice = do
 -- | Calculate the proportion of position value to release based on LMSR
 -- Returns ratio between 0.0 and 1.0
 -- Uses LMSR sell value (for longs) or buy value (for shorts) to determine proportion
-calculateReleaseProportion :: MarketContext -> Integer -> Integer -> Double
-calculateReleaseProportion ctx closedQty totalQty
+calculateReleaseProportion :: MarketContext -> Side -> Integer -> Integer -> Double
+calculateReleaseProportion ctx side closedQty totalQty
     | totalQty == 0 = 1.0  -- Full release if no position
     | closedQty >= totalQty = 1.0  -- Full release if closing all
     | otherwise =
@@ -58,13 +58,20 @@ calculateReleaseProportion ctx closedQty totalQty
             allAssets = (assetId, totalQty) : otherAssets
             lmsrState = LMSR.precompute beta allAssets
             currentPrice = LMSR.price assetId lmsrState
-            -- For both longs and shorts, we use sell revenue to determine value proportion
-            -- (sell value represents what we'd get for liquidating)
-            sellClosed = fromIntegral $ LMSR.calculateSellRevenue closedQty currentPrice beta
-            sellTotal = fromIntegral $ LMSR.calculateSellRevenue totalQty currentPrice beta
-        in if sellTotal == 0
+            -- For longs: use sell revenue (what you receive from closing)
+            -- For shorts: use buy cost (what you pay to close)
+            (valClosed, valTotal) = case side of
+                Long ->
+                    ( fromIntegral $ LMSR.calculateSellRevenue closedQty currentPrice beta
+                    , fromIntegral $ LMSR.calculateSellRevenue totalQty currentPrice beta
+                    )
+                Short ->
+                    ( fromIntegral $ LMSR.calculateBuyCost closedQty currentPrice beta
+                    , fromIntegral $ LMSR.calculateBuyCost totalQty currentPrice beta
+                    )
+        in if valTotal == 0
            then fromIntegral closedQty / fromIntegral totalQty  -- Fallback to quantity-based
-           else sellClosed / sellTotal
+           else valClosed / valTotal
 
 -- | Apply a trade to update a position
 -- MarketContext provides LMSR data for accurate proportion calculations
@@ -121,7 +128,7 @@ reduceOrFlipPosition ctx trade pos =
         closedQ = min oldQ tradeQ
 
         -- Cost basis released using LMSR-based proportion
-        releaseRatio = calculateReleaseProportion ctx closedQ oldQ
+        releaseRatio = calculateReleaseProportion ctx side closedQ oldQ
         releasedCost :: Integer
         releasedCost = round $ fromIntegral oldCost * releaseRatio
 
