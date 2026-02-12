@@ -12,38 +12,39 @@ module Domain.LMSR
 
 import qualified Data.List
 import qualified Data.Map as M
+import Generated.Types
 import IHP.Prelude
 
 -- | LMSR state for efficient calculations
 data LMSRState = LMSRState
-    { sMap :: M.Map Text Double  -- Map from asset symbol to s-value
+    { sMap :: M.Map (Id Asset) Double  -- Map from asset ID to s-value
     , sSum :: !Double           -- Sum of all s-values
     }
 
 -- | Precompute LMSR state from quantities and beta
-precompute :: Integer -> [(Text, Integer)] -> LMSRState
+precompute :: Integer -> [(Id Asset, Integer)] -> LMSRState
 precompute beta items =
     let quantities = map snd items
         m = if null quantities then 0 else maximum quantities
         betaD = fromIntegral beta
         sMap = M.fromList
-            [ (sym, exp (fromIntegral (q - m) / betaD))
-            | (sym, q) <- items
+            [ (assetId, exp (fromIntegral (q - m) / betaD))
+            | (assetId, q) <- items
             ]
         sSum = sum (M.elems sMap)
     in LMSRState sMap sSum
 
 -- | Get s-value for an item
-sumItem :: Text -> LMSRState -> Double
-sumItem sym st = fromMaybe 0.0 (M.lookup sym (sMap st))
+sumItem :: Id Asset -> LMSRState -> Double
+sumItem assetId st = fromMaybe 0.0 (M.lookup assetId (sMap st))
 
 -- | Get total sum of s-values
 sumTotal :: LMSRState -> Double
 sumTotal = sSum
 
 -- | Calculate current price for an item
-price :: Text -> LMSRState -> Double
-price sym st = sumItem sym st / sumTotal st
+price :: Id Asset -> LMSRState -> Double
+price assetId st = sumItem assetId st / sumTotal st
 
 -- | Core LMSR calculation
 -- Takes: current price ratio (a), normalized quantity (z), sign

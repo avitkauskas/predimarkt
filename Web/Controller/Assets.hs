@@ -45,9 +45,9 @@ instance Controller AssetsController where
             |> filterWhere (#marketId, market.id)
             |> fetch
 
-        -- Calculate LMSR state
-        let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
-        let currentPrice = LMSR.price asset.symbol lmsrState
+        -- Calculate LMSR state using asset IDs
+        let lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- assets]
+        let currentPrice = LMSR.price asset.id lmsrState
 
         -- Get user's wallet
         wallet <- query @Wallet
@@ -75,21 +75,29 @@ instance Controller AssetsController where
 
         let currentPosition = maybe Domain.emptyPosition toDomainPosition maybeHolding
 
-        -- Build domain transaction (prices will be set after asset update)
-        let domainTx = Domain.Transaction
-                { Domain.txSide = side
-                , Domain.txQuantity = case Domain.mkQuantity paramQty of
-                    Just q  -> q
-                    Nothing -> error "Invalid quantity"
-                , Domain.txCashFlow = Domain.Balance deltaCents
-                , Domain.txPriceBefore = 0  -- Placeholder, will be set to currentPrice
-                , Domain.txPriceAfter = 0   -- Placeholder, will be calculated after trade
+        -- Build market context for LMSR-based calculations
+        let otherAssets = [(a.id, a.quantity) | a <- assets, a.id /= asset.id]
+        let marketContext = Domain.MarketContext
+                { Domain.mcBeta = market.beta
+                , Domain.mcAssetId = asset.id
+                , Domain.mcOtherAssets = otherAssets
                 }
 
-        -- Apply transaction to get new position
-        let newPosition = Domain.applyTransaction domainTx currentPosition
+        -- Build domain trade (prices will be set after asset update)
+        let domainTrade = Domain.Trade
+                { Domain.tradeSide = side
+                , Domain.tradeQuantity = case Domain.mkQuantity paramQty of
+                    Just q  -> q
+                    Nothing -> error "Invalid quantity"
+                , Domain.tradeCashFlow = Domain.Balance deltaCents
+                , Domain.tradePriceBefore = 0  -- Placeholder, will be set to currentPrice
+                , Domain.tradePriceAfter = 0   -- Placeholder, will be calculated after trade
+                }
 
-        -- Calculate realized PnL from this specific transaction
+        -- Apply trade to get new position
+        let newPosition = Domain.applyTrade marketContext domainTrade currentPosition
+
+        -- Calculate realized PnL from this specific trade
         let Domain.Balance oldRealizedPnL = Domain.posRealizedPnL currentPosition
         let Domain.Balance newRealizedPnL = Domain.posRealizedPnL newPosition
         let txRealizedPnL = newRealizedPnL - oldRealizedPnL
@@ -104,8 +112,8 @@ instance Controller AssetsController where
 
             -- Calculate price_after based on new asset quantities
             let newLmsrState = LMSR.precompute market.beta
-                    [(a.symbol, if a.id == asset.id then updatedAssetQty else a.quantity) | a <- assets]
-            let priceAfter = LMSR.price asset.symbol newLmsrState
+                    [(a.id, if a.id == asset.id then updatedAssetQty else a.quantity) | a <- assets]
+            let priceAfter = LMSR.price asset.id newLmsrState
 
             -- Update market statistics
             market
@@ -120,15 +128,15 @@ instance Controller AssetsController where
                 |> updateRecord
 
             -- Create transaction record with both prices
-            let domainTxnWithPrices = domainTx
-                    { Domain.txPriceBefore = currentPrice
-                    , Domain.txPriceAfter = priceAfter
+            let domainTradeWithPrices = domainTrade
+                    { Domain.tradePriceBefore = currentPrice
+                    , Domain.tradePriceAfter = priceAfter
                     }
             let txnBase = newRecord @Transaction
                     |> set #userId currentUserId
                     |> set #assetId assetId
                     |> set #marketId market.id
-            _ <- fromDomainTransaction domainTxnWithPrices txnBase
+            _ <- fromDomainTrade domainTradeWithPrices txnBase
                     |> set #realizedPnl txRealizedPnL
                 |> createRecord
 
@@ -170,9 +178,9 @@ instance Controller AssetsController where
             |> filterWhere (#marketId, market.id)
             |> fetch
 
-        -- Calculate LMSR state
-        let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
-        let currentPrice = LMSR.price asset.symbol lmsrState
+        -- Calculate LMSR state using asset IDs
+        let lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- assets]
+        let currentPrice = LMSR.price asset.id lmsrState
 
         -- Get user's wallet
         wallet <- query @Wallet
@@ -194,19 +202,27 @@ instance Controller AssetsController where
                 then tradeAmount   -- User receives
                 else -tradeAmount  -- User pays
 
-        -- Build domain transaction to close position (prices will be set after asset update)
-        let domainTx = Domain.Transaction
-                { Domain.txSide = closeSide
-                , Domain.txQuantity = closeQty
-                , Domain.txCashFlow = Domain.Balance deltaCents
-                , Domain.txPriceBefore = 0  -- Placeholder, will be set to currentPrice
-                , Domain.txPriceAfter = 0   -- Placeholder, will be calculated after trade
+        -- Build market context for LMSR-based calculations
+        let otherAssets = [(a.id, a.quantity) | a <- assets, a.id /= asset.id]
+        let marketContext = Domain.MarketContext
+                { Domain.mcBeta = market.beta
+                , Domain.mcAssetId = asset.id
+                , Domain.mcOtherAssets = otherAssets
                 }
 
-        -- Apply transaction to close position
-        let closedPosition = Domain.applyTransaction domainTx currentPosition
+        -- Build domain trade to close position (prices will be set after asset update)
+        let domainTrade = Domain.Trade
+                { Domain.tradeSide = closeSide
+                , Domain.tradeQuantity = closeQty
+                , Domain.tradeCashFlow = Domain.Balance deltaCents
+                , Domain.tradePriceBefore = 0  -- Placeholder, will be set to currentPrice
+                , Domain.tradePriceAfter = 0   -- Placeholder, will be calculated after trade
+                }
 
-        -- Calculate realized PnL from this closing transaction
+        -- Apply trade to close position
+        let closedPosition = Domain.applyTrade marketContext domainTrade currentPosition
+
+        -- Calculate realized PnL from this closing trade
         let Domain.Balance oldRealizedPnL = Domain.posRealizedPnL currentPosition
         let Domain.Balance newRealizedPnL = Domain.posRealizedPnL closedPosition
         let txRealizedPnL = newRealizedPnL - oldRealizedPnL
@@ -221,8 +237,8 @@ instance Controller AssetsController where
 
             -- Calculate price_after based on new asset quantities
             let newLmsrState = LMSR.precompute market.beta
-                    [(a.symbol, if a.id == asset.id then updatedAssetQty else a.quantity) | a <- assets]
-            let priceAfter = LMSR.price asset.symbol newLmsrState
+                    [(a.id, if a.id == asset.id then updatedAssetQty else a.quantity) | a <- assets]
+            let priceAfter = LMSR.price asset.id newLmsrState
 
             -- Update market statistics
             market
@@ -237,15 +253,15 @@ instance Controller AssetsController where
                 |> updateRecord
 
             -- Create transaction record with both prices
-            let domainTxnWithPrices = domainTx
-                    { Domain.txPriceBefore = currentPrice
-                    , Domain.txPriceAfter = priceAfter
+            let domainTradeWithPrices = domainTrade
+                    { Domain.tradePriceBefore = currentPrice
+                    , Domain.tradePriceAfter = priceAfter
                     }
             let txnBase = newRecord @Transaction
                     |> set #userId currentUserId
                     |> set #assetId assetId
                     |> set #marketId market.id
-            _ <- fromDomainTransaction domainTxnWithPrices txnBase
+            _ <- fromDomainTrade domainTradeWithPrices txnBase
                     |> set #realizedPnl txRealizedPnL
                 |> createRecord
 

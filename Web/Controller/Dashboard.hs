@@ -42,7 +42,7 @@ instance Controller DashboardController where
             assets <- query @Asset
                 |> filterWhere (#marketId, mId)
                 |> fetch
-            let lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- assets]
+            let lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- assets]
             return (mId, market, assets, lmsrState)
 
         let marketDataMap = M.fromList [
@@ -55,7 +55,7 @@ instance Controller DashboardController where
             case M.lookup mId marketDataMap of
                 Just (market, lmsrState) -> do
                     let asset = get #assetId holding
-                        currentPrice = LMSR.price asset.symbol lmsrState
+                        currentPrice = LMSR.price asset.id lmsrState
                         qty = holding.quantity
 
                     let currentValue = case (qty, holding.side) of

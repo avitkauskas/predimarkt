@@ -1,6 +1,6 @@
 module Application.Adapter.Transaction
-    ( toDomainTransaction
-    , fromDomainTransaction
+    ( toDomainTrade
+    , fromDomainTrade
     , parseSideRequired
     , formatSideRequired
     ) where
@@ -22,11 +22,11 @@ formatSideRequired :: Domain.Side -> Text
 formatSideRequired Domain.Long  = "long"
 formatSideRequired Domain.Short = "short"
 
--- | Convert database Transaction to domain Transaction
+-- | Convert database Transaction to domain Trade
 -- Note: Transactions are immutable records, so we don't need to convert back
--- typically, but we provide fromDomainTransaction for completeness
-toDomainTransaction :: Transaction -> Domain.Transaction
-toDomainTransaction tx =
+-- typically, but we provide fromDomainTrade for completeness
+toDomainTrade :: Transaction -> Domain.Trade
+toDomainTrade tx =
     let side = parseSideRequired (get #side tx)
         qty = get #quantity tx
         cashFlow = fromIntegral (get #cashFlow tx)
@@ -36,23 +36,23 @@ toDomainTransaction tx =
         Nothing ->
             error $ "Invalid negative quantity in transaction: " ++ show qty
         Just domainQty ->
-            Domain.Transaction
-                { Domain.txSide = side
-                , Domain.txQuantity = domainQty
-                , Domain.txCashFlow = Domain.Balance cashFlow
-                , Domain.txPriceBefore = priceBefore
-                , Domain.txPriceAfter = priceAfter
+            Domain.Trade
+                { Domain.tradeSide = side
+                , Domain.tradeQuantity = domainQty
+                , Domain.tradeCashFlow = Domain.Balance cashFlow
+                , Domain.tradePriceBefore = priceBefore
+                , Domain.tradePriceAfter = priceAfter
                 }
 
--- | Create a database Transaction from domain Transaction and base record
+-- | Create a database Transaction from domain Trade and base record
 -- Used when creating a new transaction record
-fromDomainTransaction :: Domain.Transaction -> Transaction -> Transaction
-fromDomainTransaction domainTx tx =
-    let Domain.Quantity qty = Domain.txQuantity domainTx
-        Domain.Balance cf = Domain.txCashFlow domainTx
+fromDomainTrade :: Domain.Trade -> Transaction -> Transaction
+fromDomainTrade domainTrade tx =
+    let Domain.Quantity qty = Domain.tradeQuantity domainTrade
+        Domain.Balance cf = Domain.tradeCashFlow domainTrade
     in tx
-        |> set #side (formatSideRequired (Domain.txSide domainTx))
+        |> set #side (formatSideRequired (Domain.tradeSide domainTrade))
         |> set #quantity qty
         |> set #cashFlow (fromIntegral cf)
-        |> set #priceBefore (Domain.txPriceBefore domainTx)
-        |> set #priceAfter (Domain.txPriceAfter domainTx)
+        |> set #priceBefore (Domain.tradePriceBefore domainTrade)
+        |> set #priceAfter (Domain.tradePriceAfter domainTrade)

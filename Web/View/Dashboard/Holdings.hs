@@ -59,11 +59,21 @@ renderHoldingCard hwd =
         costBasis = abs (get #costBasis holding)
         currentVal = fromMaybe 0 (get #currentValue hwd)
 
+        -- PnL calculation with new cash-based cost basis for shorts
         currentPnL = if isLong
-                then currentVal - costBasis
-                else qty * 100 - costBasis - currentVal
+                then currentVal - costBasis           -- Long: value - cost
+                else costBasis - currentVal           -- Short: received - cost_to_close
         isProfitable = currentPnL >= 0
-        maxProfit = qty * 100 - costBasis
+
+        -- Open P&L Range: max loss to max profit
+        -- Long: [-costBasis, +(qty*100 - costBasis)]
+        -- Short: [-(qty*100 - costBasis), +costBasis]
+        maxLoss = if isLong
+                then negate costBasis
+                else negate (qty * 100 - costBasis)
+        maxProfit = if isLong
+                then qty * 100 - costBasis
+                else costBasis
         realizedPnL = get #realizedPnl holding
         updatedTime = formatTime defaultTimeLocale "%F %R" (get #updatedAt holding)
         closingTime = formatTime defaultTimeLocale "%F %R" (get #closedAt market)
@@ -117,7 +127,7 @@ renderHoldingCard hwd =
                         </div>
                         <div class="col-2">
                             <div class="text-muted" style="font-size: 0.7rem;">Open P&L Range</div>
-                            {renderPnLRange isOpen costBasis maxProfit}
+                            {renderPnLRange isOpen maxLoss maxProfit}
                         </div>
                     </div>
 
@@ -175,10 +185,10 @@ renderActionButton True isProfitable _ assetId =
     |]
 
 renderPnLRange :: Bool -> Integer -> Integer -> Html
-renderPnLRange isOpen costBasis maxProfit =
+renderPnLRange isOpen maxLoss maxProfit =
     if isOpen
     then [hsx|
-        <span class="fw-medium">{formatMoneySigned (negate costBasis)}</span>&nbsp;
+        <span class="fw-medium">{formatMoneySigned maxLoss}</span>&nbsp;
         <span class="fw-medium">{formatMoneySigned maxProfit}</span>
     |]
     else [hsx|<span class="fw-medium">--</span>|]

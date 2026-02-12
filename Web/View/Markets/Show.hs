@@ -46,7 +46,7 @@ instance View ShowView where
                 when (market.status /= MarketStatusOpen)
                     [hsx|<span>{marketStatusLabel market.status}</span>|]
 
-            lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- market.assets]
+            lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- market.assets]
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
@@ -71,10 +71,10 @@ instance View ShowView where
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
 
                     assetPrice :: Double
-                    assetPrice = LMSR.price asset.symbol lmsrState
+                    assetPrice = LMSR.price asset.id lmsrState
 
                     assetSum :: Double
-                    assetSum = LMSR.sumItem asset.symbol lmsrState
+                    assetSum = LMSR.sumItem asset.id lmsrState
 
                     assetTotal :: Double
                     assetTotal = LMSR.sumTotal lmsrState

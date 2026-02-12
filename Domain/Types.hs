@@ -8,14 +8,18 @@ module Domain.Types
     , Price
 
       -- Domain entities
-    , Transaction (..)
+    , Trade (..)
     , Position (..)
+
+      -- Context for LMSR calculations
+    , MarketContext (..)
 
       -- Smart constructors
     , mkQuantity
     , mkBalance
     ) where
 
+import Generated.Types
 import IHP.Prelude
 
 -- | Side of a position: Long (bet for) or Short (bet against)
@@ -34,13 +38,13 @@ newtype Balance = Balance Integer
 -- | Price as probability (0.0 to 1.0), for display only
 type Price = Double
 
--- | Transaction represents a trade executed by a user
-data Transaction = Transaction
-    { txSide        :: Side
-    , txQuantity    :: Quantity
-    , txCashFlow    :: Balance
-    , txPriceBefore :: Price
-    , txPriceAfter  :: Price
+-- | Trade represents a trade executed by a user (domain model)
+data Trade = Trade
+    { tradeSide        :: Side
+    , tradeQuantity    :: Quantity
+    , tradeCashFlow    :: Balance
+    , tradePriceBefore :: Price
+    , tradePriceAfter  :: Price
     } deriving (Eq, Show)
 
 -- | Position represents a user's current holdings in an asset
@@ -49,6 +53,13 @@ data Position = Position
     , posQuantity    :: Quantity
     , posCostBasis   :: Balance
     , posRealizedPnL :: Balance
+    } deriving (Eq, Show)
+
+-- | MarketContext provides LMSR calculation context for position operations
+data MarketContext = MarketContext
+    { mcBeta        :: Integer              -- ^ Market liquidity parameter
+    , mcAssetId     :: Id Asset             -- ^ Asset being traded
+    , mcOtherAssets :: [(Id Asset, Integer)] -- ^ Other assets in market with quantities
     } deriving (Eq, Show)
 
 -- | Smart constructor for Quantity (ensures non-negative)

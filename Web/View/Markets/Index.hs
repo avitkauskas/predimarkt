@@ -110,12 +110,12 @@ renderMarket market = [hsx|
         headerClass = marketStatusHeaderClasses market.status
         footerClass = marketStatusFooterClasses market.status
 
-        lmsrState = LMSR.precompute market.beta [(a.symbol, a.quantity) | a <- market.assets]
+        lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- market.assets]
 
         renderAsset asset =
             let
                 assetPrice :: Int
-                assetPrice = round (LMSR.price asset.symbol lmsrState * 100)
+                assetPrice = round (LMSR.price asset.id lmsrState * 100)
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
