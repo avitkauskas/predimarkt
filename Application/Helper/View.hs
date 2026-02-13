@@ -81,7 +81,7 @@ formatMoneySigned cents
 formatWithSep :: Integral a => a -> Text
 formatWithSep n =
     let str = unpack (show (abs (toInteger n)))
-        withSeps = Data.List.intercalate "'" $ reverse $ chunksOf3 (reverse str)
+        withSeps = reverse . Data.List.intercalate "'" . chunksOf3 . reverse $ str
         signed = if n < 0 then "-" <> pack withSeps else pack withSeps
     in signed
   where
