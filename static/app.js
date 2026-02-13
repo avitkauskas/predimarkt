@@ -2,6 +2,9 @@ $(document).on('ready turbolinks:load', function () {
     // This is called on the first page load *and* also when the page is changed by turbolinks
     htmx.process(document.body);
 
+    // Localize any times on the page
+    localizeTimes()
+
     // Initialize info blocks for any pre-opened trade forms (only on market show pages)
     const buyForms = document.querySelectorAll('[id^="buy-form-"]:not(.d-none)');
     const sellForms = document.querySelectorAll('[id^="sell-form-"]:not(.d-none)');
@@ -177,4 +180,28 @@ window.updateSellInfo = function (input) {
             </div>
         </div>
     `
+}
+
+function formatLocalISO(date) {
+    const pad = (n) => String(n).padStart(2, '0');
+
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+function localizeTimes(root = document) {
+    root.querySelectorAll(".local-time").forEach(el => {
+        if (el.dataset.localized) return;
+
+        const date = new Date(el.dataset.time);
+        el.textContent = formatLocalISO(date);
+        el.dataset.localized = "true";
+    });
 }

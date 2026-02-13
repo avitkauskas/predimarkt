@@ -3,6 +3,7 @@
 
 module Web.View.Dashboard.Holdings where
 
+import Admin.Controller.Prelude (render)
 import Application.Helper.View (formatMoney, formatPricePercent)
 import Data.Profunctor.Closed (close)
 import Data.Text (pack)
@@ -75,8 +76,8 @@ renderHoldingCard hwd =
                 then qty * 100 - costBasis
                 else costBasis
         realizedPnL = get #realizedPnl holding
-        updatedTime = formatTime defaultTimeLocale "%F %R" (get #updatedAt holding)
-        closingTime = formatTime defaultTimeLocale "%F %R" (get #closedAt market)
+        -- updatedTime = formatTime defaultTimeLocale "%F %R" holding.updatedAt
+        -- closingTime = formatTime defaultTimeLocale "%F %R" market.closedAt
 
         nextAction = case side of
             Just "long"  -> Just "buy"
@@ -140,11 +141,11 @@ renderHoldingCard hwd =
                             </div>
                             <div class="col-4 text-muted small text-center fw-medium"
                                  style="font-size: 0.7rem;">
-                                Your last trade @ {updatedTime}
+                                Your last trade @ {renderTime holding.updatedAt}
                             </div>
                             <div class="col-4 text-muted small text-center fw-medium"
                                  style="font-size: 0.7rem;">
-                                Market closes @ {closingTime}
+                                Market closes @ {renderTime market.closedAt}
                             </div>
                     </div>
                 </div>
@@ -197,3 +198,4 @@ renderHoldingsPagination :: Int -> Int -> Html
 renderHoldingsPagination currentPage totalPages =
     renderSmartPagination currentPage totalPages "Positions pagination"
         (\pageNum -> pathTo (DashboardHoldingsAction (Just pageNum)))
+

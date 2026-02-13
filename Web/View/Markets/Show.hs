@@ -28,13 +28,29 @@ instance View ShowView where
                             ←
                         </button>
                         <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
-                        <div class="market-description-box p-3">
-                            <p class="text-muted mb-0">{market.description}</p>
-                        </div>
                     </header>
 
                     <div class="assets-list border-top mt-4">
                         {forEach market.assets renderAsset}
+                    </div>
+
+                    <div class="mt-4 pt-4">
+                        <h6 class="text-muted text-uppercase fw-medium mb-3"
+                            style="font-size: 0.75rem; cursor: pointer;"
+                            onclick="document.getElementById('price-chart').classList.toggle('d-none')">
+                            Price Chart
+                        </h6>
+                        <div id="price-chart" class="d-none" style="height: 300px; margin-bottom: 1.5rem;">
+                        </div>
+
+                        <h6 class="text-muted text-uppercase fw-medium mb-3"
+                            style="font-size: 0.75rem; cursor: pointer;"
+                            onclick="document.getElementById('market-description').classList.toggle('d-none')">
+                            Rules & Description
+                        </h6>
+                        <div id="market-description" class="d-none">
+                            <p class="text-muted mb-0">{market.description}</p>
+                        </div>
                     </div>
                 </div>
             </div>

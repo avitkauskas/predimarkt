@@ -3,6 +3,7 @@
 
 module Web.View.Dashboard.Transactions where
 
+import Admin.Controller.Prelude (render)
 import Application.Helper.View (formatPricePercent)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
@@ -88,7 +89,7 @@ renderTransactionCard twd =
                         <div class="col-3 border-end">
                             <div class="small text-muted fw-medium"
                                  style="font-size: 0.7rem;">
-                                {timestampStr}
+                                {renderTime txn.createdAt}
                             </div>
                             <div class={typeColor <> " fw-bold"}>{typeText} {show qty}</div>
                         </div>

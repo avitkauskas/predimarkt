@@ -79,20 +79,26 @@ renderMarket market = [hsx|
             </div>
 
             <!-- Footer (not clickable) -->
-            <div class={classes ["card-footer text-muted small",
-                                 "d-flex align-items-center py-1 border-top-0",
+            <div class={classes ["card-footer text-muted small py-1 border-top-0",
+                                 "d-flex align-items-center justify-content-between",
                                  (footerClass, True)]}>
-                <span class="me-3" title="Number of trades">
-                    <i class="bi bi-arrow-left-right"></i>
-                    {formatWithSep market.trades}
-                </span>
-                <span class="me-3" title="Total shares traded">
-                    <i class="bi bi-layers"></i>
-                    {formatWithSep market.volume}
-                </span>
-                <span class="me-3" title="Total money turnover">
-                    <i class="bi bi-cash-stack"></i>
-                    {formatMoney market.turnover}
+                <div class="d-flex align-items-center gap-3">
+                    <span title="Number of trades">
+                        <i class="bi bi-arrow-left-right"></i>
+                        {formatWithSep market.trades}
+                    </span>
+                    <span title="Total shares traded">
+                        <i class="bi bi-layers"></i>
+                        {formatWithSep market.volume}
+                    </span>
+                    <span title="Total money turnover">
+                        <i class="bi bi-cash-stack"></i>
+                        {formatMoney market.turnover}
+                    </span>
+                </div>
+                <span title="Market closing time" style="font-size: 0.7rem;">
+                    <i class="bi bi-alarm"></i>
+                    {renderTime market.closedAt}
                 </span>
             </div>
 

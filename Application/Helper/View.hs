@@ -40,6 +40,13 @@ marketStatusFooterClasses = \case
     MarketStatusRefunded -> "market-status-refunded-footer"
     _                    -> ""
 
+-- | Time formatting helper
+renderTime :: UTCTime -> Html
+renderTime time =
+    [hsx|
+        <span class="local-time" data-time={tshow time}></span>
+    |]
+
 -- Price Formatting Helpers
 
 -- | Format price as percentage with 2 decimals (e.g., "23.45%")
