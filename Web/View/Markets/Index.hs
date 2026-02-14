@@ -44,13 +44,13 @@ renderMarket market = [hsx|
         <div class="card h-100">
 
             <!-- Clickable header -->
-            <div class="position-relative">
+            <div class="position-relative overflow-hidden rounded-top">
                 <a href={ShowMarketAction market.id Nothing Nothing}
                     class="stretched-link" aria-hidden="true">
                 </a>
                 <div class={classes [
-                        "card-header position-relative text-muted small d-flex",
-                        "justify-content-between align-items-center py-1 border-bottom-0",
+                        "card-header border-0 position-relative text-muted small d-flex",
+                        "justify-content-between align-items-center py-1",
                         (headerClass, True)]}>
                     <span>{category.name}</span>
                     {statusBadge}

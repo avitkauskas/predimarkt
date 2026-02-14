@@ -23,13 +23,20 @@ instance View ShowView where
                         </div>
                         <div class="card-body p-4">
                             <header class="mb-4">
-                                <button class="btn btn-outline-secondary back-button mb-3"
-                                        onclick="history.back()"
-                                        type="button"
-                                        title="Go back">
-                                    ←
-                                </button>
-                                <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="btn btn-outline-secondary back-button flex-shrink-0"
+                                            onclick="history.back()"
+                                            type="button"
+                                            title="Go back">
+                                        ←
+                                    </button>
+                                    <div class="flex-grow-1 overflow-x-auto scroll-no-bar ms-1"
+                                         style="white-space: nowrap;">
+                                        <span class="h4 fw-bold">
+                                            {market.title}
+                                        </span>
+                                    </div>
+                                </div>
                             </header>
 
                             <div class="assets-list border-top mt-4">
@@ -62,12 +69,12 @@ instance View ShowView where
                             <span class="fw-semibold">Users Chat</span>
                         </div>
                         <div class="card-body p-3 d-flex flex-column" style="min-height: 300px;">
-                            <div class="flex-grow-1 rounded p-3 mb-3" style="overflow-y: auto;">
-                                <p class="text-muted">Chat messages will appear here</p>
-                            </div>
-                            <div class="input-group">
+                            <div class="input-group mt-2">
                                 <input type="text" class="form-control" placeholder="Type a message..." />
                                 <button class="btn btn-primary" type="button">Send</button>
+                            </div>
+                            <div class="flex-grow-1 rounded p-3 mb-3" style="overflow-y: auto;">
+                                <p class="text-muted">Chat messages will appear here</p>
                             </div>
                         </div>
                     </div>

@@ -84,7 +84,7 @@ renderTransactionCard twd =
         <div class="col-12">
             <div class="card shadow-sm" style="max-width: 900px;">
                 <div class="card-body px-3 py-2">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex justify-content-between align-items-start mb-2 overflow-x-auto scroll-no-bar">
                         <div>
                             <a href={marketUrl} class="text-decoration-none">
                                 <span class="h6 mb-0 fw-bold">{get #title market}</span> -
@@ -93,8 +93,8 @@ renderTransactionCard twd =
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <div class="d-flex justify-content-between text-center small border-top pt-2 flex-nowrap" style="min-width: 580px;">
+                    <div class="overflow-x-auto scroll-no-bar">
+                        <div class="d-flex justify-content-between text-center border-top pt-2 flex-nowrap" style="min-width: 580px;">
                             <div class="flex-shrink-0 text-center" style="width: 145px;">
                                 <div class="small text-muted fw-medium text-nowrap" style="font-size: 0.7rem;">
                                     {renderTime txn.createdAt}

@@ -68,11 +68,13 @@ formatPriceRounded price =
 
 formatMoney :: Integral a => a -> Text
 formatMoney cents =
-    let euros = fromIntegral cents / 100 :: Double
+    let absCents = abs (fromIntegral cents) :: Integer
+        euros = fromIntegral absCents / 100 :: Double
         formatted = printf "%.2f" euros
         (intPart, decPart) = break (== '.') formatted
         intWithSeps = reverse . Data.List.intercalate "'" . chunksOf3 . reverse $ intPart
-    in "€" <> pack (intWithSeps ++ decPart)
+        sign = if cents < 0 then "-" else ""
+    in sign <> "€" <> pack (intWithSeps ++ decPart)
   where
     chunksOf3 [] = []
     chunksOf3 xs = take 3 xs : chunksOf3 (drop 3 xs)
@@ -80,9 +82,14 @@ formatMoney cents =
 -- | Format cents as signed money (e.g., "+€10.23" or "-€5.00")
 formatMoneySigned :: Integral a => a -> Text
 formatMoneySigned cents
-    | cents == 0 = "€0.00"
     | cents > 0 = "+" <> formatMoney cents
-    | otherwise = "-" <> formatMoney (abs cents)
+    | otherwise = formatMoney cents
+
+-- | Format money for closed positions (shows "--" for zero values)
+formatMoneyOrDash :: Integral a => a -> Text
+formatMoneyOrDash cents
+    | cents == 0 = "--"
+    | otherwise = formatMoney cents
 
 -- | Format integer with thousand separators (e.g., "1'234'567")
 formatWithSep :: Integral a => a -> Text
