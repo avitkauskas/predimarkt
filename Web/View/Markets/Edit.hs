@@ -1,6 +1,6 @@
 module Web.View.Markets.Edit where
-import Web.View.Prelude
 import Web.View.Assets.New
+import Web.View.Prelude
 
 instance CanSelect Category where
     type SelectValue Category = Id Category
@@ -54,7 +54,7 @@ renderForm market assets categories = formFor market [hsx|
             {forEach assets renderAssetRow}
         </div>
          <div class="mt-2">
-            <a href="#" 
+            <a href="#"
                class="btn btn-outline-primary btn-sm"
                hx-get={NewAssetAction}
                hx-target="#assets-list"

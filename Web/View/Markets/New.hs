@@ -1,6 +1,6 @@
 module Web.View.Markets.New where
-import Web.View.Prelude
 import Web.View.Assets.New
+import Web.View.Prelude
 
 instance CanSelect Category where
     type SelectValue Category = Id Category

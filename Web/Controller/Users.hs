@@ -48,19 +48,19 @@ instance Controller UsersController where
                                         Nothing -> pure candidate
 
                             uniqueNickname <- findUniqueNickname baseNickname 0
-                            
+
                             user <- withTransaction do
                                 createdUser <- user
                                     |> set #passwordHash hashed
                                     |> set #nickname uniqueNickname
                                     |> createRecord
-                                
+
                                 newRecord @Wallet
                                     |> set #userId createdUser.id
                                     |> createRecord
-                                
+
                                 pure createdUser
-                            
+
                             login user
                             setSuccessMessage "Account created successfully. You are logged in now."
                             redirectToPath "/"

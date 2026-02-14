@@ -125,16 +125,16 @@ renderMarket market = [hsx|
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
-                        <div class="btn-group shadow-sm" style="width: 80px">
+                        <div class="d-flex gap-1" style="width: 80px;">
                             <a href={ShowMarketAction market.id (Just asset.id) (Just "buy")}
-                                    class="btn btn-soft-success p-0 rounded-start-1 d-flex align-items-center justify-content-center"
-                                    style="font-size: 0.75rem; line-height: 1.5; width: 50%;">
-                                Buy
+                                    class="btn btn-success p-0 rounded-1 fw-medium"
+                                    style="font-size: 0.65rem; width: calc(50% - 2px);">
+                                BUY
                             </a>
                             <a href={ShowMarketAction market.id (Just asset.id) (Just "sell")}
-                                    class="btn btn-soft-danger p-0 rounded-end-1 d-flex align-items-center justify-content-center"
-                                    style="font-size: 0.75rem; line-height: 1.5; width: 50%;">
-                                Sell
+                                    class="btn btn-danger p-0 rounded-1 fw-medium"
+                                    style="font-size: 0.65rem; width: calc(50% - 2px);">
+                                SELL
                             </a>
                         </div>
                     |]

@@ -121,16 +121,18 @@ instance View ShowView where
                     |]
 
                     buySellButtons = [hsx|
-                        <div class="btn-group shadow-sm" style="width: 140px">
-                            <button class="btn btn-soft-success btn-sm fw-bold w-50"
+                        <div class="d-flex gap-1" style="width: 140px">
+                            <button class="btn btn-success btn-sm fw-medium"
                                     type="button"
+                                    style="width: calc(50% - 2px);"
                                     onclick={toggleForm (show asset.id) "buy"}>
-                                Buy
+                                BUY
                             </button>
-                            <button class="btn btn-soft-danger btn-sm fw-bold w-50"
+                            <button class="btn btn-danger btn-sm fw-medium"
                                     type="button"
+                                    style="width: calc(50% - 2px);"
                                     onclick={toggleForm (show asset.id) "sell"}>
-                                Sell
+                                SELL
                             </button>
                         </div>
                     |]

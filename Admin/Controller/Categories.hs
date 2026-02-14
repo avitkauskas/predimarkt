@@ -9,7 +9,7 @@ instance Controller CategoriesController where
     beforeAction = notFoundWhen (isNothing currentAdminOrNothing)
 
     action CategoriesAction = do
-        categories <- query @Category 
+        categories <- query @Category
             |> orderByAsc #sortIdx
             |> fetch
         render IndexView { .. }

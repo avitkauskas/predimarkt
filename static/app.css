@@ -5,7 +5,7 @@
     background-clip: text;
 }
 
-/* Custom hamburger menu button */
+/* Custom hamburger menu button - Bootstrap doesn't have an unstyled toggle */
 .navbar-toggler-custom {
     background: none;
     border: none;
@@ -33,23 +33,23 @@
     transition: opacity 0.15s ease-in-out;
 }
 
-/* Horizontal scroll without scrollbar */
+/* Hide scrollbar while keeping scroll functionality */
 .scroll-no-bar {
     overflow-x: auto;
     white-space: nowrap;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .scroll-no-bar::-webkit-scrollbar {
     display: none;
 }
 
+/* Dark mode customizations */
 [data-bs-theme="dark"] {
-    --bs-body-color: #adb5bd; /* Dimmed white for comfort */
+    --bs-body-color: #adb5bd;
 }
 
-/* Table styling for dark theme */
 [data-bs-theme="dark"] .table {
     --bs-table-color: #adb5bd;
     --bs-table-striped-color: #adb5bd;
@@ -57,9 +57,14 @@
     --bs-table-hover-color: #adb5bd;
 }
 
+[data-bs-theme="dark"] .card {
+    background-color: #2a2d31;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
 /* Market status colors - Light theme */
 .market-status-closed-header {
-    background-color: rgba(219, 234, 254, 1); /* blue-100 */
+    background-color: rgba(219, 234, 254, 1);
 }
 
 .market-status-closed-footer {
@@ -67,11 +72,11 @@
 }
 
 .market-status-closed-body {
-    background-color: rgba(239, 246, 255, 1); /* blue-50 */
+    background-color: rgba(239, 246, 255, 1);
 }
 
 .market-status-resolved-header {
-    background-color: rgba(220, 252, 231, 1); /* green-100 */
+    background-color: rgba(220, 252, 231, 1);
 }
 
 .market-status-resolved-footer {
@@ -79,11 +84,11 @@
 }
 
 .market-status-resolved-body {
-    background-color: rgba(240, 253, 244, 1); /* green-50 */
+    background-color: rgba(240, 253, 244, 1);
 }
 
 .market-status-refunded-header {
-    background-color: rgba(254, 226, 226, 1); /* red-100 */
+    background-color: rgba(254, 226, 226, 1);
 }
 
 .market-status-refunded-footer {
@@ -91,18 +96,12 @@
 }
 
 .market-status-refunded-body {
-    background-color: rgba(254, 242, 242, 1); /* red-50 */
+    background-color: rgba(254, 242, 242, 1);
 }
 
-/* Market status colors - Dark theme (Pastel Dark) */
-[data-bs-theme="dark"] .card {
-    /* background-color: #1a1d21; */
-    background-color: #2a2d31;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
+/* Market status colors - Dark theme */
 [data-bs-theme="dark"] .market-status-closed-header {
-    background-color: rgba(94, 158, 255, 0.14); /* Brighter pastel blue overlay */
+    background-color: rgba(94, 158, 255, 0.14);
 }
 
 [data-bs-theme="dark"] .market-status-closed-footer {
@@ -114,7 +113,7 @@
 }
 
 [data-bs-theme="dark"] .market-status-resolved-header {
-    background-color: rgba(74, 222, 128, 0.14); /* Brighter pastel green overlay */
+    background-color: rgba(74, 222, 128, 0.14);
 }
 
 [data-bs-theme="dark"] .market-status-resolved-footer {
@@ -126,7 +125,7 @@
 }
 
 [data-bs-theme="dark"] .market-status-refunded-header {
-    background-color: rgba(248, 113, 113, 0.14); /* Brighter pastel red overlay */
+    background-color: rgba(248, 113, 113, 0.14);
 }
 
 [data-bs-theme="dark"] .market-status-refunded-footer {
@@ -137,69 +136,7 @@
     background-color: rgba(248, 113, 113, 0.06);
 }
 
-.btn-sm {
-    font-size: 0.8125rem;
-}
-
-/* Updated Soft Buttons (Intense but Lighter on Hover) */
-.btn-soft-success {
-    background-color: #86efac;
-    color: #064e3b;
-    border: 1px solid #4ade80;
-    transition: all 0.2s ease;
-}
-
-.btn-soft-success:hover {
-    background-color: #dcfce7;
-    color: #065f46;
-    border-color: #86efac;
-}
-
-.btn-soft-danger {
-    background-color: #fca5a5;
-    color: #7f1d1d;
-    border: 1px solid #f87171;
-    transition: all 0.2s ease;
-}
-
-.btn-soft-danger:hover {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border-color: #fca5a5;
-}
-
-.market-description-box {
-    background-color: rgba(0, 0, 0, 0.03);
-    border-radius: 0.5rem;
-}
-
-[data-bs-theme="dark"] .market-description-box {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Dark mode specific buttons - more intense normal, lighter hover */
-[data-bs-theme="dark"] .btn-soft-success {
-    background-color: rgba(34, 197, 94, 0.35); /* More intense */
-    color: #2abe60;
-    border: 1px solid rgba(34, 197, 94, 0.5);
-}
-
-[data-bs-theme="dark"] .btn-soft-success:hover {
-    background-color: rgba(34, 197, 94, 0.20); /* Lighter */
-    color: #76df9c;
-}
-
-[data-bs-theme="dark"] .btn-soft-danger {
-    background-color: rgba(239, 68, 68, 0.35); /* More intense */
-    color: #dc6565;
-    border: 1px solid rgba(239, 68, 68, 0.5);
-}
-
-[data-bs-theme="dark"] .btn-soft-danger:hover {
-    background-color: rgba(239, 68, 68, 0.15); /* Lighter */
-    color: #dc9595;
-}
-/* Trade form improvements */
+/* Trade form info grid */
 .trade-info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -229,7 +166,7 @@
     color: var(--bs-secondary-color);
 }
 
-/* Remove focus border from trade form inputs */
+/* Remove focus outline from trade form inputs */
 #buy-form input[type="number"]:focus,
 #sell-form input[type="number"]:focus,
 [id^="buy-form-"] input[type="number"]:focus,
@@ -267,7 +204,6 @@
     transform: translateX(-2px) scale(0.95);
 }
 
-/* Dark mode back button */
 [data-bs-theme="dark"] .back-button {
     background-color: #2a2d31;
     border-color: rgba(255, 255, 255, 0.15);
@@ -280,8 +216,9 @@
     color: #dee2e6;
 }
 
+/* Utility classes */
 .prevent-select {
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }

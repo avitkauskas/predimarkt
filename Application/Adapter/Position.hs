@@ -7,8 +7,8 @@ module Application.Adapter.Position
 
 import qualified Domain.Types as Domain
 import Generated.Types
-import IHP.Prelude
 import IHP.ModelSupport
+import IHP.Prelude
 
 -- | Parse side from database text representation
 -- Throws exception for invalid values
@@ -21,8 +21,8 @@ parseSide (Just invalid) =
 
 -- | Format side for database storage
 formatSide :: Maybe Domain.Side -> Maybe Text
-formatSide Nothing = Nothing
-formatSide (Just Domain.Long) = Just "long"
+formatSide Nothing             = Nothing
+formatSide (Just Domain.Long)  = Just "long"
 formatSide (Just Domain.Short) = Just "short"
 
 -- | Convert database Holding to domain Position

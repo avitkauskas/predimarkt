@@ -6,9 +6,9 @@ module Admin.View.Prelude
 , module Application.Helper.View
 ) where
 
-import IHP.ViewPrelude
-import Admin.View.Layout
-import Generated.Types
-import Admin.Types
 import Admin.Routes ()
+import Admin.Types
+import Admin.View.Layout
 import Application.Helper.View
+import Generated.Types
+import IHP.ViewPrelude

@@ -6,8 +6,8 @@ module Admin.Controller.Prelude
 )
 where
 
+import Admin.Routes
 import Admin.Types
 import Application.Helper.Controller
-import IHP.ControllerPrelude
 import Generated.Types
-import Admin.Routes
+import IHP.ControllerPrelude
