@@ -41,7 +41,9 @@ renderHoldingsContent holdings currentPage totalPages = [hsx|
     <div class="row g-3">
         {forEach holdings renderHoldingCard}
     </div>
-    {renderHoldingsPagination currentPage totalPages}
+    <div style="max-width: 900px;">
+        {renderHoldingsPagination currentPage totalPages}
+    </div>
 |]
 
 renderHoldingCard :: (?context :: ControllerContext) => HoldingWithValue -> Html
@@ -69,12 +71,9 @@ renderHoldingCard hwd =
         -- Open P&L Range: max loss to max profit
         -- Long: [-costBasis, +(qty*100 - costBasis)]
         -- Short: [-(qty*100 - costBasis), +costBasis]
-        maxLoss = if isLong
-                then negate costBasis
-                else negate (qty * 100 - costBasis)
-        maxProfit = if isLong
+        maxOutcome = if isLong
                 then qty * 100 - costBasis
-                else costBasis
+                else negate (qty * 100 - costBasis)
         realizedPnL = get #realizedPnl holding
         -- updatedTime = formatTime defaultTimeLocale "%F %R" holding.updatedAt
         -- closingTime = formatTime defaultTimeLocale "%F %R" market.closedAt
@@ -95,7 +94,7 @@ renderHoldingCard hwd =
         actionBtn = renderActionButton isOpen isProfitable market.id asset.id
     in [hsx|
         <div class="col-12">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm" style="max-width: 900px;">
                 <div class="card-body px-3 py-2">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <a href={marketUrl} class="text-decoration-none">
@@ -104,49 +103,61 @@ renderHoldingCard hwd =
                         </a>
                     </div>
 
-                    <div class="row text-center small border-top border-bottom py-2 mb-2">
-                        <div class="col-2 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">Position</div>
-                            <div class="fw-medium">{positionDisplay}</div>
-                        </div>
-                        <div class="col-2 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">Current Value</div>
-                            <div class="fw-medium">{formatMoney currentVal}</div>
-                        </div>
-                        <div class="col-2">
-                            <div class="text-muted" style="font-size: 0.7rem;">Unrealized P&L</div>
-                            <div class={pnlClass}>
-                                {pnlDisplay}
+                    <div class="overflow-x-auto">
+                        <div class="d-flex justify-content-between border-top border-bottom py-2 mb-2" style="min-width: 640px;">
+                            <div class="flex-shrink-0 text-center px-2" style="width: 90px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Position</div>
+                                <div class="fw-medium text-nowrap">{positionDisplay}</div>
                             </div>
-                        </div>
-                        <div class="col-2 text-start border-end py-1">
-                            {actionBtn}
-                        </div>
-                        <div class="col-2 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">Realized P&L</div>
-                            <div class="fw-medium">{realizedDisplay}</div>
-                        </div>
-                        <div class="col-2">
-                            <div class="text-muted" style="font-size: 0.7rem;">Open P&L Range</div>
-                            {renderPnLRange isOpen maxLoss maxProfit}
+                            <div class="flex-shrink-0 text-center px-2" style="width: 100px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Value</div>
+                                <div class="fw-medium text-nowrap">{formatMoney currentVal}</div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="width: 90px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isLong then ("Paid" :: Text) else ("Received" :: Text)}</div>
+                                <div class="fw-medium text-nowrap">{formatMoney costBasis}</div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="width: 250px;">
+                                <div class="d-flex align-items-center justify-content-center" style="gap: 24px;">
+                                    <div class="text-center" style="width: 75px;">
+                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Unrealized P&L</div>
+                                        <div class={pnlClass}>{pnlDisplay}</div>
+                                    </div>
+                                    <div>
+                                        {actionBtn}
+                                    </div>
+                                    <div class="text-center" style="width: 75px;">
+                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isLong then ("Max Win" :: Text) else ("Max Loss" :: Text)}</div>
+                                        <div class="fw-medium text-nowrap">{formatMoneySigned maxOutcome}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="width: 110px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Realized P&L</div>
+                                <div class="fw-medium text-nowrap">{realizedDisplay}</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                            <div class="col-4 small text-center fw-medium">
-                                <span class="text-muted" style="font-size: 0.7rem;">
+                    <div class="overflow-x-auto">
+                        <div class="d-flex justify-content-between align-items-center small flex-nowrap" style="min-width: 530px;">
+                            <div class="text-start ms-1" style="max-width: 200px;">
+                                <span class="text-muted text-nowrap"
+                                      style="font-size: 0.7rem;">
                                     Current probability
                                 </span>
-                                {probText}
+                                <span class="text-nowrap">&nbsp;{probText}</span>
                             </div>
-                            <div class="col-4 text-muted small text-center fw-medium"
-                                 style="font-size: 0.7rem;">
+                            <div class="text-muted text-center text-nowrap mx-1"
+                                 style="font-size: 0.7rem; max-width: 500px;">
                                 Your last trade @ {renderTime holding.updatedAt}
                             </div>
-                            <div class="col-4 text-muted small text-center fw-medium"
-                                 style="font-size: 0.7rem;">
-                                Market closes @ {renderTime market.closedAt}
+                            <div class="text-muted text-end text-nowrap me-1" style="font-size: 0.7rem;"
+                                 title="Market closing time">
+                                <i class="bi bi-alarm"></i>
+                                {renderTime market.closedAt}
                             </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -173,7 +184,7 @@ renderRealizedDisplay pnl
 renderActionButton :: Bool -> Bool -> Id Market ->Id Asset -> Html
 renderActionButton False _ marketId assetId = [hsx|
         <a href={ShowMarketAction marketId (Just assetId) (Just "buy")}
-           class="btn btn-outline-primary btn-sm">Make Trade</a>
+           class="btn btn-outline-primary btn-sm text-nowrap">Make Trade</a>
     |]
 renderActionButton True isProfitable _ assetId =
     let (cls, txt) = if isProfitable
@@ -181,7 +192,7 @@ renderActionButton True isProfitable _ assetId =
             else ("btn-outline-danger" :: Text, "Close Loss" :: Text)
     in [hsx|
         <form action={ClosePositionAction assetId} method="POST" class="d-inline">
-            <button type="submit" class={"btn btn-sm " <> cls}>{txt}</button>
+            <button type="submit" class={"btn btn-sm text-nowrap " <> cls}>{txt}</button>
         </form>
     |]
 
