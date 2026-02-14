@@ -70,10 +70,16 @@ instance Controller DashboardController where
                 Nothing -> return HoldingWithValue
                     { holding = holding, currentValue = Nothing, assetPrice = Nothing }
 
+        -- Fetch wallet for balance display
+        wallet <- query @Wallet
+            |> filterWhere (#userId, currentUserId)
+            |> fetchOne
+
         render HoldingsView
             { holdingsWithValue = holdingsWithValue
             , currentPage = validPage
             , totalPages = totalPages
+            , wallet = wallet
             }
 
     action DashboardWalletsAction = do
@@ -150,8 +156,14 @@ instance Controller DashboardController where
 
         let transactionsWithDetails = map (\t -> TransactionWithDetails { transaction = t }) transactions
 
+        -- Fetch wallet for balance display
+        wallet <- query @Wallet
+            |> filterWhere (#userId, currentUserId)
+            |> fetchOne
+
         render TransactionsView
             { transactionsWithDetails = transactionsWithDetails
             , currentPage = validPage
             , totalPages = totalPages
+            , wallet = wallet
             }

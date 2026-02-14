@@ -21,12 +21,18 @@ data HoldingsView = HoldingsView
     { holdingsWithValue :: [HoldingWithValue]
     , currentPage       :: Int
     , totalPages        :: Int
+    , wallet            :: Wallet
     }
 
 instance View HoldingsView where
     html HoldingsView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid py-3">
-            <h5 class="mb-3 text-muted">Positions</h5>
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px;">
+                <h5>Positions</h5>
+                <div class="text-end me-1">
+                    Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
+                </div>
+            </div>
             {renderHoldingsContent holdingsWithValue currentPage totalPages}
         </div>
     |]

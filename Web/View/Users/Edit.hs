@@ -8,7 +8,7 @@ instance View EditView where
         <div class="h-100" id="users-edit">
             <div class="d-flex align-items-center">
                 <div class="w-100">
-                    <div style="max-width: 400px" class="mb-5">
+                    <div style="max-width: 500px" class="mb-5">
                         <h3>Edit Profile</h3>
                         {renderForm user passwordConfirmation}
 
@@ -17,7 +17,7 @@ instance View EditView where
                         <div class="card border-danger">
                             <div class="card-body">
                                 <h5 class="card-title text-danger">Danger Zone</h5>
-                                <p class="card-text text-muted">Once you delete your account, there is no going back. Please be certain.</p>
+                                <p class="card-text text-muted">Once you delete your account, there is no way back.<br/> Please be certain.</p>
                                 <a href={DeleteUserAction (get #id user)}
                                    class="btn btn-outline-danger js-delete"
                                    data-confirm="Are you sure you want to delete your account? This action cannot be undone.">

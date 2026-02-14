@@ -86,7 +86,6 @@ navbar = [hsx|
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a  class="dropdown-item" href={DashboardWalletsAction}>Balance</a></li>
                     <li><a  class="dropdown-item" href={DashboardHoldingsAction Nothing}>Positions</a></li>
                     <li><a  class="dropdown-item" href={DashboardTransactionsAction Nothing}>Transactions</a></li>
                     <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>Markets</a></li>
@@ -112,14 +111,6 @@ dashboardLayout inner = [hsx|
                         <h5>Dashboard</h5>
                     </div>
                     <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class={classes
-                                    ["nav-link",
-                                    ("active", isActivePath (pathTo DashboardWalletsAction))]}
-                               href={DashboardWalletsAction}>
-                              Balance
-                            </a>
-                        </li>
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",

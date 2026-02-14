@@ -4,7 +4,7 @@
 module Web.View.Dashboard.Transactions where
 
 import Admin.Controller.Prelude (render)
-import Application.Helper.View (formatPricePercent)
+import Application.Helper.View (formatMoney, formatPricePercent)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Database.PostgreSQL.Simple.TypeInfo.Static (money)
@@ -19,12 +19,18 @@ data TransactionsView = TransactionsView
     { transactionsWithDetails :: [TransactionWithDetails]
     , currentPage             :: Int
     , totalPages              :: Int
+    , wallet                  :: Wallet
     }
 
 instance View TransactionsView where
     html TransactionsView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid py-3">
-            <h5 class="mb-3 text-muted">Transactions</h5>
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px;">
+                <h5>Transactions</h5>
+                <div class="text-end me-1">
+                    Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
+                </div>
+            </div>
             {renderTransactionsContent transactionsWithDetails currentPage totalPages}
         </div>
     |]
@@ -39,7 +45,9 @@ renderTransactionsContent txns currentPage totalPages = [hsx|
     <div class="row g-3">
         {forEach txns renderTransactionCard}
     </div>
-    {renderTxnPagination currentPage totalPages}
+    <div style="max-width: 900px;">
+        {renderTxnPagination currentPage totalPages}
+    </div>
 |]
 
 renderTransactionCard :: (?context :: ControllerContext) => TransactionWithDetails -> Html
@@ -74,7 +82,7 @@ renderTransactionCard twd =
                | otherwise -> "text-muted fw-medium"
     in [hsx|
         <div class="col-12">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm" style="max-width: 900px;">
                 <div class="card-body px-3 py-2">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
@@ -85,29 +93,30 @@ renderTransactionCard twd =
                         </div>
                     </div>
 
-                    <div class="row text-center small border-top pt-2">
-                        <div class="col-3 border-end">
-                            <div class="small text-muted fw-medium"
-                                 style="font-size: 0.7rem;">
-                                {renderTime txn.createdAt}
+                    <div class="overflow-x-auto">
+                        <div class="d-flex justify-content-between text-center small border-top pt-2 flex-nowrap" style="min-width: 580px;">
+                            <div class="flex-shrink-0 text-center" style="width: 145px;">
+                                <div class="small text-muted fw-medium text-nowrap" style="font-size: 0.7rem;">
+                                    {renderTime txn.createdAt}
+                                </div>
+                                <div class={typeColor <> " fw-bold text-nowrap"}>{typeText} {show qty}</div>
                             </div>
-                            <div class={typeColor <> " fw-bold"}>{typeText} {show qty}</div>
-                        </div>
-                        <div class="col-3 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">Cash Flow</div>
-                            <div class={moneyClass cashFlow}>
-                                {formatMoneySigned cashFlow}
+                            <div class="flex-shrink-0 text-center" style="width: 145px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Cash Flow</div>
+                                <div class={moneyClass cashFlow <> " text-nowrap"}>
+                                    {formatMoneySigned cashFlow}
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-3 border-end">
-                            <div class="text-muted" style="font-size: 0.7rem;">Realized P&L</div>
-                            <div class={moneyClass realizedPnL}>
-                                {pnlText}
+                            <div class="flex-shrink-0 text-center" style="width: 145px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Realized P&L</div>
+                                <div class={moneyClass realizedPnL <> " text-nowrap"}>
+                                    {pnlText}
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-3">
-                            <div class="text-muted" style="font-size: 0.7rem;">Probability Impact</div>
-                            <div class="fw-medium">{priceImpact}</div>
+                            <div class="flex-shrink-0 text-center" style="width: 145px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Probability Impact</div>
+                                <div class="fw-medium text-nowrap">{priceImpact}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
