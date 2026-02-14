@@ -12,19 +12,17 @@ This is an IHP (Integrated Haskell Platform) web application using:
 
 ```bash
 # Development server
-devenv up                    # Start PostgreSQL + IHP dev server
-make                         # Build CSS/JS assets
+# devenv up                    # Start PostgreSQL + IHP dev server
+# devenv is always running for you with autorefresh
 
 # Build generated files (required after schema changes)
 make build/Generated/Types.hs
 
 # Linting & Formatting
-hlint .                      # Run linter
-stylish-haskell -i **/*.hs   # Format all Haskell files in-place
+stylish-haskell -i **/*.hs   # Format all Haskell files in-place (always run this before committing)
 
-# Testing (no test suite currently configured)
 # To run tests when they exist:
-# runghc $(make print-ghc-extensions) -i. -ibuild -iConfig Test/Main.hs
+runghc $(make print-ghc-extensions) -i. -ibuild -iConfig Test/Main.hs
 ```
 
 ## Code Style Guidelines
