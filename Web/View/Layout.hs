@@ -1,6 +1,7 @@
 module Web.View.Layout (defaultLayout, dashboardLayout, Html) where
 
 import Application.Helper.View
+import Data.Conduit.Attoparsec (Position (Position))
 import Generated.Types
 import IHP.Environment
 import IHP.ViewPrelude
@@ -86,7 +87,7 @@ navbar = [hsx|
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href={DashboardWalletsAction}>Balance</a></li>
-                    <li><a  class="dropdown-item" href={DashboardHoldingsAction Nothing}>Holdings</a></li>
+                    <li><a  class="dropdown-item" href={DashboardHoldingsAction Nothing}>Positions</a></li>
                     <li><a  class="dropdown-item" href={DashboardTransactionsAction Nothing}>Transactions</a></li>
                     <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>Markets</a></li>
                     <li><hr class="dropdown-divider" /></li>
