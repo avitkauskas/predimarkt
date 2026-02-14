@@ -127,12 +127,12 @@ renderMarket market = [hsx|
                     then [hsx|
                         <div class="d-flex gap-1" style="width: 80px;">
                             <a href={ShowMarketAction market.id (Just asset.id) (Just "buy")}
-                                    class="btn btn-success p-0 rounded-1 fw-medium"
+                                    class="btn btn-outline-success p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
                                 BUY
                             </a>
                             <a href={ShowMarketAction market.id (Just asset.id) (Just "sell")}
-                                    class="btn btn-danger p-0 rounded-1 fw-medium"
+                                    class="btn btn-outline-danger p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
                                 SELL
                             </a>

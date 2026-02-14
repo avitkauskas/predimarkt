@@ -122,13 +122,13 @@ instance View ShowView where
 
                     buySellButtons = [hsx|
                         <div class="d-flex gap-1" style="width: 140px">
-                            <button class="btn btn-success btn-sm fw-medium"
+                            <button class="btn btn-outline-success btn-sm fw-medium"
                                     type="button"
                                     style="width: calc(50% - 2px);"
                                     onclick={toggleForm (show asset.id) "buy"}>
                                 BUY
                             </button>
-                            <button class="btn btn-danger btn-sm fw-medium"
+                            <button class="btn btn-outline-danger btn-sm fw-medium"
                                     type="button"
                                     style="width: calc(50% - 2px);"
                                     onclick={toggleForm (show asset.id) "sell"}>

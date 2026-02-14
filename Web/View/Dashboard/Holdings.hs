@@ -8,6 +8,7 @@ import Application.Helper.View (formatMoney, formatPricePercent)
 import Data.Profunctor.Closed (close)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
+import Data.Vector.Generic.Lens (asStream)
 import Text.Printf (printf)
 import Web.View.Prelude
 
@@ -110,20 +111,26 @@ renderHoldingCard hwd =
                     </div>
 
                     <div class="overflow-x-auto">
-                        <div class="d-flex justify-content-between border-top border-bottom py-2 mb-2" style="min-width: 640px;">
-                            <div class="flex-shrink-0 text-center px-2" style="width: 90px;">
+                        <div class="d-flex justify-content-between border-top pt-2" style="min-width: 640px;">
+                            <div class="flex-shrink-0 text-center px-2">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Position</div>
                                 <div class="fw-medium text-nowrap">{positionDisplay}</div>
                             </div>
-                            <div class="flex-shrink-0 text-center px-2" style="width: 100px;">
+                            <div class="flex-shrink-0 text-center px-2">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Probability</div>
+                                <div class="fw-medium text-nowrap">{probText}</div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Value</div>
                                 <div class="fw-medium text-nowrap">{formatMoney currentVal}</div>
                             </div>
-                            <div class="flex-shrink-0 text-center px-2" style="width: 90px;">
-                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isLong then ("Paid" :: Text) else ("Received" :: Text)}</div>
+                            <div class="flex-shrink-0 text-center px-2">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">
+                                    {if isLong then ("Invested" :: Text) else ("Received" :: Text)}
+                                </div>
                                 <div class="fw-medium text-nowrap">{formatMoney costBasis}</div>
                             </div>
-                            <div class="flex-shrink-0 text-center px-2" style="width: 250px;">
+                            <div class="flex-shrink-0 text-center px-2">
                                 <div class="d-flex align-items-center justify-content-center" style="gap: 24px;">
                                     <div class="text-center" style="width: 75px;">
                                         <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Unrealized P&L</div>
@@ -132,36 +139,15 @@ renderHoldingCard hwd =
                                     <div>
                                         {actionBtn}
                                     </div>
-                                    <div class="text-center" style="width: 75px;">
+                                    <div class="text-center">
                                         <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isLong then ("Max Win" :: Text) else ("Max Loss" :: Text)}</div>
                                         <div class="fw-medium text-nowrap">{formatMoneySigned maxOutcome}</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex-shrink-0 text-center px-2" style="width: 110px;">
+                            <div class="flex-shrink-0 text-center px-2">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Realized P&L</div>
                                 <div class="fw-medium text-nowrap">{realizedDisplay}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <div class="d-flex justify-content-between align-items-center small flex-nowrap" style="min-width: 530px;">
-                            <div class="text-start ms-1" style="max-width: 200px;">
-                                <span class="text-muted text-nowrap"
-                                      style="font-size: 0.7rem;">
-                                    Current probability
-                                </span>
-                                <span class="text-nowrap">&nbsp;{probText}</span>
-                            </div>
-                            <div class="text-muted text-center text-nowrap mx-1"
-                                 style="font-size: 0.7rem; max-width: 500px;">
-                                Your last trade @ {renderTime holding.updatedAt}
-                            </div>
-                            <div class="text-muted text-end text-nowrap me-1" style="font-size: 0.7rem;"
-                                 title="Market closing time">
-                                <i class="bi bi-alarm"></i>
-                                {renderTime market.closedAt}
                             </div>
                         </div>
                     </div>

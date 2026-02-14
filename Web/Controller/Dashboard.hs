@@ -13,7 +13,7 @@ instance Controller DashboardController where
 
     action DashboardHoldingsAction { page } = autoRefresh do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
-        let itemsPerPage = 4
+        let itemsPerPage = 5
 
         -- Get total count for pagination
         totalCount <- query @Holding
