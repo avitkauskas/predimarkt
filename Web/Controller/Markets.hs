@@ -3,7 +3,6 @@
 module Web.Controller.Markets where
 
 import Application.Adapter.Position
-import Application.Helper.View (formatMoney)
 import Data.List (zipWith4)
 import qualified Domain.Logic as Domain
 import qualified Domain.Types as Domain
@@ -28,16 +27,17 @@ instance Controller MarketsController where
         let applyStatusFilter queryBuilder =
                 queryBuilder |> filterWhereNot (#status, MarketStatusDraft)
 
-        markets <-
+        markets' <-
             query @Market
                 |> applyCategoryFilter
                 |> applyStatusFilter
                 |> orderByDesc #updatedAt
                 |> fetch
-                >>= collectionFetchRelated #assets . map (modify #assets (orderByDesc #quantity))
+                >>= collectionFetchRelated #assets
                 >>= collectionFetchRelated #categoryId
 
         categories <- fetchCategories
+        let markets = map (\m -> m |> set #assets (sortAssetsForDisplay (get #assets m))) markets'
         render IndexView { .. }
 
     action NewMarketAction = do
@@ -54,15 +54,17 @@ instance Controller MarketsController where
 
     action ShowMarketAction { marketId, tradingAssetId, tradingAction } = autoRefresh do
         ensureIsUser
-        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
-        let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
-        let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
+        let marketId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let tradingAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
+        let tradingAction = tradingAction <|> paramOrNothing @Text "tradingAction"
 
-        market <- fetch mId
-            >>= fetchRelated #assets . modify #assets (orderByDesc #quantity)
+        market' <- fetch marketId
+            >>= fetchRelated #assets
             >>= fetchRelated #categoryId
+        let sortedAssets = sortAssetsForDisplay (get #assets market')
+        let market = market' |> set #assets sortedAssets
 
-        render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction }
+        render ShowView { .. }
 
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
