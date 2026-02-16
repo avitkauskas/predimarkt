@@ -71,7 +71,8 @@ renderMarket market = [hsx|
                 </div>
 
                 <!-- Assets container -->
-                <div class="scroll-no-bar position-relative pt-1" style="overflow-y: auto; max-height: 54px;">
+                <div class="scroll-no-bar position-relative"
+                     style="overflow-y: auto; max-height: 54px; margin-left: -0.5rem; margin-right: -0.5rem;">
                     <div class="pe-auto">
                         {forEach market.assets renderAsset}
                     </div>
@@ -80,7 +81,8 @@ renderMarket market = [hsx|
 
             <!-- Footer (not clickable) -->
             <div class={classes ["card-footer text-muted small py-1 border-top-0",
-                                 "d-flex align-items-center justify-content-between",
+                                 "d-flex align-items-center justify-content-between gap-3",
+                                 "text-nowrap overflow-auto scroll-no-bar",
                                  (footerClass, True)]}>
                 <div class="d-flex align-items-center gap-3">
                     <span title="Number of trades">
@@ -125,7 +127,7 @@ renderMarket market = [hsx|
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
-                        <div class="d-flex gap-1" style="width: 80px;">
+                        <div class="d-flex gap-1 ms-1" style="width: 80px;">
                             <a href={ShowMarketAction market.id (Just asset.id) (Just "buy")}
                                     class="btn btn-outline-success p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
@@ -139,15 +141,19 @@ renderMarket market = [hsx|
                         </div>
                     |]
                     else mempty
+
+                isResolvedWinner = market.status == MarketStatusResolved
+                    && market.outcomeAssetId == Just asset.id
+
             in [hsx|
-            <div class="d-flex justify-content-between align-items-center mb-1 small">
+            <div class={classes ["d-flex justify-content-between align-items-center mb-1 small rounded-1",
+                                 ("market-status-resolved-asset", isResolvedWinner)]}
+                 style="padding: 0.0rem 0.75rem;">
                 <div class="text-nowrap overflow-auto scroll-no-bar me-2" style="flex: 1;">
                    {asset.name}
                 </div>
                 <div class="d-flex align-items-center gap-1 ps-1 flex-shrink-0">
-                    <span class="me-1">
-                        {assetPrice}%
-                    </span>
+                    {assetPrice}%
                     {buttons}
                 </div>
             </div>

@@ -198,6 +198,7 @@ instance Controller MarketsController where
             market <- market
                 |> set #status MarketStatusResolved
                 |> set #resolvedAt (Just now)
+                |> set #outcomeAssetId (Just outcomeAssetId)
                 |> updateRecord
 
             forM_ holdings \holding -> do

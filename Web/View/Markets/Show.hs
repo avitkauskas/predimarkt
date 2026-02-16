@@ -92,11 +92,14 @@ instance View ShowView where
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
-                <div class="py-3 border-bottom"
+                <div class={classes ["py-3 border-bottom",
+                                     ("market-status-resolved-asset", isResolvedWinner)]}
                      id={"asset-" <> show asset.id}>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="asset-info ms-3">
-                            <div class="fw-semibold fs-5">{asset.name}</div>
+                            <div class="fw-semibold fs-5">
+                                {asset.name}
+                            </div>
                         </div>
                         <div class="asset-actions d-flex align-items-center gap-2">
                             {priceDisplay}
@@ -109,6 +112,8 @@ instance View ShowView where
             |]
                 where
                     isTradable = market.status == MarketStatusOpen
+                    isResolvedWinner = market.status == MarketStatusResolved
+                        && market.outcomeAssetId == Just asset.id
                     isBuyFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "buy"
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
 
@@ -122,7 +127,7 @@ instance View ShowView where
                     assetTotal = LMSR.sumTotal lmsrState
 
                     priceDisplay = [hsx|
-                        <div class="text-end fw-medium pe-4" style="width: 100px;">
+                        <div class="text-end fw-medium pe-3" style="width: 100px;">
                             €{printf "%.4f" assetPrice :: String}
                         </div>
                     |]
