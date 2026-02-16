@@ -1,7 +1,7 @@
 module Web.View.Layout (defaultLayout, dashboardLayout, Html) where
 
 import Application.Helper.View
-import Data.Conduit.Attoparsec (Position (Position))
+
 import Generated.Types
 import IHP.Environment
 import IHP.ViewPrelude
@@ -76,7 +76,7 @@ navbar = [hsx|
 
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
-            <li class="nav-item"><a class="nav-link" href={DashboardHoldingsAction Nothing}>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardPositionsAction Nothing}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -86,7 +86,7 @@ navbar = [hsx|
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a  class="dropdown-item" href={DashboardHoldingsAction Nothing}>Positions</a></li>
+                    <li><a  class="dropdown-item" href={DashboardPositionsAction Nothing}>Positions</a></li>
                     <li><a  class="dropdown-item" href={DashboardTransactionsAction Nothing}>Transactions</a></li>
                     <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>Markets</a></li>
                     <li><hr class="dropdown-divider" /></li>
@@ -114,8 +114,8 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", isActivePath (pathTo (DashboardHoldingsAction Nothing)))]}
-                               href={DashboardHoldingsAction Nothing}>
+                                    ("active", isActivePath (pathTo (DashboardPositionsAction Nothing)))]}
+                               href={DashboardPositionsAction Nothing}>
                               Positions
                             </a>
                         </li>

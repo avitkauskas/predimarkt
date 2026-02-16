@@ -1,25 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 
-module Web.View.Dashboard.Holdings where
+module Web.View.Dashboard.Positions where
 
 import Web.View.Prelude
 
-data HoldingWithValue = HoldingWithValue
-    { holding      :: Include' ["marketId", "assetId"] Holding
+data PositionWithValue = PositionWithValue
+    { position     :: Include' ["marketId", "assetId"] Position
     , currentValue :: Maybe Integer
     , assetPrice   :: Maybe Double
     }
 
-data HoldingsView = HoldingsView
-    { holdingsWithValue :: [HoldingWithValue]
-    , currentPage       :: Int
-    , totalPages        :: Int
-    , wallet            :: Wallet
+data PositionsView = PositionsView
+    { positionsWithValue :: [PositionWithValue]
+    , currentPage        :: Int
+    , totalPages         :: Int
+    , wallet             :: Wallet
     }
 
-instance View HoldingsView where
-    html HoldingsView { .. } = dashboardLayout [hsx|
+instance View PositionsView where
+    html PositionsView { .. } = dashboardLayout [hsx|
         <div class="container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px;">
                 <h5>Positions</h5>
@@ -27,40 +27,40 @@ instance View HoldingsView where
                     Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
                 </div>
             </div>
-            {renderHoldingsContent holdingsWithValue currentPage totalPages}
+            {renderPositionsContent positionsWithValue currentPage totalPages}
         </div>
     |]
 
-renderHoldingsContent :: (?context :: ControllerContext) => [HoldingWithValue] -> Int -> Int -> Html
-renderHoldingsContent [] _ _ = [hsx|
+renderPositionsContent :: (?context :: ControllerContext) => [PositionWithValue] -> Int -> Int -> Html
+renderPositionsContent [] _ _ = [hsx|
     <div class="alert alert-info">
         No active positions. <a href={MarketsAction} class="alert-link">Browse markets</a> to trade.
     </div>
 |]
-renderHoldingsContent holdings currentPage totalPages = [hsx|
+renderPositionsContent positions currentPage totalPages = [hsx|
     <div class="row g-3">
-        {forEach holdings renderHoldingCard}
+        {forEach positions renderPositionCard}
     </div>
     <div style="max-width: 900px;">
-        {renderHoldingsPagination currentPage totalPages}
+        {renderPositionsPagination currentPage totalPages}
     </div>
 |]
 
-renderHoldingCard :: (?context :: ControllerContext) => HoldingWithValue -> Html
-renderHoldingCard hwd =
-    let holding = get #holding hwd
-        asset = get #assetId holding
-        market = get #marketId holding
+renderPositionCard :: (?context :: ControllerContext) => PositionWithValue -> Html
+renderPositionCard pvd =
+    let position = get #position pvd
+        asset = get #assetId position
+        market = get #marketId position
 
-        qty = get #quantity holding
-        side = get #side holding
+        qty = get #quantity position
+        side = get #side position
         isLong = side == Just "long"
         isOpen = qty > 0
 
-        probText = maybe "-" formatPricePercent (get #assetPrice hwd)
+        probText = maybe "-" formatPricePercent (get #assetPrice pvd)
 
-        costBasis = abs (get #costBasis holding)
-        currentVal = fromMaybe 0 (get #currentValue hwd)
+        costBasis = abs (get #costBasis position)
+        currentVal = fromMaybe 0 (get #currentValue pvd)
 
         -- PnL calculation with new cash-based cost basis for shorts
         currentPnL = if isLong
@@ -146,7 +146,7 @@ renderPositionDisplay isOpen isLong qty =
     if isOpen
     then let cls :: Text = if isLong then "text-success fw-bold" else "text-danger fw-bold"
              txt :: Text = show qty <> if isLong then " long" else " short"
-          in [hsx|<span class={cls}>{txt}</span>|]
+           in [hsx|<span class={cls}>{txt}</span>|]
     else [hsx|<span class="fw-medium">closed</span>|]
 
 renderPnLDisplay :: Integer -> Html
@@ -190,10 +190,10 @@ renderStatusButton marketId cls txt =
            style="width: 94px;">{txt}</a>
     |]
 
-renderHoldingsPagination :: Int -> Int -> Html
-renderHoldingsPagination currentPage totalPages =
+renderPositionsPagination :: Int -> Int -> Html
+renderPositionsPagination currentPage totalPages =
     renderSmartPagination currentPage totalPages "Positions pagination"
-        (\pageNum -> pathTo (DashboardHoldingsAction (Just pageNum)))
+        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum)))
 
 renderClosedPnL :: Integer -> Html
 renderClosedPnL pnl

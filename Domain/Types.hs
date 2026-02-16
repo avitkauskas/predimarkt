@@ -19,7 +19,7 @@ module Domain.Types
     , mkBalance
     ) where
 
-import Generated.Types
+import Generated.Types hiding (Position)
 import IHP.Prelude
 
 -- | Side of a position: Long (bet for) or Short (bet against)

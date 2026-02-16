@@ -64,7 +64,7 @@ data AssetsController
     deriving (Eq, Show, Data)
 
 data DashboardController
-    = DashboardHoldingsAction { page :: Maybe Int }
+    = DashboardPositionsAction { page :: Maybe Int }
     | DashboardWalletsAction
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
     | DashboardTransactionsAction { page :: Maybe Int }

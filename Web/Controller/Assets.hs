@@ -67,13 +67,13 @@ instance Controller AssetsController where
                 then -tradeAmount  -- User pays
                 else tradeAmount   -- User receives
 
-        -- Get or create holding
-        maybeHolding <- query @Holding
+        -- Get or create position
+        maybeDbPosition <- query @Position
             |> filterWhere (#userId, currentUserId)
             |> filterWhere (#assetId, assetId)
             |> fetchOneOrNothing
 
-        let currentPosition = maybe Domain.emptyPosition toDomainPosition maybeHolding
+        let currentPosition = maybe Domain.emptyPosition toDomainPosition maybeDbPosition
 
         -- Build market context for LMSR-based calculations
         let otherAssets = [(a.id, a.quantity) | a <- assets, a.id /= asset.id]
@@ -139,18 +139,18 @@ instance Controller AssetsController where
             _ <- fromDomainTrade domainTradeWithPrices txnBase
                 |> createRecord
 
-            -- Update or create holding
-            case maybeHolding of
-                Just holding -> do
-                    let updatedHolding = fromDomainPosition newPosition holding
-                    updatedHolding |> updateRecord
+            -- Update or create position
+            case maybeDbPosition of
+                Just dbPosition -> do
+                    let updatedDbPosition = fromDomainPosition newPosition dbPosition
+                    updatedDbPosition |> updateRecord
                 Nothing -> do
-                    let newHoldingBase = newRecord @Holding
+                    let newDbPositionBase = newRecord @Position
                             |> set #userId currentUserId
                             |> set #marketId market.id
                             |> set #assetId assetId
-                    let newHolding = fromDomainPosition newPosition newHoldingBase
-                    newHolding |> createRecord
+                    let newDbPosition = fromDomainPosition newPosition newDbPositionBase
+                    newDbPosition |> createRecord
 
         -- Set success message
         let action = if tradeType == "buy" then "bought" else "sold"
@@ -159,14 +159,14 @@ instance Controller AssetsController where
         redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
 
     action ClosePositionAction { assetId } = do
-        -- Fetch user's holding for this asset
-        holding <- query @Holding
+        -- Fetch user's position for this asset
+        dbPosition <- query @Position
             |> filterWhere (#userId, currentUserId)
             |> filterWhere (#assetId, assetId)
             |> fetchOne
 
         -- Convert to domain position
-        let currentPosition = toDomainPosition holding
+        let currentPosition = toDomainPosition dbPosition
 
         -- Fetch asset and market
         asset <- fetch assetId
@@ -263,12 +263,12 @@ instance Controller AssetsController where
             _ <- fromDomainTrade domainTradeWithPrices txnBase
                 |> createRecord
 
-            -- Update holding - position is now flat
-            let updatedHolding = fromDomainPosition closedPosition holding
-            updatedHolding |> updateRecord
+            -- Update position - position is now flat
+            let updatedDbPosition = fromDomainPosition closedPosition dbPosition
+            updatedDbPosition |> updateRecord
 
         -- Set success message
         let action = if closeSide == Domain.Short then "sold" else "bought"
         setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show qty <> " shares for " <> formatMoney tradeAmount
 
-        redirectTo (DashboardHoldingsAction Nothing)
+        redirectTo (DashboardPositionsAction Nothing)

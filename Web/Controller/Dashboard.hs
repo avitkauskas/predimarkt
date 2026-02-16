@@ -3,20 +3,20 @@ module Web.Controller.Dashboard where
 import qualified Data.Map as M
 import qualified Domain.LMSR as LMSR
 import Web.Controller.Prelude
-import Web.View.Dashboard.Holdings
 import Web.View.Dashboard.Markets
+import Web.View.Dashboard.Positions
 import Web.View.Dashboard.Transactions
 import Web.View.Dashboard.Wallets
 
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardHoldingsAction { page } = autoRefresh do
+    action DashboardPositionsAction { page } = autoRefresh do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
         let itemsPerPage = 5
 
         -- Get total count for pagination
-        totalCount <- query @Holding
+        totalCount <- query @Position
             |> filterWhere (#userId, currentUserId)
             |> fetchCount
 
@@ -24,7 +24,7 @@ instance Controller DashboardController where
         let validPage = max 1 (min currentPage totalPages)
         let pageOffset = (validPage - 1) * itemsPerPage
 
-        holdings <- query @Holding
+        positions <- query @Position
             |> filterWhere (#userId, currentUserId)
             |> orderByDesc #updatedAt
             |> limit itemsPerPage
@@ -33,8 +33,8 @@ instance Controller DashboardController where
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #marketId
 
-        -- Get unique market IDs from holdings
-        let marketIds = nub (map (\h -> h.marketId.id) holdings)
+        -- Get unique market IDs from positions
+        let marketIds = nub (map (\p -> p.marketId.id) positions)
 
         -- Fetch all markets with their assets
         marketsWithAssets <- forM marketIds $ \mId -> do
@@ -49,16 +49,16 @@ instance Controller DashboardController where
                       (marketId, (market, lmsrState))
                     | (marketId, market, _, lmsrState) <- marketsWithAssets ]
 
-        -- Calculate current value for each holding
-        holdingsWithValue <- forM holdings $ \holding -> do
-            let mId = holding.marketId.id
+        -- Calculate current value for each position
+        positionsWithValue <- forM positions $ \position -> do
+            let mId = position.marketId.id
             case M.lookup mId marketDataMap of
                 Just (market, lmsrState) -> do
-                    let asset = get #assetId holding
+                    let asset = get #assetId position
                         currentPrice = LMSR.price asset.id lmsrState
-                        qty = holding.quantity
+                        qty = position.quantity
 
-                    let currentValue = case (qty, holding.side) of
+                    let currentValue = case (qty, position.side) of
                             (0, _) -> Nothing
                             (q, Just "long") -> Just $ LMSR.calculateSellRevenue q currentPrice market.beta
                             (q, Just "short") -> Just $ LMSR.calculateBuyCost q currentPrice market.beta
@@ -66,17 +66,17 @@ instance Controller DashboardController where
 
                         assetPrice = Just currentPrice
 
-                    return HoldingWithValue { .. }
-                Nothing -> return HoldingWithValue
-                    { holding = holding, currentValue = Nothing, assetPrice = Nothing }
+                    return PositionWithValue { .. }
+                Nothing -> return PositionWithValue
+                    { position = position, currentValue = Nothing, assetPrice = Nothing }
 
         -- Fetch wallet for balance display
         wallet <- query @Wallet
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
 
-        render HoldingsView
-            { holdingsWithValue = holdingsWithValue
+        render PositionsView
+            { positionsWithValue = positionsWithValue
             , currentPage = validPage
             , totalPages = totalPages
             , wallet = wallet

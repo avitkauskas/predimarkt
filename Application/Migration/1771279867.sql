@@ -1,0 +1,17 @@
+DROP INDEX holdings_asset_id_index;
+DROP INDEX holdings_market_id_index;
+DROP INDEX holdings_user_id_asset_id_index;
+DROP INDEX holdings_user_id_index;
+DROP TRIGGER update_holdings_updated_at ON holdings;
+ALTER TABLE holdings DROP CONSTRAINT holdings_ref_asset_id;
+ALTER TABLE holdings DROP CONSTRAINT holdings_ref_market_id;
+ALTER TABLE holdings DROP CONSTRAINT holdings_ref_user_id;
+ALTER TABLE holdings RENAME TO positions;
+CREATE INDEX positions_user_id_index ON positions (user_id);
+CREATE INDEX positions_market_id_index ON positions (market_id);
+CREATE INDEX positions_asset_id_index ON positions (asset_id);
+CREATE UNIQUE INDEX positions_user_id_asset_id_index ON positions (user_id, asset_id);
+CREATE TRIGGER update_positions_updated_at BEFORE UPDATE ON positions FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+ALTER TABLE positions ADD CONSTRAINT positions_ref_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
+ALTER TABLE positions ADD CONSTRAINT positions_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE NO ACTION;
+ALTER TABLE positions ADD CONSTRAINT positions_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;

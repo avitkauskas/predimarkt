@@ -25,16 +25,16 @@ formatSide Nothing             = Nothing
 formatSide (Just Domain.Long)  = Just "long"
 formatSide (Just Domain.Short) = Just "short"
 
--- | Convert database Holding to domain Position
--- Note: This reconstructs the current state from the holding record
-toDomainPosition :: Holding -> Domain.Position
-toDomainPosition holding =
-    let mSide = parseSide (get #side holding)
-        qty = get #quantity holding
-        costBasis = fromIntegral (get #costBasis holding)
+-- | Convert database Position to domain Position
+-- Note: This reconstructs the current state from the position record
+toDomainPosition :: Position -> Domain.Position
+toDomainPosition position =
+    let mSide = parseSide (get #side position)
+        qty = get #quantity position
+        costBasis = fromIntegral (get #costBasis position)
     in case Domain.mkQuantity qty of
         Nothing ->
-            error $ "Invalid negative quantity in holding: " ++ show qty
+            error $ "Invalid negative quantity in position: " ++ show qty
         Just domainQty ->
             Domain.Position
                 { Domain.posSide = if qty == 0 then Nothing else mSide
@@ -43,14 +43,14 @@ toDomainPosition holding =
                 , Domain.posRealizedPnL = Domain.Balance 0
                 }
 
--- | Apply domain Position back to database Holding
--- This preserves the holding's ID and other fields while updating state
-fromDomainPosition :: Domain.Position -> Holding -> Holding
-fromDomainPosition domainPos holding =
+-- | Apply domain Position back to database Position
+-- This preserves the position's ID and other fields while updating state
+fromDomainPosition :: Domain.Position -> Position -> Position
+fromDomainPosition domainPos position =
     let Domain.Quantity qty = Domain.posQuantity domainPos
         Domain.Balance costBasis = Domain.posCostBasis domainPos
         mSide = Domain.posSide domainPos
-    in holding
+    in position
         |> set #side (formatSide mSide)
         |> set #quantity qty
         |> set #costBasis (fromIntegral costBasis)

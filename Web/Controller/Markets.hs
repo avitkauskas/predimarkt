@@ -187,7 +187,7 @@ instance Controller MarketsController where
         outcomeAsset <- fetch outcomeAssetId
         accessDeniedUnless (outcomeAsset.marketId == market.id)
 
-        holdings <- query @Holding
+        positions <- query @Position
             |> filterWhere (#marketId, market.id)
             |> filterWhereNot (#quantity, 0)
             |> fetch
@@ -201,14 +201,14 @@ instance Controller MarketsController where
                 |> set #outcomeAssetId (Just outcomeAssetId)
                 |> updateRecord
 
-            forM_ holdings \holding -> do
+            forM_ positions \position -> do
                 wallet <- query @Wallet
-                    |> filterWhere (#userId, holding.userId)
+                    |> filterWhere (#userId, position.userId)
                     |> fetchOne
 
                 -- Convert to domain position and resolve
-                let position = toDomainPosition holding
-                let resolvedPosition = Domain.resolvePosition (holding.assetId == outcomeAssetId) position
+                let domainPosition = toDomainPosition position
+                let resolvedPosition = Domain.resolvePosition (position.assetId == outcomeAssetId) domainPosition
                 let Domain.Balance refundAmount = Domain.refundPosition resolvedPosition
 
                 -- Update wallet
@@ -218,19 +218,19 @@ instance Controller MarketsController where
 
                 -- Create transaction for resolution
                 _ <- newRecord @Transaction
-                    |> set #userId holding.userId
-                    |> set #assetId holding.assetId
+                    |> set #userId position.userId
+                    |> set #assetId position.assetId
                     |> set #marketId market.id
-                    |> set #quantity (-holding.quantity)
+                    |> set #quantity (-position.quantity)
                     |> set #cashFlow refundAmount
-                    |> set #side (fromMaybe "long" holding.side)  -- Use actual position side
+                    |> set #side (fromMaybe "long" position.side)  -- Use actual position side
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> createRecord
 
-                -- Update holding to reflect resolved state
-                let updatedHolding = fromDomainPosition resolvedPosition holding
-                updatedHolding |> updateRecord
+                -- Update position to reflect resolved state
+                let updatedPosition = fromDomainPosition resolvedPosition position
+                updatedPosition |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
@@ -247,8 +247,8 @@ instance Controller MarketsController where
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusClosed)
 
-        -- Get all holdings (both open and closed) for refunding
-        holdings <- query @Holding
+        -- Get all positions (both open and closed) for refunding
+        positions <- query @Position
             |> filterWhere (#marketId, market.id)
             |> fetch
 
@@ -261,24 +261,24 @@ instance Controller MarketsController where
                 |> set #refundedAt (Just now)
                 |> updateRecord
 
-            -- Process each holding and refund
-            forM_ holdings \holding -> do
+            -- Process each position and refund
+            forM_ positions \position -> do
                 wallet <- query @Wallet
-                    |> filterWhere (#userId, holding.userId)
+                    |> filterWhere (#userId, position.userId)
                     |> fetchOne
 
                 -- Calculate refund amount (cost basis + realized PnL)
-                let position = toDomainPosition holding
-                let Domain.Balance refundAmount = Domain.refundPosition position
+                let domainPosition = toDomainPosition position
+                let Domain.Balance refundAmount = Domain.refundPosition domainPosition
 
                 -- Create transaction record for the refund
                 _ <- newRecord @Transaction
-                    |> set #userId holding.userId
-                    |> set #assetId holding.assetId
+                    |> set #userId position.userId
+                    |> set #assetId position.assetId
                     |> set #marketId market.id
-                    |> set #quantity (-holding.quantity)
+                    |> set #quantity (-position.quantity)
                     |> set #cashFlow refundAmount
-                    |> set #side (fromMaybe "long" holding.side)
+                    |> set #side (fromMaybe "long" position.side)
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> createRecord
@@ -293,10 +293,10 @@ instance Controller MarketsController where
                         { Domain.posSide = Nothing
                         , Domain.posQuantity = Domain.Quantity 0
                         , Domain.posCostBasis = Domain.Balance 0
-                        , Domain.posRealizedPnL = Domain.posRealizedPnL position
+                        , Domain.posRealizedPnL = Domain.posRealizedPnL domainPosition
                         }
-                let updatedHolding = fromDomainPosition closedPosition holding
-                updatedHolding |> updateRecord
+                let updatedPosition = fromDomainPosition closedPosition position
+                updatedPosition |> updateRecord
 
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing

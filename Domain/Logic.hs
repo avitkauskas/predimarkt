@@ -15,7 +15,6 @@ module Domain.Logic
 
 import qualified Domain.LMSR as LMSR
 import Domain.Types
-import Generated.Types
 import IHP.Prelude
 
 -- | An empty position (no holdings)
