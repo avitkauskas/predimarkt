@@ -644,11 +644,11 @@
         "systems": "systems_7"
       },
       "locked": {
-        "lastModified": 1771254497,
-        "narHash": "sha256-4QW28gPsz+4TgNoA6czDYIV/vjVQXtS28dWiqK+7D8c=",
+        "lastModified": 1771330955,
+        "narHash": "sha256-ZOcHI8YF6RZLPjqHoz6A+LotZ7g0/T1r5WxkmLkgIxk=",
         "owner": "digitallyinduced",
         "repo": "ihp",
-        "rev": "7cfbde2c7cb57a952d45d4aad47b4d06598565ff",
+        "rev": "a2a32279d3d76ee594b93aa02aa9c8496d65594d",
         "type": "github"
       },
       "original": {

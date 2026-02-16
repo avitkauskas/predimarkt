@@ -54,17 +54,17 @@ instance Controller MarketsController where
 
     action ShowMarketAction { marketId, tradingAssetId, tradingAction } = autoRefresh do
         ensureIsUser
-        let marketId = if marketId == def then param @(Id Market) "marketId" else marketId
-        let tradingAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
-        let tradingAction = tradingAction <|> paramOrNothing @Text "tradingAction"
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
+        let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
 
-        market' <- fetch marketId
+        market' <- fetch mId
             >>= fetchRelated #assets
             >>= fetchRelated #categoryId
         let sortedAssets = sortAssetsForDisplay (get #assets market')
         let market = market' |> set #assets sortedAssets
 
-        render ShowView { .. }
+        render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction }
 
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
