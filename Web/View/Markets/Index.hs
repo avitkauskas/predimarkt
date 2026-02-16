@@ -58,7 +58,8 @@ renderMarket market = [hsx|
             </div>
 
             <!-- Card body -->
-            <div class={classes ["card-body d-flex flex-column position-relative", (bodyClass, True)]}>
+            <div class={classes ["card-body d-flex flex-column position-relative pb-2",
+                        (bodyClass, True)]}>
 
                 <!-- Scrollable, clickable title -->
                 <div class="position-relative scroll-no-bar mb-2">
@@ -72,10 +73,8 @@ renderMarket market = [hsx|
 
                 <!-- Assets container -->
                 <div class="scroll-no-bar position-relative"
-                     style="overflow-y: auto; max-height: 54px; margin-left: -0.5rem; margin-right: -0.5rem;">
-                    <div class="pe-auto">
-                        {forEach market.assets renderAsset}
-                    </div>
+                     style="overflow-y: auto; max-height: 50px; margin-left: -0.5rem; margin-right: -0.5rem;">
+                    {forEach market.assets renderAsset}
                 </div>
             </div>
 
@@ -146,9 +145,9 @@ renderMarket market = [hsx|
                     && market.outcomeAssetId == Just asset.id
 
             in [hsx|
-            <div class={classes ["d-flex justify-content-between align-items-center mb-1 small rounded-1",
+            <div class={classes ["d-flex justify-content-between mb-1 small rounded-1",
                                  ("market-status-resolved-asset", isResolvedWinner)]}
-                 style="padding: 0.0rem 0.75rem;">
+                 style="padding: 0.0rem 0.6rem;">
                 <div class="text-nowrap overflow-auto scroll-no-bar me-2" style="flex: 1;">
                    {asset.name}
                 </div>

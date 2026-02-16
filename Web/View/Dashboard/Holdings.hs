@@ -87,7 +87,7 @@ renderHoldingCard hwd =
             n | n > 0 -> "text-success fw-bold"
               | n < 0 -> "text-danger fw-bold"
               | otherwise -> "fw-medium"
-        actionBtn = renderActionButton isOpen isProfitable market.id asset.id
+        actionBtn = renderActionButton isOpen isProfitable market.id asset.id market.status
     in [hsx|
         <div class="col-12">
             <div class="card shadow-sm" style="max-width: 900px;">
@@ -122,7 +122,7 @@ renderHoldingCard hwd =
                             <div class="flex-shrink-0 text-center px-2">
                                 <div class="d-flex align-items-center justify-content-center" style="gap: 20px;">
                                     <div class="text-center" style="min-width: 80px;">
-                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Unrealized P&L</div>
+                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">P&L Now</div>
                                         <div class={pnlClass}>{if isOpen then pnlDisplay else renderClosedPnL currentPnL}</div>
                                     </div>
                                     <div class="text-center" style="min-width: 100px;">
@@ -152,29 +152,43 @@ renderPositionDisplay isOpen isLong qty =
 renderPnLDisplay :: Integer -> Html
 renderPnLDisplay pnl = [hsx|<span>{formatMoneySigned pnl}</span>|]
 
-renderActionButton :: Bool -> Bool -> Id Market ->Id Asset -> Html
-renderActionButton False _ marketId assetId = [hsx|
-        <a href={ShowMarketAction marketId (Just assetId) (Just "buy")}
-           class="btn btn-outline-primary btn-sm text-nowrap">Make Trade</a>
-    |]
-renderActionButton True isProfitable _ assetId =
+renderActionButton :: Bool -> Bool -> Id Market -> Id Asset -> MarketStatus -> Html
+-- For markets that are closed/resolved/refunded, always show status button
+renderActionButton _ _ marketId _ marketStatus
+    | marketStatus == MarketStatusClosed =
+        renderStatusButton marketId "btn-outline-primary" "Closed"
+    | marketStatus == MarketStatusResolved =
+        renderStatusButton marketId "btn-outline-success" "Resolved"
+    | marketStatus == MarketStatusRefunded =
+        renderStatusButton marketId "btn-outline-danger" "Refunded"
+-- For open markets with open positions, show profit/loss buttons
+renderActionButton True isProfitable _ assetId _ =
     let (cls, txt) = if isProfitable
-            then ("btn-outline-success" :: Text, "Take Profit" :: Text)
-            else ("btn-outline-danger" :: Text, "Close Loss" :: Text)
+            then ("btn-success" :: Text, "Take Profit" :: Text)
+            else ("btn-danger" :: Text, "Close Loss" :: Text)
     in [hsx|
         <form action={ClosePositionAction assetId} method="POST" class="d-inline">
-            <button type="submit" class={"btn btn-sm text-nowrap " <> cls}>{txt}</button>
+            <button type="submit" class={"btn btn-sm text-nowrap " <> cls}
+                    style="width: 94px;">{txt}</button>
         </form>
     |]
-
-renderPnLRange :: Bool -> Integer -> Integer -> Html
-renderPnLRange isOpen maxLoss maxProfit =
-    if isOpen
-    then [hsx|
-        <span class="fw-medium">{formatMoneySigned maxLoss}</span>&nbsp;
-        <span class="fw-medium">{formatMoneySigned maxProfit}</span>
+-- For open markets with closed positions, show Make Trade
+renderActionButton False _ marketId _ _ =
+    let link = ShowMarketAction marketId Nothing Nothing
+    in [hsx|
+        <a href={link}
+           class="btn btn-primary btn-sm text-nowrap"
+           style="width: 94px;">Make Trade</a>
     |]
-    else [hsx|<span class="fw-medium">--</span>|]
+
+renderStatusButton :: Id Market -> Text -> Text -> Html
+renderStatusButton marketId cls txt =
+    let link = ShowMarketAction marketId Nothing Nothing
+    in [hsx|
+        <a href={link}
+           class={"btn btn-sm text-nowrap " <> cls}
+           style="width: 94px;">{txt}</a>
+    |]
 
 renderHoldingsPagination :: Int -> Int -> Html
 renderHoldingsPagination currentPage totalPages =
