@@ -4,9 +4,6 @@ module Domain.Logic
     , resolvePosition
     , refundPosition
 
-      -- LMSR-based proportion calculation
-    , calculateReleaseProportion
-
       -- Utility functions
     , emptyPosition
     , isFlat

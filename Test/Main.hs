@@ -341,23 +341,6 @@ main = hspec do
                         Domain.Balance cb = Domain.posCostBasis pos
                     in cb >= 0
 
-    describe "Release Proportion Calculation" $ do
-        it "returns 1.0 when closing full position" $ do
-            let ctx = mkBinaryMarketContext testYesAsset 100 50
-                ratio = Logic.calculateReleaseProportion ctx Domain.Long 100 100
-            ratio `shouldBe` 1.0
-
-        it "returns 0.0 when closing 0 shares" $ do
-            let ctx = mkBinaryMarketContext testYesAsset 100 50
-                ratio = Logic.calculateReleaseProportion ctx Domain.Long 0 100
-            ratio `shouldBe` 0.0
-
-        it "returns proportional value for partial close" $ do
-            let ctx = mkBinaryMarketContext testYesAsset 100 50
-                ratio = Logic.calculateReleaseProportion ctx Domain.Long 30 100
-            -- With LMSR, selling 30/100 shares doesn't give exactly 0.3 of value
-            ratio > 0 && ratio < 1 `shouldBe` True
-
     describe "Open Position" $ do
         it "opens a Long position with correct cost basis" $ do
             let trade = mkBuyTrade 100 5000
