@@ -89,8 +89,7 @@ CREATE TABLE transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     side TEXT DEFAULT 'long' NOT NULL,
     price_before DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    price_after DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    realized_pnl BIGINT DEFAULT 0 NOT NULL
+    price_after DOUBLE PRECISION DEFAULT 0 NOT NULL
 );
 CREATE INDEX transactions_user_id_index ON transactions (user_id);
 CREATE INDEX transactions_market_id_index ON transactions (market_id);
@@ -104,8 +103,7 @@ CREATE TABLE holdings (
     quantity BIGINT DEFAULT 0 NOT NULL,
     cost_basis BIGINT DEFAULT 0 NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    side TEXT,
-    realized_pnl BIGINT DEFAULT 0 NOT NULL
+    side TEXT
 );
 CREATE INDEX holdings_user_id_index ON holdings (user_id);
 CREATE INDEX holdings_market_id_index ON holdings (market_id);

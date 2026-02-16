@@ -74,7 +74,6 @@ renderHoldingCard hwd =
         maxOutcome = if isLong
                 then qty * 100 - costBasis
                 else negate (qty * 100 - costBasis)
-        realizedPnL = get #realizedPnl holding
 
         nextAction = case side of
             Just "long"  -> Just "buy"
@@ -88,7 +87,6 @@ renderHoldingCard hwd =
             n | n > 0 -> "text-success fw-bold"
               | n < 0 -> "text-danger fw-bold"
               | otherwise -> "fw-medium"
-        realizedDisplay = renderRealizedDisplay realizedPnL
         actionBtn = renderActionButton isOpen isProfitable market.id asset.id
     in [hsx|
         <div class="col-12">
@@ -136,10 +134,6 @@ renderHoldingCard hwd =
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
-                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Realized P&L</div>
-                                <div class="fw-medium text-nowrap">{realizedDisplay}</div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -157,12 +151,6 @@ renderPositionDisplay isOpen isLong qty =
 
 renderPnLDisplay :: Integer -> Html
 renderPnLDisplay pnl = [hsx|<span>{formatMoneySigned pnl}</span>|]
-
-renderRealizedDisplay :: Integer -> Html
-renderRealizedDisplay pnl
-    | pnl == 0 = [hsx|<span class="text-muted">--</span>|]
-    | pnl > 0 = [hsx|<span class="fw-bold text-success">{formatMoneySigned pnl}</span>|]
-    | otherwise = [hsx|<span class="fw-bold text-danger">{formatMoneySigned pnl}</span>|]
 
 renderActionButton :: Bool -> Bool -> Id Market ->Id Asset -> Html
 renderActionButton False _ marketId assetId = [hsx|

@@ -137,7 +137,6 @@ instance Controller AssetsController where
                     |> set #assetId assetId
                     |> set #marketId market.id
             _ <- fromDomainTrade domainTradeWithPrices txnBase
-                    |> set #realizedPnl txRealizedPnL
                 |> createRecord
 
             -- Update or create holding
@@ -262,7 +261,6 @@ instance Controller AssetsController where
                     |> set #assetId assetId
                     |> set #marketId market.id
             _ <- fromDomainTrade domainTradeWithPrices txnBase
-                    |> set #realizedPnl txRealizedPnL
                 |> createRecord
 
             -- Update holding - position is now flat

@@ -217,7 +217,6 @@ instance Controller MarketsController where
                     |> updateRecord
 
                 -- Create transaction for resolution
-                let Domain.Balance realizedPnlValue = Domain.posRealizedPnL resolvedPosition
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
@@ -227,7 +226,6 @@ instance Controller MarketsController where
                     |> set #side (fromMaybe "long" holding.side)  -- Use actual position side
                     |> set #priceBefore 0
                     |> set #priceAfter 0
-                    |> set #realizedPnl realizedPnlValue
                     |> createRecord
 
                 -- Update holding to reflect resolved state
@@ -274,7 +272,6 @@ instance Controller MarketsController where
                 let Domain.Balance refundAmount = Domain.refundPosition position
 
                 -- Create transaction record for the refund
-                let Domain.Balance realizedPnlValue = Domain.posRealizedPnL position
                 _ <- newRecord @Transaction
                     |> set #userId holding.userId
                     |> set #assetId holding.assetId
@@ -284,7 +281,6 @@ instance Controller MarketsController where
                     |> set #side (fromMaybe "long" holding.side)
                     |> set #priceBefore 0
                     |> set #priceAfter 0
-                    |> set #realizedPnl realizedPnlValue
                     |> createRecord
 
                 -- Update wallet balance with refund

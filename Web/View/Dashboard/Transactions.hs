@@ -59,7 +59,6 @@ renderTransactionCard twd =
         isBuy = get #side txn == "long"
         qty = abs (get #quantity txn)
         cashFlow = get #cashFlow txn
-        realizedPnL = get #realizedPnl txn
 
         timestampStr = formatTime defaultTimeLocale "%F %R" (get #createdAt txn)
 
@@ -72,9 +71,6 @@ renderTransactionCard twd =
 
         typeText = if isBuy then "bought" else "sold" :: Text
         typeColor = if isBuy then "text-success" else "text-danger" :: Text
-        pnlText = if realizedPnL /= 0
-            then formatMoneySigned realizedPnL
-            else "--"
         moneyClass :: Integer -> Text
         moneyClass money = case money of
              n | n > 0 -> "text-success fw-bold"
@@ -105,12 +101,6 @@ renderTransactionCard twd =
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Cash Flow</div>
                                 <div class={moneyClass cashFlow <> " text-nowrap"}>
                                     {formatMoneySigned cashFlow}
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 text-center" style="width: 145px;">
-                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Realized P&L</div>
-                                <div class={moneyClass realizedPnL <> " text-nowrap"}>
-                                    {pnlText}
                                 </div>
                             </div>
                             <div class="flex-shrink-0 text-center" style="width: 145px;">

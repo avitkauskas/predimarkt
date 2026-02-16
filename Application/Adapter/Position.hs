@@ -27,13 +27,11 @@ formatSide (Just Domain.Short) = Just "short"
 
 -- | Convert database Holding to domain Position
 -- Note: This reconstructs the current state from the holding record
--- The realized PnL is preserved from the holding
 toDomainPosition :: Holding -> Domain.Position
 toDomainPosition holding =
     let mSide = parseSide (get #side holding)
         qty = get #quantity holding
         costBasis = fromIntegral (get #costBasis holding)
-        realizedPnL = fromIntegral (get #realizedPnl holding)
     in case Domain.mkQuantity qty of
         Nothing ->
             error $ "Invalid negative quantity in holding: " ++ show qty
@@ -42,20 +40,17 @@ toDomainPosition holding =
                 { Domain.posSide = if qty == 0 then Nothing else mSide
                 , Domain.posQuantity = domainQty
                 , Domain.posCostBasis = Domain.Balance costBasis
-                , Domain.posRealizedPnL = Domain.Balance realizedPnL
+                , Domain.posRealizedPnL = Domain.Balance 0
                 }
 
 -- | Apply domain Position back to database Holding
 -- This preserves the holding's ID and other fields while updating state
--- Critical: When position is flat (side=Nothing, qty=0), realized PnL is preserved
 fromDomainPosition :: Domain.Position -> Holding -> Holding
 fromDomainPosition domainPos holding =
     let Domain.Quantity qty = Domain.posQuantity domainPos
         Domain.Balance costBasis = Domain.posCostBasis domainPos
-        Domain.Balance realizedPnL = Domain.posRealizedPnL domainPos
         mSide = Domain.posSide domainPos
     in holding
         |> set #side (formatSide mSide)
         |> set #quantity qty
         |> set #costBasis (fromIntegral costBasis)
-        |> set #realizedPnl (fromIntegral realizedPnL)
