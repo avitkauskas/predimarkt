@@ -53,7 +53,8 @@ CREATE TABLE markets (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     trades BIGINT DEFAULT 0 NOT NULL,
     volume BIGINT DEFAULT 0 NOT NULL,
-    turnover BIGINT DEFAULT 0 NOT NULL
+    turnover BIGINT DEFAULT 0 NOT NULL,
+    resolved_asset_id UUID DEFAULT NULL
 );
 CREATE INDEX markets_user_id_index ON markets (user_id);
 CREATE INDEX markets_status_index ON markets (status);
@@ -116,6 +117,7 @@ ALTER TABLE holdings ADD CONSTRAINT holdings_ref_asset_id FOREIGN KEY (asset_id)
 ALTER TABLE holdings ADD CONSTRAINT holdings_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE NO ACTION;
 ALTER TABLE holdings ADD CONSTRAINT holdings_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
+ALTER TABLE markets ADD CONSTRAINT markets_ref_resolved_asset_id FOREIGN KEY (resolved_asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
 ALTER TABLE transactions ADD CONSTRAINT transactions_ref_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE transactions ADD CONSTRAINT transactions_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE NO ACTION;
