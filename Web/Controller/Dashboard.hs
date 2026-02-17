@@ -57,14 +57,16 @@ instance Controller DashboardController where
                     let asset = get #assetId position
                         currentPrice = LMSR.price asset.id lmsrState
                         qty = position.quantity
+                        absQty = abs qty
 
-                    let currentValue = case (qty, position.side) of
-                            (0, _) -> Nothing
-                            (q, Just "long") -> Just $ LMSR.calculateSellRevenue q currentPrice market.beta
-                            (q, Just "short") -> Just $ LMSR.calculateBuyCost q currentPrice market.beta
-                            (_, _) -> Nothing
+                    -- Derive side from quantity sign: positive = long, negative = short
+                    let currentValue = if qty == 0
+                            then Nothing
+                            else if qty > 0  -- Long position
+                                then Just $ LMSR.calculateSellRevenue absQty currentPrice market.beta
+                                else Just $ LMSR.calculateBuyCost absQty currentPrice market.beta
 
-                        assetPrice = Just currentPrice
+                    let assetPrice = Just currentPrice
 
                     return PositionWithValue { .. }
                 Nothing -> return PositionWithValue

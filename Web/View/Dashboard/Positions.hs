@@ -53,13 +53,17 @@ renderPositionCard pvd =
         market = get #marketId position
 
         qty = get #quantity position
-        side = get #side position
-        isLong = side == Just "long"
-        isOpen = qty > 0
+        isLong = qty > 0  -- Positive quantity = long position
+        isOpen = qty /= 0
+        absQty = abs qty
 
         probText = maybe "-" formatPricePercent (get #assetPrice pvd)
 
-        costBasis = abs (get #costBasis position)
+        -- Cost basis calculation from invested and received
+        invested = get #invested position      -- Always <= 0 (money paid)
+        received = get #received position      -- Always >= 0 (money received)
+        costBasis = abs (invested + received)  -- Total money at risk
+
         currentVal = fromMaybe 0 (get #currentValue pvd)
 
         -- PnL calculation with new cash-based cost basis for shorts
@@ -72,16 +76,13 @@ renderPositionCard pvd =
         -- Long: [-costBasis, +(qty*100 - costBasis)]
         -- Short: [-(qty*100 - costBasis), +costBasis]
         maxOutcome = if isLong
-                then qty * 100 - costBasis
-                else negate (qty * 100 - costBasis)
+                then absQty * 100 - costBasis
+                else negate (absQty * 100 - costBasis)
 
-        nextAction = case side of
-            Just "long"  -> Just "buy"
-            Just "short" -> Just "sell"
-            _            -> Nothing
+        nextAction = if isLong then Just "buy" else Just "sell"
         marketUrl = ShowMarketAction market.id (Just asset.id) nextAction
 
-        positionDisplay = renderPositionDisplay isOpen isLong qty
+        positionDisplay = renderPositionDisplay isOpen isLong absQty
         pnlDisplay = renderPnLDisplay currentPnL
         pnlClass :: Text = case currentPnL of
             n | n > 0 -> "text-success fw-bold"
@@ -200,4 +201,3 @@ renderClosedPnL pnl
     | pnl == 0 = [hsx|<span class="fw-medium">--</span>|]
     | pnl > 0 = [hsx|<span class="fw-bold text-success">{formatMoneySigned pnl}</span>|]
     | otherwise = [hsx|<span class="fw-bold text-danger">{formatMoneySigned pnl}</span>|]
-

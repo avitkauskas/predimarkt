@@ -87,7 +87,6 @@ CREATE TABLE transactions (
     quantity BIGINT DEFAULT 0 NOT NULL,
     cash_flow BIGINT DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    side TEXT DEFAULT 'long' NOT NULL,
     price_before DOUBLE PRECISION DEFAULT 0 NOT NULL,
     price_after DOUBLE PRECISION DEFAULT 0 NOT NULL
 );
@@ -101,9 +100,9 @@ CREATE TABLE positions (
     market_id UUID NOT NULL,
     asset_id UUID NOT NULL,
     quantity BIGINT DEFAULT 0 NOT NULL,
-    cost_basis BIGINT DEFAULT 0 NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    side TEXT
+    invested BIGINT DEFAULT 0 NOT NULL,
+    received BIGINT DEFAULT 0 NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 CREATE INDEX positions_user_id_index ON positions (user_id);
 CREATE INDEX positions_market_id_index ON positions (market_id);

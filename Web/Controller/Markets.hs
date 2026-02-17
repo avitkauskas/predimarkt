@@ -219,13 +219,13 @@ instance Controller MarketsController where
                     |> updateRecord
 
                 -- Create transaction for resolution
+                -- Side is derived from quantity: negative quantity = closing transaction
                 _ <- newRecord @Transaction
                     |> set #userId position.userId
                     |> set #assetId position.assetId
                     |> set #marketId market.id
                     |> set #quantity (-position.quantity)
                     |> set #cashFlow refundAmount
-                    |> set #side (fromMaybe "long" position.side)  -- Use actual position side
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> createRecord
@@ -274,13 +274,13 @@ instance Controller MarketsController where
                 let Domain.Balance refundAmount = Domain.refundPosition domainPosition
 
                 -- Create transaction record for the refund
+                -- Side is derived from quantity: negative quantity = closing transaction
                 _ <- newRecord @Transaction
                     |> set #userId position.userId
                     |> set #assetId position.assetId
                     |> set #marketId market.id
                     |> set #quantity (-position.quantity)
                     |> set #cashFlow refundAmount
-                    |> set #side (fromMaybe "long" position.side)
                     |> set #priceBefore 0
                     |> set #priceAfter 0
                     |> createRecord

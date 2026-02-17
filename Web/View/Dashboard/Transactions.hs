@@ -56,8 +56,10 @@ renderTransactionCard twd =
         asset = get #assetId txn
         market = get #marketId txn
 
-        isBuy = get #side txn == "long"
-        qty = abs (get #quantity txn)
+        -- Derive isBuy from quantity sign: positive = buy (long), negative = sell (short)
+        qty = get #quantity txn
+        isBuy = qty > 0
+        absQty = abs qty
         cashFlow = get #cashFlow txn
 
         timestampStr = formatTime defaultTimeLocale "%F %R" (get #createdAt txn)
@@ -95,7 +97,7 @@ renderTransactionCard twd =
                                 <div class="small text-muted fw-medium text-nowrap" style="font-size: 0.7rem;">
                                     {renderTime txn.createdAt}
                                 </div>
-                                <div class={typeColor <> " fw-bold text-nowrap"}>{typeText} {show qty}</div>
+                                <div class={typeColor <> " fw-bold text-nowrap"}>{typeText} {show absQty}</div>
                             </div>
                             <div class="flex-shrink-0 text-center" style="width: 145px;">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Cash Flow</div>
