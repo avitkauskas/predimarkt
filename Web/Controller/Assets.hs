@@ -97,11 +97,6 @@ instance Controller AssetsController where
         -- Apply trade to get new position
         let newPosition = Domain.applyTrade marketContext domainTrade currentPosition
 
-        -- Calculate realized PnL from this specific trade
-        let Domain.Balance oldRealizedPnL = Domain.posRealizedPnL currentPosition
-        let Domain.Balance newRealizedPnL = Domain.posRealizedPnL newPosition
-        let txRealizedPnL = newRealizedPnL - oldRealizedPnL
-
         withTransaction do
             -- Update asset quantity
             let assetDeltaQty = if side == Domain.Long then paramQty else (-paramQty)
@@ -143,14 +138,20 @@ instance Controller AssetsController where
             case maybeDbPosition of
                 Just dbPosition -> do
                     let updatedDbPosition = fromDomainPosition newPosition dbPosition
-                    updatedDbPosition |> updateRecord
+                    updatedDbPosition
+                        |> set #invested (updatedDbPosition.invested + if deltaCents < 0 then deltaCents else 0)
+                        |> set #received (updatedDbPosition.received + if deltaCents > 0 then deltaCents else 0)
+                        |> updateRecord
                 Nothing -> do
                     let newDbPositionBase = newRecord @Position
                             |> set #userId currentUserId
                             |> set #marketId market.id
                             |> set #assetId assetId
                     let newDbPosition = fromDomainPosition newPosition newDbPositionBase
-                    newDbPosition |> createRecord
+                    newDbPosition
+                        |> set #invested (newDbPosition.invested + if deltaCents < 0 then deltaCents else 0)
+                        |> set #received (newDbPosition.received + if deltaCents > 0 then deltaCents else 0)
+                        |> createRecord
 
         -- Set success message
         let action = if tradeType == "buy" then "bought" else "sold"
@@ -265,7 +266,10 @@ instance Controller AssetsController where
 
             -- Update position - position is now flat
             let updatedDbPosition = fromDomainPosition closedPosition dbPosition
-            updatedDbPosition |> updateRecord
+            updatedDbPosition
+                |> set #invested (updatedDbPosition.invested + if deltaCents < 0 then deltaCents else 0)
+                |> set #received (updatedDbPosition.received + if deltaCents > 0 then deltaCents else 0)
+                |> updateRecord
 
         -- Set success message
         let action = if closeSide == Domain.Short then "sold" else "bought"

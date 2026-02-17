@@ -59,15 +59,5 @@ fromDomainPosition domainPos position =
             Just Domain.Long  -> domainQty
             Just Domain.Short -> negate domainQty
             Nothing           -> 0
-        -- For the database: invested <= 0, received >= 0
-        -- If we have a cost basis, we need to track it appropriately
-        -- For simplicity: Long positions store in invested (as negative), Short in received (as positive)
-        -- When position is flat (cost basis = 0), both are 0
-        (newInvested, newReceived) = case mSide of
-            Just Domain.Long  -> (costBasis, 0)     -- Invested is negative, received is 0
-            Just Domain.Short -> (0, costBasis)     -- Invested is 0, received is positive
-            Nothing           -> (0, 0)             -- Flat position
     in position
         |> set #quantity signedQty
-        |> set #invested newInvested
-        |> set #received newReceived

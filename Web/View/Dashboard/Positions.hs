@@ -21,7 +21,7 @@ data PositionsView = PositionsView
 instance View PositionsView where
     html PositionsView { .. } = dashboardLayout [hsx|
         <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px;">
+            <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 1000px;">
                 <h5>Positions</h5>
                 <div class="text-end me-1">
                     Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
@@ -41,7 +41,7 @@ renderPositionsContent positions currentPage totalPages = [hsx|
     <div class="row g-3">
         {forEach positions renderPositionCard}
     </div>
-    <div style="max-width: 900px;">
+    <div style="max-width: 1000px;">
         {renderPositionsPagination currentPage totalPages}
     </div>
 |]
@@ -91,7 +91,7 @@ renderPositionCard pvd =
         actionBtn = renderActionButton isOpen isProfitable market.id asset.id market.status
     in [hsx|
         <div class="col-12">
-            <div class="card shadow-sm" style="max-width: 900px;">
+            <div class="card shadow-sm" style="max-width: 1000px;">
                 <div class="card-body px-3 py-2">
                     <div class="d-flex justify-content-between align-items-start mb-2 overflow-x-auto scroll-no-bar">
                         <a href={marketUrl} class="text-decoration-none">
@@ -111,14 +111,20 @@ renderPositionCard pvd =
                                 <div class="fw-medium text-nowrap">{probText}</div>
                             </div>
                             <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
-                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Value</div>
-                                <div class="fw-medium text-nowrap">{if isOpen then formatMoney currentVal else formatMoneyOrDash currentVal}</div>
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Invested</div>
+                                <div class="fw-medium text-nowrap">{formatMoney (abs position.invested)}</div>
                             </div>
                             <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
-                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">
-                                    {if isOpen then (if isLong then ("Invested" :: Text) else ("Received" :: Text)) else ("Invested" :: Text)}
-                                </div>
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Received</div>
+                                <div class="fw-medium text-nowrap">{formatMoney position.received}</div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Stake</div>
                                 <div class="fw-medium text-nowrap">{if isOpen then formatMoney costBasis else formatMoneyOrDash costBasis}</div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Value</div>
+                                <div class="fw-medium text-nowrap">{if isOpen then formatMoney currentVal else formatMoneyOrDash currentVal}</div>
                             </div>
                             <div class="flex-shrink-0 text-center px-2">
                                 <div class="d-flex align-items-center justify-content-center" style="gap: 20px;">
