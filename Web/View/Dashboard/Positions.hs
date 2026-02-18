@@ -34,7 +34,7 @@ instance View PositionsView where
 renderPositionsContent :: (?context :: ControllerContext) => [PositionWithValue] -> Int -> Int -> Html
 renderPositionsContent [] _ _ = [hsx|
     <div class="alert alert-info">
-        No active positions. <a href={MarketsAction} class="alert-link">Browse markets</a> to trade.
+        No active positions. Browse <a href={MarketsAction} class="alert-link">markets</a> to trade.
     </div>
 |]
 renderPositionsContent positions currentPage totalPages = [hsx|
@@ -67,9 +67,12 @@ renderPositionCard pvd =
         currentVal = fromMaybe 0 (get #currentValue pvd)
 
         -- PnL calculation with new cash-based cost basis for shorts
-        currentPnL = if isLong
-                then currentVal - costBasis           -- Long: value - cost
-                else costBasis - currentVal           -- Short: received - cost_to_close
+        -- For closed positions, P&L is simply received + invested (invested is negative)
+        currentPnL = if isOpen
+                then if isLong
+                        then currentVal - costBasis           -- Long: value - cost
+                        else costBasis - currentVal           -- Short: received - cost_to_close
+                else received + invested                -- Closed: net P&L
         isProfitable = currentPnL >= 0
 
         -- Open P&L Range: max loss to max profit
@@ -120,7 +123,7 @@ renderPositionCard pvd =
                             </div>
                             <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Stake</div>
-                                <div class="fw-medium text-nowrap">{if isOpen then formatMoney costBasis else formatMoneyOrDash costBasis}</div>
+                                <div class="fw-medium text-nowrap">{if isOpen then formatMoney costBasis else "--" :: Text}</div>
                             </div>
                             <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Current Value</div>
@@ -136,8 +139,8 @@ renderPositionCard pvd =
                                         {actionBtn}
                                     </div>
                                     <div class="text-center" style="min-width: 80px;">
-                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isLong then ("Max Win" :: Text) else ("Max Loss" :: Text)}</div>
-                                        <div class="fw-medium text-nowrap">{if isOpen then formatMoneySigned maxOutcome else formatMoneyOrDash maxOutcome}</div>
+                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isOpen then (if isLong then ("Max Win" :: Text) else ("Max Loss" :: Text)) else ("Max Win" :: Text)}</div>
+                                        <div class="fw-medium text-nowrap">{if isOpen then formatMoneySigned maxOutcome else "--" :: Text}</div>
                                     </div>
                                 </div>
                             </div>
