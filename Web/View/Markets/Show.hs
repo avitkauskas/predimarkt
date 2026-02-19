@@ -52,7 +52,7 @@ instance View ShowView where
                                     onclick="document.getElementById('price-chart').classList.toggle('d-none'); initPriceChart();">
                                     Price Chart
                                 </h6>
-                                <div id="price-chart" class="d-none" style="height: 300px; margin-bottom: 1.5rem;">
+                                <div id="price-chart" style="height: 300px; margin-bottom: 1.5rem;">
                                 </div>
                                 {chartDataScript}
                                 <!-- Debug: Chart data count: {show (length chartData)} assets -->
@@ -239,38 +239,29 @@ instance View ShowView where
                 , "</script>"
                 ]
 
-            -- | JavaScript to initialize the chart
             chartScript :: Html
             chartScript = [hsx|
                 <script>
-                    window.priceChartInitialized = false;
-                    window.initPriceChart = function() {
-                        if (window.priceChartInitialized) return;
-                        window.priceChartInitialized = true;
+                    function initPriceChart() {
+                        var chartContainer = document.getElementById('price-chart');
+                        var chartDataScript = document.getElementById('chart-data');
+                        if (!chartContainer || !chartDataScript) return;
 
-                        const chartContainer = document.getElementById('price-chart');
-                        const chartDataScript = document.getElementById('chart-data');
-                        if (!chartContainer || !chartDataScript) {
-                            console.error('Chart elements not found');
-                            return;
+                        if (chartContainer._chart) {
+                            chartContainer._chart.remove();
+                            chartContainer._chart = null;
                         }
 
-                        let chartData;
+                        var chartData;
                         try {
                             chartData = JSON.parse(chartDataScript.textContent.trim());
                         } catch (e) {
-                            console.error('Failed to parse chart data:', e);
                             return;
                         }
 
-                        if (!chartData || chartData.length === 0) {
-                            console.log('No chart data available');
-                            return;
-                        }
+                        if (!chartData || chartData.length === 0) return;
 
-                        console.log('Chart data loaded:', chartData);
-
-                        const chart = LightweightCharts.createChart(chartContainer, {
+                        var chart = LightweightCharts.createChart(chartContainer, {
                             width: chartContainer.clientWidth,
                             height: chartContainer.clientHeight,
                             layout: {
@@ -293,10 +284,10 @@ instance View ShowView where
                             },
                         });
 
-                        chartData.forEach(asset => {
-                            console.log('Adding series for asset:', asset.name, 'with data points:', asset.data.length);
+                        chartContainer._chart = chart;
 
-                            const series = chart.addSeries(LightweightCharts.CandlestickSeries, {
+                        chartData.forEach(function(asset) {
+                            var series = chart.addSeries(LightweightCharts.CandlestickSeries, {
                                 upColor: asset.color,
                                 downColor: '#ef5350',
                                 borderUpColor: asset.color,
@@ -307,24 +298,29 @@ instance View ShowView where
                             });
 
                             if (asset.data && asset.data.length > 0) {
-                                // Ensure data is sorted by time
-                                const sortedData = asset.data.sort((a, b) => a.time - b.time);
-                                console.log('Setting data for', asset.name, ':', sortedData);
-                                series.setData(sortedData);
+                                series.setData(asset.data.sort(function(a, b) { return a.time - b.time; }));
                             }
                         });
 
                         chart.timeScale().fitContent();
 
-                        // Enable auto sizing
-                        const resizeObserver = new ResizeObserver(entries => {
-                            const entry = entries[0];
+                        var resizeObserver = new ResizeObserver(function(entries) {
                             chart.applyOptions({
-                                width: entry.contentRect.width,
-                                height: entry.contentRect.height,
+                                width: entries[0].contentRect.width,
+                                height: entries[0].contentRect.height,
                             });
                         });
                         resizeObserver.observe(chartContainer);
-                    };
+                    }
+
+                    document.addEventListener('turbolinks:load', initPriceChart);
+
+                    document.addEventListener('turbolinks:before-cache', function() {
+                        var chartContainer = document.getElementById('price-chart');
+                        if (chartContainer && chartContainer._chart) {
+                            chartContainer._chart.remove();
+                            chartContainer._chart = null;
+                        }
+                    });
                 </script>
             |]
