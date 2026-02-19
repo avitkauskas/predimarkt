@@ -1,12 +1,16 @@
 module Web.View.Markets.Show where
+import qualified Data.List as List
+import qualified Data.Text as Text
 import qualified Domain.LMSR as LMSR
 import Text.Printf (printf)
+import Web.Types (AssetChartData (..), OhlcPoint (..))
 import Web.View.Prelude
 
 data ShowView = ShowView
     { market         :: Include' ["assets", "categoryId"] Market
     , tradingAssetId :: Maybe (Id Asset)
     , tradingAction  :: Maybe Text
+    , chartData      :: [AssetChartData]
     }
 
 instance View ShowView where
@@ -45,11 +49,13 @@ instance View ShowView where
 
                             <div class="mt-4 pt-4">
                                 <h6 class="info-label mb-3" style="cursor: pointer;"
-                                    onclick="document.getElementById('price-chart').classList.toggle('d-none')">
+                                    onclick="document.getElementById('price-chart').classList.toggle('d-none'); initPriceChart();">
                                     Price Chart
                                 </h6>
                                 <div id="price-chart" class="d-none" style="height: 300px; margin-bottom: 1.5rem;">
                                 </div>
+                                {chartDataScript}
+                                <!-- Debug: Chart data count: {show (length chartData)} assets -->
 
                                 <h6 class="info-label mb-3" style="cursor: pointer;"
                                     onclick="document.getElementById('market-description').classList.toggle('d-none')">
@@ -59,6 +65,7 @@ instance View ShowView where
                                     <p class="text-muted mb-0">{market.description}</p>
                                 </div>
                             </div>
+                            {chartScript}
                         </div>
                     </div>
                 </div>
@@ -209,3 +216,115 @@ instance View ShowView where
 
                     toggleForm :: Text -> Text -> Text
                     toggleForm id type' = "window.toggleAssetForm('" <> id <> "', '" <> type' <> "')"
+
+            -- | Encode chart data as JSON for JavaScript
+            encodeChartData :: [AssetChartData] -> Text
+            encodeChartData assetsData =
+                "[" <> Text.intercalate "," (map encodeAsset assetsData) <> "]"
+                where
+                    encodeAsset (AssetChartData aid' aname' acolor' ohlcs') =
+                        "{\"id\":\"" <> assetIdToText aid' <> "\",\"name\":\"" <> aname' <> "\",\"color\":\"" <> acolor' <> "\",\"data\":[" <> Text.intercalate "," (map encodeOhlc ohlcs') <> "]}"
+                    encodeOhlc (OhlcPoint time' open' high' low' close') =
+                        "{\"time\":" <> tshow time' <> ",\"open\":" <> tshow open' <> ",\"high\":" <> tshow high' <> ",\"low\":" <> tshow low' <> ",\"close\":" <> tshow close' <> "}"
+                    tshow :: Show a => a -> Text
+                    tshow x = cs (show x)
+                    assetIdToText :: Id Asset -> Text
+                    assetIdToText aid = cs (show aid)
+
+            -- | Script tag with chart data (raw HTML to prevent escaping)
+            chartDataScript :: Html
+            chartDataScript = preEscapedToHtml $ Text.concat
+                [ "<script id=\"chart-data\" type=\"application/json\">"
+                , encodeChartData chartData
+                , "</script>"
+                ]
+
+            -- | JavaScript to initialize the chart
+            chartScript :: Html
+            chartScript = [hsx|
+                <script>
+                    window.priceChartInitialized = false;
+                    window.initPriceChart = function() {
+                        if (window.priceChartInitialized) return;
+                        window.priceChartInitialized = true;
+
+                        const chartContainer = document.getElementById('price-chart');
+                        const chartDataScript = document.getElementById('chart-data');
+                        if (!chartContainer || !chartDataScript) {
+                            console.error('Chart elements not found');
+                            return;
+                        }
+
+                        let chartData;
+                        try {
+                            chartData = JSON.parse(chartDataScript.textContent.trim());
+                        } catch (e) {
+                            console.error('Failed to parse chart data:', e);
+                            return;
+                        }
+
+                        if (!chartData || chartData.length === 0) {
+                            console.log('No chart data available');
+                            return;
+                        }
+
+                        console.log('Chart data loaded:', chartData);
+
+                        const chart = LightweightCharts.createChart(chartContainer, {
+                            width: chartContainer.clientWidth,
+                            height: chartContainer.clientHeight,
+                            layout: {
+                                background: { color: 'transparent' },
+                                textColor: getComputedStyle(document.body).getPropertyValue('--bs-body-color') || '#333',
+                            },
+                            grid: {
+                                vertLines: { color: 'rgba(128, 128, 128, 0.2)' },
+                                horzLines: { color: 'rgba(128, 128, 128, 0.2)' },
+                            },
+                            crosshair: {
+                                mode: LightweightCharts.CrosshairMode.Normal,
+                            },
+                            rightPriceScale: {
+                                borderColor: 'rgba(128, 128, 128, 0.2)',
+                            },
+                            timeScale: {
+                                borderColor: 'rgba(128, 128, 128, 0.2)',
+                                timeVisible: false,
+                            },
+                        });
+
+                        chartData.forEach(asset => {
+                            console.log('Adding series for asset:', asset.name, 'with data points:', asset.data.length);
+
+                            const series = chart.addSeries(LightweightCharts.CandlestickSeries, {
+                                upColor: asset.color,
+                                downColor: '#ef5350',
+                                borderUpColor: asset.color,
+                                borderDownColor: '#ef5350',
+                                wickUpColor: asset.color,
+                                wickDownColor: '#ef5350',
+                                title: asset.name,
+                            });
+
+                            if (asset.data && asset.data.length > 0) {
+                                // Ensure data is sorted by time
+                                const sortedData = asset.data.sort((a, b) => a.time - b.time);
+                                console.log('Setting data for', asset.name, ':', sortedData);
+                                series.setData(sortedData);
+                            }
+                        });
+
+                        chart.timeScale().fitContent();
+
+                        // Enable auto sizing
+                        const resizeObserver = new ResizeObserver(entries => {
+                            const entry = entries[0];
+                            chart.applyOptions({
+                                width: entry.contentRect.width,
+                                height: entry.contentRect.height,
+                            });
+                        });
+                        resizeObserver.observe(chartContainer);
+                    };
+                </script>
+            |]

@@ -72,3 +72,21 @@ data DashboardController
     deriving (Eq, Show, Data)
 
 deriving instance Data MarketStatus
+
+-- | OHLC data point for candlestick charts
+-- Time is stored as Unix timestamp in seconds for JavaScript compatibility
+data OhlcPoint = OhlcPoint
+    { ohlcTime  :: Int
+    , ohlcOpen  :: Double
+    , ohlcHigh  :: Double
+    , ohlcLow   :: Double
+    , ohlcClose :: Double
+    } deriving (Eq, Show)
+
+-- | Chart data for a single asset
+data AssetChartData = AssetChartData
+    { chartAssetId    :: Id Asset
+    , chartAssetName  :: Text
+    , chartAssetColor :: Text
+    , chartOhlcData   :: [OhlcPoint]
+    } deriving (Eq, Show)

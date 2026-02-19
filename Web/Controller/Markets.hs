@@ -4,6 +4,10 @@ module Web.Controller.Markets where
 
 import Application.Adapter.Position
 import Data.List (zipWith4)
+import qualified Data.List as List
+import Data.Time (utctDay)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import qualified Domain.LMSR as LMSR
 import qualified Domain.Logic as Domain
 import qualified Domain.Types as Domain
 import Web.Controller.Prelude
@@ -64,7 +68,13 @@ instance Controller MarketsController where
         let sortedAssets = sortAssetsForDisplay (get #assets market')
         let market = market' |> set #assets sortedAssets
 
-        render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction }
+        assets' <- query @Asset
+            |> filterWhere (#marketId, mId)
+            |> orderByAsc #quantity
+            |> fetch
+        chartData <- fetchChartData mId assets' market.beta
+
+        render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction, chartData }
 
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -329,3 +339,76 @@ buildMarket now market = market
 
 fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
 fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch
+
+-- | Fetch and aggregate transaction data into OHLC format by day
+fetchChartData :: (?modelContext::ModelContext) => Id Market -> [Asset] -> Integer -> IO [AssetChartData]
+fetchChartData marketId assets beta = do
+    transactions <- query @Transaction
+        |> filterWhere (#marketId, marketId)
+        |> orderByAsc #createdAt
+        |> fetch
+
+    now <- getCurrentTime
+    let currentTimestamp = floor (utcTimeToPOSIXSeconds now)
+    let lmsrState = LMSR.precompute beta [(get #id a, get #quantity a) | a <- assets]
+    let currentPrices = [(get #id a, LMSR.price (get #id a) lmsrState) | a <- assets]
+
+    if null transactions
+        then pure $ map (makeFlatChartData currentPrices assets currentTimestamp) assets
+        else pure $ map (aggregateTransactions transactions assets beta currentTimestamp) assets
+  where
+    -- For markets with no transactions, show flat line at current price
+    makeFlatChartData :: [(Id Asset, Double)] -> [Asset] -> Int -> Asset -> AssetChartData
+    makeFlatChartData prices allAssets currentTime asset =
+        let currentPrice = maybe 0.0 (\x -> x) (List.lookup (get #id asset) prices)
+        in AssetChartData
+            { chartAssetId = get #id asset
+            , chartAssetName = get #name asset
+            , chartAssetColor = assetColorFor allAssets asset
+            , chartOhlcData = [OhlcPoint currentTime currentPrice currentPrice currentPrice currentPrice]
+            }
+
+    -- Aggregate transactions by day for each asset
+    aggregateTransactions :: [Transaction] -> [Asset] -> Integer -> Int -> Asset -> AssetChartData
+    aggregateTransactions txns allAssets beta currentTime asset =
+        let assetTxns = filter (\t -> get #assetId t == get #id asset) txns
+            byDay = List.groupBy (\t1 t2 -> utctDay (get #createdAt t1) == utctDay (get #createdAt t2)) assetTxns
+            ohlcPoints = if null assetTxns
+                then -- No transactions for this asset, show flat line at current price
+                    let lmsrState = LMSR.precompute beta [(get #id a, get #quantity a) | a <- allAssets]
+                        currentPrice = LMSR.price (get #id asset) lmsrState
+                    in [OhlcPoint currentTime currentPrice currentPrice currentPrice currentPrice]
+                else map transactionsToOhlc byDay
+        in AssetChartData
+            { chartAssetId = get #id asset
+            , chartAssetName = get #name asset
+            , chartAssetColor = assetColorFor allAssets asset
+            , chartOhlcData = ohlcPoints
+            }
+
+    -- Convert a day's transactions to OHLC point
+    transactionsToOhlc :: [Transaction] -> OhlcPoint
+    transactionsToOhlc [] = OhlcPoint 0 0.0 0.0 0.0 0.0
+    transactionsToOhlc dayTxns =
+        let mkPoint :: Transaction -> (Int, Double)
+            mkPoint txn =
+                let time = floor (utcTimeToPOSIXSeconds (get #createdAt txn))
+                    price = get #priceAfter txn
+                in (time, price)
+            points :: [(Int, Double)]
+            points = map mkPoint dayTxns
+            times = map fst points
+            prices :: [Double]
+            prices = map snd points
+            minTime = minimum times
+            (open, high, low, close) = case prices of
+                [] -> (0.0, 0.0, 0.0, 0.0)
+                (p:ps) -> (p, maximum (p:ps), minimum (p:ps), case reverse (p:ps) of (x:_) -> x; _ -> p)
+        in OhlcPoint minTime open high low close
+
+    -- Assign colors to assets based on index
+    assetColorFor :: [Asset] -> Asset -> Text
+    assetColorFor allAssets asset =
+        let colors = ["#2962FF", "#E91E63", "#4CAF50", "#FF9800", "#9C27B0", "#00BCD4"]
+            idx = fromMaybe 0 (List.elemIndex asset allAssets)
+        in colors !! (idx `mod` length colors)

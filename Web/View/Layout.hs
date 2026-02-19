@@ -197,6 +197,7 @@ scripts = [hsx|
         <script src={assetPath "/ihp-auto-refresh.js"}></script>
         <script src={assetPath "/theme-toggle.js"}></script>
         <script src={assetPath "/app.js"}></script>
+        <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     |]
 
 devScripts :: Html
