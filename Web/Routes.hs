@@ -11,6 +11,16 @@ instance AutoRoute SessionsController
 instance AutoRoute UsersController
 instance AutoRoute CategoriesController
 instance AutoRoute AssetsController
+
+instance HasPath AuthController where
+    pathTo LoginAction          = "/login"
+    pathTo WorkOSCallbackAction = "/auth/callback"
+
+instance CanRoute AuthController where
+    parseRoute' =
+        (string "/login" >> pure LoginAction)
+        <|> (string "/auth/callback" >> pure WorkOSCallbackAction)
+
 instance HasPath MarketsController where
     pathTo MarketsAction = "/Markets"
     pathTo NewMarketAction = "/NewMarket"

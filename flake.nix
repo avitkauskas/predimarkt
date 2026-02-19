@@ -33,6 +33,9 @@
                         base
                         wai
                         text
+                        http-conduit
+                        jwt
+                        base64
 
                         # Uncomment on local development for testing
                         hspec

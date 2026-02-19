@@ -10,11 +10,9 @@ CREATE TABLE users (
     id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
     nickname TEXT NOT NULL,
-    password_hash TEXT NOT NULL,
-    locked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    failed_login_attempts INT DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    workos_user_id TEXT NOT NULL UNIQUE
 );
 CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));

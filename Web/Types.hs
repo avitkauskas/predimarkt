@@ -14,9 +14,12 @@ data StaticController
     deriving (Eq, Show, Data)
 
 data SessionsController
-    = NewSessionAction
-    | CreateSessionAction
-    | DeleteSessionAction
+    = DeleteSessionAction
+    deriving (Eq, Show, Data)
+
+data AuthController
+    = LoginAction
+    | WorkOSCallbackAction
     deriving (Eq, Show, Data)
 
 instance HasNewSessionUrl User where
@@ -25,9 +28,7 @@ instance HasNewSessionUrl User where
 type instance CurrentUserRecord = User
 
 data UsersController
-    = NewUserAction
-    | CreateUserAction
-    | EditUserAction {userId :: !(Id User)}
+    = EditUserAction {userId :: !(Id User)}
     | UpdateUserAction {userId :: !(Id User)}
     | DeleteUserAction {userId :: !(Id User)}
     deriving (Eq, Show, Data)

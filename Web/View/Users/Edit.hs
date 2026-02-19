@@ -1,7 +1,8 @@
 module Web.View.Users.Edit (EditView(..), renderForm) where
+
 import Web.View.Prelude
 
-data EditView = EditView { user :: User, passwordConfirmation :: Text }
+data EditView = EditView { user :: User }
 
 instance View EditView where
     html EditView { .. } = dashboardLayout [hsx|
@@ -10,7 +11,7 @@ instance View EditView where
                 <div class="w-100">
                     <div style="max-width: 500px" class="mb-5">
                         <h3>Edit Profile</h3>
-                        {renderForm user passwordConfirmation}
+                        {renderForm user}
 
                         <hr class="my-4" />
 
@@ -31,14 +32,12 @@ instance View EditView where
         </div>
     |]
 
-renderForm :: User -> Text -> Html
-renderForm user passwordConfirmation = formFor user [hsx|
-    {(textField #email) {required = True}}
-    {(textField #nickname) {required = True}}
-    {(passwordField #passwordHash) {fieldLabel = "New Password (leave blank to keep current)"}}
-    <div class="mb-3" id="form-group-user_passwordConfirmation">
-        <label for="user_passwordConfirmation" class="form-label">Confirm New Password</label>
-        <input type="password" name="passwordConfirmation" id="user_passwordConfirmation" value={passwordConfirmation} class="form-control" />
+renderForm :: User -> Html
+renderForm user = formFor user [hsx|
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" value={user.email} disabled />
     </div>
+    {(textField #nickname) {required = True}}
     {submitButton {label = "Save Changes"}}
 |]

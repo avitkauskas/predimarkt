@@ -71,7 +71,7 @@ navbar = [hsx|
 
         loggedOutNav :: Html
         loggedOutNav = [hsx|
-            <li class="nav-item"><a class="nav-link" href={NewSessionAction}>Login</a></li>
+            <li class="nav-item"><a class="nav-link" data-turbolinks="false" href={LoginAction}>Login</a></li>
         |]
 
         loggedInNav :: User -> Html
