@@ -16,9 +16,8 @@ positionSide qty
 
 positionValue :: Id Asset -> Quantity -> Beta -> Map (Id Asset) Quantity -> Money
 positionValue assetId (Quantity qty) beta qtyMap
-    | qty > 0   = let Money v = tradeValue assetId (Quantity (-qty)) beta qtyMap in Money v
-    | qty < 0   = let Money v = tradeValue assetId (Quantity (abs qty)) beta qtyMap in Money (-v)
-    | otherwise = Money 0
+    | qty == 0  = Money 0
+    | otherwise = tradeValue assetId (Quantity (-qty)) beta qtyMap
 
 currentPnL :: Money -> Money -> Money -> Money
 currentPnL currentValue invested received = currentValue - (invested - received)
