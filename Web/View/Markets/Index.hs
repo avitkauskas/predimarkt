@@ -119,19 +119,22 @@ renderMarket market = [hsx|
         headerClass = marketStatusHeaderClasses market.status
         footerClass = marketStatusFooterClasses market.status
 
-        lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- market.assets]
-                         in (qtyMap, Beta market.beta)
+        qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- market.assets]
+        beta = Beta market.beta
 
         renderAsset asset =
             let
                 isResolvedWinner = market.status == MarketStatusResolved
                     && market.outcomeAssetId == Just asset.id
 
-                assetPriceVal :: Int
+                assetPriceVal :: Text
                 assetPriceVal = case market.status of
-                    MarketStatusResolved -> if isResolvedWinner then 100 else 0
-                    MarketStatusRefunded -> 0
-                    _ -> round (assetPrice asset.id (snd lmsrState) (fst lmsrState) * 100)
+                    MarketStatusResolved ->
+                        if isResolvedWinner
+                            then tshow 100 <> "%"
+                            else tshow 0 <> "%"
+                    MarketStatusRefunded -> "--"
+                    _ -> tshow (round (assetPrice asset.id beta qtyMap * 100)) <> "%"
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
@@ -158,7 +161,7 @@ renderMarket market = [hsx|
                    {asset.name}
                 </div>
                 <div class="d-flex align-items-center gap-1 ps-1 flex-shrink-0">
-                    {assetPriceVal}%
+                    {assetPriceVal}
                     {buttons}
                 </div>
             </div>

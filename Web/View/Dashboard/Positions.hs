@@ -62,7 +62,7 @@ renderPositionCard pvd =
                 case market.outcomeAssetId of
                     Just oid -> if asset.id == oid then "100.00%" else "0.00%"
                     Nothing  -> "0.00%"
-            MarketStatusRefunded -> "0.00%"
+            MarketStatusRefunded -> "--"
             _ -> maybe "-" formatPricePercent (get #assetPrice pvd)
 
         -- Cost basis calculation from invested and received
