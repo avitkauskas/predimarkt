@@ -64,3 +64,20 @@ Pardavęs 50+50=100 gaučiau 50.00
 Pardavęs 50 gaučiau 26.04
 skirtumas 23.96
 gaunu 30.13 - skirtumas 6.17
+
+
+We display prices with 4 decimal digits,
+so we must be checking that the first 4 digits match the expected result.
+Market state: {"one": 0, "two": 0, "three": 0}
+allAssetPrices should be: 0.3333, 0.3333, 0.3333
+when buying, we use positive quantity of the asset
+tradeValue to buy 100 of "one" should be (Money (-3716)) (Money with negative integer)
+adjust quantity of "one" by 100
+Market state: {"one": 100, "two": 0, "three": 0}
+allAssetPrices should be: 0.4110, 0.2945, 0.2945
+when selling, we use negative quantity of the asset
+tradeValue to sell -100 of "two" should be (Money 2615) (Money with positive integer)
+adjust quantity of "two" by -100
+Market state: {"one": 100, "two": -100, "three": 0}
+allAssetPrices should be: 0.4484, 0.2302, 0.3213 
+assetPrice of "three" should return 0.3213

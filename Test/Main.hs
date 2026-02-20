@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Main where
 
-import Domain.LMSR
+import Application.Domain.LMSR
+import qualified Application.Domain.Types as NewDomain
+import qualified Data.Map.Strict as M
+import qualified Domain.LMSR as OldLMSR
 import qualified Domain.Logic as Logic
 import qualified Domain.Types as Domain
 import Generated.Types
@@ -41,8 +44,8 @@ mkBinaryMarketContext assetId yesQty noQty = Domain.MarketContext
 -- | Calculate current price for an asset in a binary market with LMSR
 calcPrice :: Id Asset -> Integer -> Integer -> Double
 calcPrice assetId yesQty noQty =
-    let lmsrState = precompute testBeta [(testYesAsset, yesQty), (testNoAsset, noQty)]
-    in price assetId lmsrState
+    let lmsrState = OldLMSR.precompute testBeta [(testYesAsset, yesQty), (testNoAsset, noQty)]
+    in OldLMSR.price assetId lmsrState
 
 -- ============================================================================
 -- Trade Helpers
@@ -112,15 +115,15 @@ main = hspec do
                 currentPrice = calcPrice testYesAsset yesQty noQty
 
             -- Buy 100 shares cost (to establish cost basis)
-            let buyCost = calculateBuyCost 100 currentPrice testBeta
+            let buyCost = OldLMSR.calculateBuyCost 100 currentPrice testBeta
 
             -- Now market moves: external buy of 30 YES, market becomes YES=130, NO=50
             let newYesQty = 130
                 newPrice = calcPrice testYesAsset newYesQty noQty
 
             -- User sells 30 shares at new price
-            let sellRevenue = calculateSellRevenue 30 newPrice testBeta
-                sellTotal = calculateSellRevenue 100 newPrice testBeta
+            let sellRevenue = OldLMSR.calculateSellRevenue 30 newPrice testBeta
+                sellTotal = OldLMSR.calculateSellRevenue 100 newPrice testBeta
 
             -- Apply trade
             let pos1 = mkLongPosition 100 buyCost
@@ -150,14 +153,14 @@ main = hspec do
                 currentPrice = calcPrice testYesAsset yesQty noQty
 
             -- Cash received when shorting 50 shares
-            let cashReceived = calculateBuyCost 50 currentPrice testBeta
+            let cashReceived = OldLMSR.calculateBuyCost 50 currentPrice testBeta
 
             -- Market moves: external sell of 20 YES, market becomes YES=80, NO=50
             let newYesQty = 80
                 newPrice = calcPrice testYesAsset newYesQty noQty
 
             -- User buys 20 to close at lower price (profit)
-            let buyCost = calculateBuyCost 20 newPrice testBeta
+            let buyCost = OldLMSR.calculateBuyCost 20 newPrice testBeta
 
             -- Apply trade
             let pos1 = mkShortPosition 50 cashReceived
@@ -187,10 +190,10 @@ main = hspec do
                 currentPrice = calcPrice testYesAsset yesQty noQty
 
             -- Cost basis for 50 long
-            let longCost = calculateBuyCost 50 currentPrice testBeta
+            let longCost = OldLMSR.calculateBuyCost 50 currentPrice testBeta
 
             -- User sells 80 (flips to 30 short)
-            let sellTotal = calculateSellRevenue 80 currentPrice testBeta
+            let sellTotal = OldLMSR.calculateSellRevenue 80 currentPrice testBeta
 
             -- Apply trade
             let pos1 = mkLongPosition 50 longCost
@@ -219,10 +222,10 @@ main = hspec do
                 currentPrice = calcPrice testYesAsset yesQty noQty
 
             -- Buy 100 long
-            let buyCost = calculateBuyCost 100 currentPrice testBeta
+            let buyCost = OldLMSR.calculateBuyCost 100 currentPrice testBeta
 
             -- Sell all 100
-            let sellRevenue = calculateSellRevenue 100 currentPrice testBeta
+            let sellRevenue = OldLMSR.calculateSellRevenue 100 currentPrice testBeta
 
             -- Apply trade
             let pos1 = mkLongPosition 100 buyCost
@@ -251,10 +254,10 @@ main = hspec do
                 currentPrice = calcPrice testYesAsset yesQty noQty
 
             -- Short 100 shares, receive cash
-            let cashReceived = calculateBuyCost 100 currentPrice testBeta
+            let cashReceived = OldLMSR.calculateBuyCost 100 currentPrice testBeta
 
             -- Buy all 100 to close
-            let buyCost = calculateBuyCost 100 currentPrice testBeta
+            let buyCost = OldLMSR.calculateBuyCost 100 currentPrice testBeta
 
             -- Apply trade
             let pos1 = mkShortPosition 100 cashReceived
@@ -405,3 +408,66 @@ main = hspec do
 
         it "returns Nothing for flat position" $ do
             Logic.positionValue Logic.emptyPosition 0.50 `shouldBe` Nothing
+
+    describe "New LMSR Module Tests" $ do
+        let beta = NewDomain.Beta 300
+            assetOne = unsafeCoerce ("one" :: Text)
+            assetTwo = unsafeCoerce ("two" :: Text)
+            assetThree = unsafeCoerce ("three" :: Text)
+
+        let initialState = M.fromList 
+                [ (assetOne, NewDomain.Quantity 0)
+                , (assetTwo, NewDomain.Quantity 0)
+                , (assetThree, NewDomain.Quantity 0)
+                ]
+
+        let price4digits p = round (p * 10000) :: Integer
+
+        describe "Initial state prices" $ do
+            it "allAssetPrices returns equal prices for equal quantities" $ do
+                let prices = allAssetPrices beta initialState
+                price4digits (prices M.! assetOne) `shouldBe` 3333
+                price4digits (prices M.! assetTwo) `shouldBe` 3333
+                price4digits (prices M.! assetThree) `shouldBe` 3333
+
+        describe "Buy 100 of asset one" $ do
+            it "tradeValue returns correct negative money (cost)" $ do
+                let cost = tradeValue assetOne (NewDomain.Quantity 100) beta initialState
+                cost `shouldBe` NewDomain.Money (-3716)
+
+            it "prices update after buying" $ do
+                let stateAfter = M.insertWith (+) assetOne (NewDomain.Quantity 100) initialState
+                    prices = allAssetPrices beta stateAfter
+                price4digits (prices M.! assetOne) `shouldBe` 4110
+                price4digits (prices M.! assetTwo) `shouldBe` 2945
+                price4digits (prices M.! assetThree) `shouldBe` 2945
+
+        describe "Sell 100 of asset two" $ do
+            let stateAfterBuy = M.fromList 
+                    [ (assetOne, NewDomain.Quantity 100)
+                    , (assetTwo, NewDomain.Quantity 0)
+                    , (assetThree, NewDomain.Quantity 0)
+                    ]
+
+            it "tradeValue returns positive money (revenue from selling)" $ do
+                let revenue = tradeValue assetTwo (NewDomain.Quantity (-100)) beta stateAfterBuy
+                revenue `shouldBe` NewDomain.Money 2615
+
+            it "prices update after selling" $ do
+                let stateAfterSell = M.insertWith (+) assetTwo (NewDomain.Quantity (-100)) stateAfterBuy
+                    prices = allAssetPrices beta stateAfterSell
+                price4digits (prices M.! assetOne) `shouldBe` 4484
+                price4digits (prices M.! assetTwo) `shouldBe` 2302
+                price4digits (prices M.! assetThree) `shouldBe` 3213
+
+        describe "assetPrice function" $ do
+            let finalState = M.fromList 
+                    [ (assetOne, NewDomain.Quantity 100)
+                    , (assetTwo, NewDomain.Quantity (-100))
+                    , (assetThree, NewDomain.Quantity 0)
+                    ]
+
+            it "returns correct price for asset three" $ do
+                let p = assetPrice assetThree beta finalState
+                price4digits p `shouldBe` 3213
+
