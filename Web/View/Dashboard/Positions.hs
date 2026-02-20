@@ -86,7 +86,9 @@ renderPositionCard pvd =
                 else costBasis - absQty * 100
 
         nextAction = if isLong then Just "buy" else Just "sell"
-        marketUrl = ShowMarketAction market.id (Just asset.id) nextAction
+        marketUrl = if isOpen
+            then ShowMarketAction market.id (Just asset.id) nextAction
+            else ShowMarketAction market.id Nothing Nothing
 
         positionDisplay = renderPositionDisplay isOpen isLong absQty
         pnlDisplay = renderPnLDisplay currentPnL
