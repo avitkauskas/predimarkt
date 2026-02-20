@@ -312,7 +312,7 @@ instance Controller MarketsController where
 
                 let invested = position.invested
                 let received = position.received
-                let refundAmount = invested + received
+                let refundAmount = negate (invested + received)
 
                 let priceBefore = assetPrice position.assetId beta qtyMap
 
