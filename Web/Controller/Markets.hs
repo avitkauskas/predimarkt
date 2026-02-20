@@ -5,6 +5,7 @@ module Web.Controller.Markets where
 import Application.Domain.LMSR
 import Application.Domain.Position
 import Application.Domain.Types
+import Control.Lens (Field1 (_1))
 import Data.List (zipWith4)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
@@ -257,12 +258,12 @@ instance Controller MarketsController where
                     |> createRecord
 
                 let newInvested = case side of
-                        Just Long  -> position.invested + payout
-                        Just Short -> position.invested
+                        Just Long  -> position.invested
+                        Just Short -> position.invested + payout
                         Nothing    -> position.invested
                 let newReceived = case side of
-                        Just Long  -> position.received
-                        Just Short -> position.received + payout
+                        Just Long  -> position.received + payout
+                        Just Short -> position.received
                         Nothing    -> position.received
 
                 position

@@ -53,7 +53,7 @@ renderPositionCard pvd =
         market = get #marketId position
 
         qty = get #quantity position
-        isLong = qty > 0  -- Positive quantity = long position
+        isLong = qty > 0
         isOpen = qty /= 0
         absQty = abs qty
 
@@ -65,28 +65,25 @@ renderPositionCard pvd =
             MarketStatusRefunded -> "--"
             _ -> maybe "-" formatPricePercent (get #assetPrice pvd)
 
-        -- Cost basis calculation from invested and received
-        invested = get #invested position      -- Always <= 0 (money paid)
-        received = get #received position      -- Always >= 0 (money received)
-        costBasis = abs (invested + received)  -- Total money at risk
+        invested = get #invested position
+        received = get #received position
+        costBasis = abs (invested + received)
 
         currentVal = fromMaybe 0 (get #currentValue pvd)
 
-        -- PnL calculation with new cash-based cost basis for shorts
-        -- For closed positions, P&L is simply received + invested (invested is negative)
         currentPnL = if isOpen
                 then if isLong
-                        then currentVal - costBasis           -- Long: value - cost
-                        else costBasis - currentVal           -- Short: received - cost_to_close
-                else received + invested                -- Closed: net P&L
+                        then currentVal - costBasis
+                        else costBasis - currentVal
+                else received + invested
         isProfitable = currentPnL >= 0
 
-        -- Open P&L Range: max loss to max profit
-        -- Long: [-costBasis, +(qty*100 - costBasis)]
-        -- Short: [-(qty*100 - costBasis), +costBasis]
-        maxOutcome = if isLong
+        maxWin = if isLong
                 then absQty * 100 - costBasis
-                else negate (absQty * 100 - costBasis)
+                else costBasis
+        maxLoss = if isLong
+                then negate costBasis
+                else costBasis - absQty * 100
 
         nextAction = if isLong then Just "buy" else Just "sell"
         marketUrl = ShowMarketAction market.id (Just asset.id) nextAction
@@ -136,7 +133,7 @@ renderPositionCard pvd =
                                 <div class="fw-medium text-nowrap">{if isOpen then formatMoney currentVal else formatMoneyOrDash currentVal}</div>
                             </div>
                             <div class="flex-shrink-0 text-center px-2">
-                                <div class="d-flex align-items-center justify-content-center" style="gap: 20px;">
+                                <div class="d-flex align-items-center justify-content-center" style="gap: 10px;">
                                     <div class="text-center" style="min-width: 80px;">
                                         <div class="text-muted text-nowrap" style="font-size: 0.7rem;">P&L Now</div>
                                         <div class={pnlClass}>{if isOpen then pnlDisplay else renderClosedPnL currentPnL}</div>
@@ -144,11 +141,15 @@ renderPositionCard pvd =
                                     <div class="text-center" style="min-width: 100px;">
                                         {actionBtn}
                                     </div>
-                                    <div class="text-center" style="min-width: 80px;">
-                                        <div class="text-muted text-nowrap" style="font-size: 0.7rem;">{if isOpen then (if isLong then ("Max Win" :: Text) else ("Max Loss" :: Text)) else ("Max Win" :: Text)}</div>
-                                        <div class="fw-medium text-nowrap">{if isOpen then formatMoneySigned maxOutcome else "--" :: Text}</div>
-                                    </div>
                                 </div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Max Gain</div>
+                                <div class="fw-medium text-nowrap">{if isOpen then formatMoneySigned maxWin else "--" :: Text}</div>
+                            </div>
+                            <div class="flex-shrink-0 text-center px-2" style="min-width: 80px;">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Max Loss</div>
+                                <div class="fw-medium text-nowrap">{if isOpen then formatMoneySigned maxLoss else "--" :: Text}</div>
                             </div>
                         </div>
                     </div>
