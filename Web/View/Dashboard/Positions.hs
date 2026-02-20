@@ -63,7 +63,7 @@ renderPositionCard pvd =
                     Just oid -> if asset.id == oid then "100.00%" else "0.00%"
                     Nothing  -> "0.00%"
             MarketStatusRefunded -> "--"
-            _ -> maybe "-" formatPricePercent (get #assetPrice pvd)
+            _ -> maybe "--" formatPricePercent (get #assetPrice pvd)
 
         invested = get #invested position
         received = get #received position

@@ -75,7 +75,7 @@ instance Controller DashboardController where
                             then (Just 0, Just 0.0)
                             else
                                 if qty == 0
-                                then (Nothing, Nothing)
+                                then (Nothing, Just (LMSR.assetPrice assetId beta qtyMap))
                                 else if qty > 0
                                 then
                                     let Money v = LMSR.tradeValue assetId (Quantity (-qty)) beta qtyMap
