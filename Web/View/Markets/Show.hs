@@ -1,7 +1,9 @@
 module Web.View.Markets.Show where
+import Application.Domain.LMSR
+import Application.Domain.Types
 import qualified Data.List as List
+import qualified Data.Map.Strict as M
 import qualified Data.Text as Text
-import qualified Domain.LMSR as LMSR
 import Text.Printf (printf)
 import Web.Types (AssetChartData (..), OhlcPoint (..))
 import Web.View.Prelude
@@ -95,7 +97,8 @@ instance View ShowView where
                 when (market.status /= MarketStatusOpen)
                     [hsx|<span>{marketStatusLabel market.status}</span>|]
 
-            lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- market.assets]
+            lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- market.assets]
+                         in (qtyMap, Beta market.beta)
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
@@ -124,18 +127,15 @@ instance View ShowView where
                     isBuyFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "buy"
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
 
-                    assetPrice :: Double
-                    assetPrice = LMSR.price asset.id lmsrState
-
-                    assetSum :: Double
-                    assetSum = LMSR.sumItem asset.id lmsrState
-
-                    assetTotal :: Double
-                    assetTotal = LMSR.sumTotal lmsrState
+                    assetPriceVal :: Double
+                    assetPriceVal = case market.status of
+                        MarketStatusResolved -> if isResolvedWinner then 1.0 else 0.0
+                        MarketStatusRefunded -> 0.0
+                        _ -> assetPrice asset.id (snd lmsrState) (fst lmsrState)
 
                     priceDisplay = [hsx|
                         <div class="text-end fw-medium pe-3" style="width: 100px;">
-                            €{printf "%.4f" assetPrice :: String}
+                            €{printf "%.4f" assetPriceVal :: String}
                         </div>
                     |]
 
@@ -159,7 +159,7 @@ instance View ShowView where
                     buySellForms = [hsx|
                         <div id={"buy-form-" <> show asset.id}
                              class={classes ["mt-3", ("d-none", not isBuyFormOpen)]}>
-                            <form action={TradeAssetAction asset.id} method="POST">
+                            <form action={ExecuteTradeAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="buy" />
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
@@ -171,7 +171,7 @@ instance View ShowView where
                                                    autofocus={isBuyFormOpen}
                                                    oninput="updateBuyInfo(this)"
                                                    data-info-id={"buy-info-" <> show asset.id}
-                                                   data-a={show (assetSum / assetTotal)}
+                                                   data-a={show assetPriceVal}
                                                    data-beta={show market.beta} />
                                         </div>
                                         <button type="submit" class="btn btn-primary fw-bold"
@@ -187,7 +187,7 @@ instance View ShowView where
 
                         <div id={"sell-form-" <> show asset.id}
                              class={classes ["mt-3", ("d-none", not isSellFormOpen)]}>
-                            <form action={TradeAssetAction asset.id} method="POST">
+                            <form action={ExecuteTradeAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="sell" />
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
@@ -199,7 +199,7 @@ instance View ShowView where
                                                    autofocus={isSellFormOpen}
                                                    oninput="updateSellInfo(this)"
                                                    data-info-id={"sell-info-" <> show asset.id}
-                                                   data-a={show (assetSum / assetTotal)}
+                                                   data-a={show assetPriceVal}
                                                    data-beta={show market.beta} />
                                         </div>
                                         <button type="submit" class="btn btn-primary fw-bold"

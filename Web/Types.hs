@@ -59,9 +59,12 @@ data MarketsController
 
 data AssetsController
     = DeleteAssetAction { assetId :: !(Id Asset) }
-    | TradeAssetAction { assetId :: !(Id Asset) }
-    | ClosePositionAction { assetId :: !(Id Asset) }
     | NewAssetAction
+    deriving (Eq, Show, Data)
+
+data TradesController
+    = ExecuteTradeAction { assetId :: !(Id Asset) }
+    | ClosePositionAction { assetId :: !(Id Asset) }
     deriving (Eq, Show, Data)
 
 data DashboardController

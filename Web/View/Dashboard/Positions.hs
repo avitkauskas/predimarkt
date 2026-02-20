@@ -57,7 +57,13 @@ renderPositionCard pvd =
         isOpen = qty /= 0
         absQty = abs qty
 
-        probText = maybe "-" formatPricePercent (get #assetPrice pvd)
+        probText = case market.status of
+            MarketStatusResolved ->
+                case market.outcomeAssetId of
+                    Just oid -> if asset.id == oid then "100.00%" else "0.00%"
+                    Nothing  -> "0.00%"
+            MarketStatusRefunded -> "0.00%"
+            _ -> maybe "-" formatPricePercent (get #assetPrice pvd)
 
         -- Cost basis calculation from invested and received
         invested = get #invested position      -- Always <= 0 (money paid)

@@ -1,7 +1,8 @@
 module Web.Controller.Dashboard where
 
+import Application.Domain.LMSR as LMSR
+import Application.Domain.Types
 import qualified Data.Map as M
-import qualified Domain.LMSR as LMSR
 import Web.Controller.Prelude
 import Web.View.Dashboard.Markets
 import Web.View.Dashboard.Positions
@@ -42,33 +43,47 @@ instance Controller DashboardController where
             assets <- query @Asset
                 |> filterWhere (#marketId, mId)
                 |> fetch
-            let lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- assets]
-            return (mId, market, assets, lmsrState)
+            let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
+            let beta = Beta market.beta
+            return (mId, market, assets, (qtyMap, beta))
 
         let marketDataMap = M.fromList [
-                      (marketId, (market, lmsrState))
-                    | (marketId, market, _, lmsrState) <- marketsWithAssets ]
+                      (marketId, (market, lmsrData))
+                    | (marketId, market, _, lmsrData) <- marketsWithAssets ]
 
         -- Calculate current value for each position
         positionsWithValue <- forM positions $ \position -> do
             let mId = position.marketId.id
+                assetId = position.assetId.id
+                qty = position.quantity
+
             case M.lookup mId marketDataMap of
-                Just (market, lmsrState) -> do
-                    let asset = get #assetId position
-                        currentPrice = LMSR.price asset.id lmsrState
-                        qty = position.quantity
-                        absQty = abs qty
-
-                    -- Derive side from quantity sign: positive = long, negative = short
-                    let currentValue = if qty == 0
-                            then Nothing
-                            else if qty > 0  -- Long position
-                                then Just $ LMSR.calculateSellRevenue absQty currentPrice market.beta
-                                else Just $ LMSR.calculateBuyCost absQty currentPrice market.beta
-
-                    let assetPrice = Just currentPrice
-
-                    return PositionWithValue { .. }
+                Just (market, (qtyMap, beta)) ->
+                    let (currentValue, assetPrice) =
+                            if market.status == MarketStatusResolved
+                            then
+                                if qty == 0
+                                then (Nothing, Nothing)
+                                else
+                                    let isWinner = case market.outcomeAssetId of
+                                            Just oid -> assetId == oid
+                                            Nothing  -> False
+                                        displayValue = if isWinner then abs qty * 100 else 0
+                                        displayPrice = if isWinner then 1.0 else 0.0
+                                    in (Just displayValue, Just displayPrice)
+                            else if market.status == MarketStatusRefunded
+                            then (Just 0, Just 0.0)
+                            else
+                                if qty == 0
+                                then (Nothing, Nothing)
+                                else if qty > 0
+                                then
+                                    let Money v = LMSR.tradeValue assetId (Quantity (-qty)) beta qtyMap
+                                    in (Just v, Just (LMSR.assetPrice assetId beta qtyMap))
+                                else
+                                    let Money v = LMSR.tradeValue assetId (Quantity (abs qty)) beta qtyMap
+                                    in (Just (-v), Just (LMSR.assetPrice assetId beta qtyMap))
+                    in return PositionWithValue { .. }
                 Nothing -> return PositionWithValue
                     { position = position, currentValue = Nothing, assetPrice = Nothing }
 

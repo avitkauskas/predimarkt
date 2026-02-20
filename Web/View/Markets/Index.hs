@@ -1,6 +1,8 @@
 module Web.View.Markets.Index where
+import Application.Domain.LMSR
+import Application.Domain.Types
 import Application.Helper.View (formatMoney)
-import qualified Domain.LMSR as LMSR
+import qualified Data.Map.Strict as M
 import Web.View.Prelude
 
 data IndexView = IndexView
@@ -117,12 +119,19 @@ renderMarket market = [hsx|
         headerClass = marketStatusHeaderClasses market.status
         footerClass = marketStatusFooterClasses market.status
 
-        lmsrState = LMSR.precompute market.beta [(a.id, a.quantity) | a <- market.assets]
+        lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- market.assets]
+                         in (qtyMap, Beta market.beta)
 
         renderAsset asset =
             let
-                assetPrice :: Int
-                assetPrice = round (LMSR.price asset.id lmsrState * 100)
+                isResolvedWinner = market.status == MarketStatusResolved
+                    && market.outcomeAssetId == Just asset.id
+
+                assetPriceVal :: Int
+                assetPriceVal = case market.status of
+                    MarketStatusResolved -> if isResolvedWinner then 100 else 0
+                    MarketStatusRefunded -> 0
+                    _ -> round (assetPrice asset.id (snd lmsrState) (fst lmsrState) * 100)
 
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
@@ -141,9 +150,6 @@ renderMarket market = [hsx|
                     |]
                     else mempty
 
-                isResolvedWinner = market.status == MarketStatusResolved
-                    && market.outcomeAssetId == Just asset.id
-
             in [hsx|
             <div class={classes ["d-flex justify-content-between mb-1 small rounded-1",
                                  ("market-status-resolved-asset", isResolvedWinner)]}
@@ -152,7 +158,7 @@ renderMarket market = [hsx|
                    {asset.name}
                 </div>
                 <div class="d-flex align-items-center gap-1 ps-1 flex-shrink-0">
-                    {assetPrice}%
+                    {assetPriceVal}%
                     {buttons}
                 </div>
             </div>

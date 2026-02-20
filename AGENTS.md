@@ -11,9 +11,8 @@ This is an IHP (Integrated Haskell Platform) web application using:
 ## Build, Test & Lint Commands
 
 ```bash
-# Development server
-# devenv up                    # Start PostgreSQL + IHP dev server
-# devenv is always running for you with autorefresh
+# Development server is already running via 'devenv up' - do NOT try to start it yourself
+# The server auto-recompiles on file changes
 
 # Build generated files (required after schema changes)
 make build/Generated/Types.hs
@@ -24,6 +23,12 @@ stylish-haskell -i **/*.hs   # Format all Haskell files in-place (always run thi
 # To run tests when they exist:
 runghc $(make print-ghc-extensions) -i. -ibuild -iConfig Test/Main.hs
 ```
+
+## Important Notes
+
+- **Never try to build or run the app manually** - devenv is always running in the background with hot reload
+- If you need to check for compile errors, ask the user to run `devenv up` and show you the output
+- The dev server automatically recompiles and reloads when files change
 
 ## Code Style Guidelines
 

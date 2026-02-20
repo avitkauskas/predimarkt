@@ -2,14 +2,14 @@
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
 
-import Application.Adapter.Position
+import Application.Domain.LMSR
+import Application.Domain.Position
+import Application.Domain.Types
 import Data.List (zipWith4)
 import qualified Data.List as List
+import qualified Data.Map.Strict as M
 import Data.Time (utctDay)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import qualified Domain.LMSR as LMSR
-import qualified Domain.Logic as Domain
-import qualified Domain.Types as Domain
 import Web.Controller.Prelude
 import Web.Types
 import Web.View.Markets.Edit
@@ -204,9 +204,16 @@ instance Controller MarketsController where
             |> filterWhereNot (#quantity, 0)
             |> fetch
 
+        assets <- query @Asset
+            |> filterWhere (#marketId, market.id)
+            |> fetch
+
+        let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
+        let beta = Beta market.beta
+
         now <- getCurrentTime
 
-        withTransaction do
+        withTransaction $ do
             market <- market
                 |> set #status MarketStatusResolved
                 |> set #resolvedAt (Just now)
@@ -218,31 +225,51 @@ instance Controller MarketsController where
                     |> filterWhere (#userId, position.userId)
                     |> fetchOne
 
-                -- Convert to domain position and resolve
-                let domainPosition = toDomainPosition position
-                let resolvedPosition = Domain.resolvePosition (position.assetId == outcomeAssetId) domainPosition
-                let Domain.Balance refundAmount = Domain.refundPosition resolvedPosition
+                let qty = position.quantity
+                    side = positionSide qty
+                    didWin = case side of
+                        Just Long  -> position.assetId == outcomeAssetId
+                        Just Short -> position.assetId /= outcomeAssetId
+                        Nothing    -> False
+                    Just s = side
+                    payoutCents = resolutionPayout (Quantity (abs qty)) s didWin
 
-                -- Update wallet
+                let priceBefore = assetPrice position.assetId beta qtyMap
+                let priceAfter = case side of
+                        Just Long  -> if didWin then 1.0 else 0.0
+                        Just Short -> if didWin then 0.0 else 1.0
+                        Nothing    -> 0.0
+
+                let Money payout = payoutCents
+
                 wallet
-                    |> set #amount (wallet.amount + refundAmount)
+                    |> set #amount (wallet.amount + payout)
                     |> updateRecord
 
-                -- Create transaction for resolution
-                -- Side is derived from quantity: negative quantity = closing transaction
                 _ <- newRecord @Transaction
                     |> set #userId position.userId
                     |> set #assetId position.assetId
                     |> set #marketId market.id
                     |> set #quantity (-position.quantity)
-                    |> set #cashFlow refundAmount
-                    |> set #priceBefore 0
-                    |> set #priceAfter 0
+                    |> set #cashFlow payout
+                    |> set #priceBefore priceBefore
+                    |> set #priceAfter priceAfter
                     |> createRecord
 
-                -- Update position to reflect resolved state
-                let updatedPosition = fromDomainPosition resolvedPosition position
-                updatedPosition |> updateRecord
+                let newInvested = case side of
+                        Just Long  -> position.invested + payout
+                        Just Short -> position.invested
+                        Nothing    -> position.invested
+                let newReceived = case side of
+                        Just Long  -> position.received
+                        Just Short -> position.received + payout
+                        Nothing    -> position.received
+
+                position
+                    |> set #quantity 0
+                    |> set #invested newInvested
+                    |> set #received newReceived
+                    |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
@@ -259,56 +286,55 @@ instance Controller MarketsController where
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusClosed)
 
-        -- Get all positions (both open and closed) for refunding
         positions <- query @Position
             |> filterWhere (#marketId, market.id)
             |> fetch
 
+        assets <- query @Asset
+            |> filterWhere (#marketId, market.id)
+            |> fetch
+
+        let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
+        let beta = Beta market.beta
+
         now <- getCurrentTime
 
-        withTransaction do
-            -- Update market status
+        withTransaction $ do
             market <- market
                 |> set #status MarketStatusRefunded
                 |> set #refundedAt (Just now)
                 |> updateRecord
 
-            -- Process each position and refund
             forM_ positions \position -> do
                 wallet <- query @Wallet
                     |> filterWhere (#userId, position.userId)
                     |> fetchOne
 
-                -- Calculate refund amount (cost basis + realized PnL)
-                let domainPosition = toDomainPosition position
-                let Domain.Balance refundAmount = Domain.refundPosition domainPosition
+                let invested = position.invested
+                let received = position.received
+                let refundAmount = invested + received
 
-                -- Create transaction record for the refund
-                -- Side is derived from quantity: negative quantity = closing transaction
+                let priceBefore = assetPrice position.assetId beta qtyMap
+
                 _ <- newRecord @Transaction
                     |> set #userId position.userId
                     |> set #assetId position.assetId
                     |> set #marketId market.id
                     |> set #quantity (-position.quantity)
                     |> set #cashFlow refundAmount
-                    |> set #priceBefore 0
-                    |> set #priceAfter 0
+                    |> set #priceBefore priceBefore
+                    |> set #priceAfter 0.0
                     |> createRecord
 
-                -- Update wallet balance with refund
                 wallet
                     |> set #amount (wallet.amount + refundAmount)
                     |> updateRecord
 
-                -- Close the position
-                let closedPosition = Domain.Position
-                        { Domain.posSide = Nothing
-                        , Domain.posQuantity = Domain.Quantity 0
-                        , Domain.posCostBasis = Domain.Balance 0
-                        , Domain.posRealizedPnL = Domain.posRealizedPnL domainPosition
-                        }
-                let updatedPosition = fromDomainPosition closedPosition position
-                updatedPosition |> updateRecord
+                position
+                    |> set #quantity 0
+                    |> set #invested 0
+                    |> set #received 0
+                    |> updateRecord
 
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing
@@ -350,8 +376,8 @@ fetchChartData marketId assets beta = do
 
     now <- getCurrentTime
     let currentTimestamp = floor (utcTimeToPOSIXSeconds now)
-    let lmsrState = LMSR.precompute beta [(get #id a, get #quantity a) | a <- assets]
-    let currentPrices = [(get #id a, LMSR.price (get #id a) lmsrState) | a <- assets]
+    let qtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
+    let currentPrices = [(get #id a, assetPrice (get #id a) (Beta beta) qtyMap) | a <- assets]
 
     if null transactions
         then pure $ map (makeFlatChartData currentPrices assets currentTimestamp) assets
@@ -374,9 +400,9 @@ fetchChartData marketId assets beta = do
         let assetTxns = filter (\t -> get #assetId t == get #id asset) txns
             byDay = List.groupBy (\t1 t2 -> utctDay (get #createdAt t1) == utctDay (get #createdAt t2)) assetTxns
             ohlcPoints = if null assetTxns
-                then -- No transactions for this asset, show flat line at current price
-                    let lmsrState = LMSR.precompute beta [(get #id a, get #quantity a) | a <- allAssets]
-                        currentPrice = LMSR.price (get #id asset) lmsrState
+                then
+                    let qtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- allAssets]
+                        currentPrice = assetPrice (get #id asset) (Beta beta) qtyMap
                     in [OhlcPoint currentTime currentPrice currentPrice currentPrice currentPrice]
                 else map transactionsToOhlc byDay
         in AssetChartData
