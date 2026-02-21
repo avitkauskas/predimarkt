@@ -86,11 +86,11 @@ CREATE TABLE transactions (
     cash_flow BIGINT DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     price_before DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    price_after DOUBLE PRECISION DEFAULT 0 NOT NULL
+    price_after DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    market_state JSONB DEFAULT '{}'::JSONB NOT NULL
 );
 CREATE INDEX transactions_user_id_index ON transactions (user_id);
-CREATE INDEX transactions_market_id_index ON transactions (market_id);
-CREATE INDEX transactions_asset_id_index ON transactions (asset_id);
+CREATE INDEX transactions_market_id_asset_id_index ON transactions (market_id, asset_id);
 CREATE INDEX transactions_created_at_index ON transactions (created_at);
 CREATE TABLE positions (
     id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
