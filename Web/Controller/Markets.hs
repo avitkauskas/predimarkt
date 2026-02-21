@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
@@ -6,11 +7,16 @@ import Application.Domain.LMSR
 import Application.Domain.Position
 import Application.Domain.Types
 import Control.Lens (Field1 (_1))
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Types as AesonTypes
 import Data.List (zipWith4)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
-import Data.Time (utctDay)
+import Data.Time (Day, addDays, utctDay)
+import Data.Time.Clock (UTCTime (..))
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.UUID (UUID)
+import qualified Data.UUID as UUID
 import Web.Controller.Prelude
 import Web.Types
 import Web.View.Markets.Edit
@@ -63,19 +69,17 @@ instance Controller MarketsController where
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
         let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
 
-        market' <- fetch mId
-            >>= fetchRelated #assets
-            >>= fetchRelated #categoryId
-        let sortedAssets = sortAssetsForDisplay (get #assets market')
-        let market = market' |> set #assets sortedAssets
-
-        assets' <- query @Asset
+        market :: Market <- fetch mId
+        category <- fetch (market.categoryId)
+        assets <- query @Asset
             |> filterWhere (#marketId, mId)
             |> orderByAsc #quantity
             |> fetch
-        chartData <- fetchChartData mId assets' market.beta
+        let sortedAssets = sortAssetsForDisplay assets
 
-        render ShowView { market, tradingAssetId = tAssetId, tradingAction = tAction, chartData }
+        chartData <- fetchChartData market assets market.beta
+
+        render ShowView { market, category, assets = sortedAssets, tradingAssetId = tAssetId, tradingAction = tAction, chartData }
 
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -189,156 +193,11 @@ instance Controller MarketsController where
             |> fetch
         render ResolveView { .. }
 
-    action ResolveMarketAction { marketId } = do
-        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
-        market <- fetch mId
-        accessDeniedUnless (market.userId == Just currentUserId)
-        accessDeniedUnless (market.status == MarketStatusClosed)
-
-        let outcomeAssetId = param @(Id Asset) "outcomeAssetId"
-
-        outcomeAsset <- fetch outcomeAssetId
-        accessDeniedUnless (outcomeAsset.marketId == market.id)
-
-        positions <- query @Position
-            |> filterWhere (#marketId, market.id)
-            |> filterWhereNot (#quantity, 0)
-            |> fetch
-
-        assets <- query @Asset
-            |> filterWhere (#marketId, market.id)
-            |> fetch
-
-        let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
-        let beta = Beta market.beta
-
-        now <- getCurrentTime
-
-        withTransaction $ do
-            market <- market
-                |> set #status MarketStatusResolved
-                |> set #resolvedAt (Just now)
-                |> set #outcomeAssetId (Just outcomeAssetId)
-                |> updateRecord
-
-            forM_ positions \position -> do
-                wallet <- query @Wallet
-                    |> filterWhere (#userId, position.userId)
-                    |> fetchOne
-
-                let qty = position.quantity
-                    side = positionSide qty
-                    didWin = case side of
-                        Just Long  -> position.assetId == outcomeAssetId
-                        Just Short -> position.assetId /= outcomeAssetId
-                        Nothing    -> False
-                    Just s = side
-                    payoutCents = resolutionPayout (Quantity (abs qty)) s didWin
-
-                let priceBefore = assetPrice position.assetId beta qtyMap
-                let priceAfter = case side of
-                        Just Long  -> if didWin then 1.0 else 0.0
-                        Just Short -> if didWin then 0.0 else 1.0
-                        Nothing    -> 0.0
-
-                let Money payout = payoutCents
-
-                wallet
-                    |> set #amount (wallet.amount + payout)
-                    |> updateRecord
-
-                _ <- newRecord @Transaction
-                    |> set #userId position.userId
-                    |> set #assetId position.assetId
-                    |> set #marketId market.id
-                    |> set #quantity (-position.quantity)
-                    |> set #cashFlow payout
-                    |> set #priceBefore priceBefore
-                    |> set #priceAfter priceAfter
-                    |> createRecord
-
-                let newInvested = case side of
-                        Just Long  -> position.invested
-                        Just Short -> position.invested + payout
-                        Nothing    -> position.invested
-                let newReceived = case side of
-                        Just Long  -> position.received + payout
-                        Just Short -> position.received
-                        Nothing    -> position.received
-
-                position
-                    |> set #quantity 0
-                    |> set #invested newInvested
-                    |> set #received newReceived
-                    |> updateRecord
-
-        setSuccessMessage "Market resolved successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing
-
     action ConfirmRefundMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         render RefundView { .. }
-
-    action RefundMarketAction { marketId } = do
-        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
-        market <- fetch mId
-        accessDeniedUnless (market.userId == Just currentUserId)
-        accessDeniedUnless (market.status == MarketStatusClosed)
-
-        positions <- query @Position
-            |> filterWhere (#marketId, market.id)
-            |> fetch
-
-        assets <- query @Asset
-            |> filterWhere (#marketId, market.id)
-            |> fetch
-
-        let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
-        let beta = Beta market.beta
-
-        now <- getCurrentTime
-
-        withTransaction $ do
-            market <- market
-                |> set #status MarketStatusRefunded
-                |> set #refundedAt (Just now)
-                |> updateRecord
-
-            forM_ positions \position -> do
-                wallet <- query @Wallet
-                    |> filterWhere (#userId, position.userId)
-                    |> fetchOne
-
-                let invested = position.invested
-                let received = position.received
-                let refundAmount = negate (invested + received)
-
-                let priceBefore = assetPrice position.assetId beta qtyMap
-
-                _ <- newRecord @Transaction
-                    |> set #userId position.userId
-                    |> set #assetId position.assetId
-                    |> set #marketId market.id
-                    |> set #quantity (-position.quantity)
-                    |> set #cashFlow refundAmount
-                    |> set #priceBefore priceBefore
-                    |> set #priceAfter 0.0
-                    |> createRecord
-
-                wallet
-                    |> set #amount (wallet.amount + refundAmount)
-                    |> updateRecord
-
-                position
-                    |> set #quantity 0
-                    |> set #invested 0
-                    |> set #received 0
-                    |> updateRecord
-
-        setSuccessMessage "Market refunded successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing
 
 fetchAssetsFromParams :: (?context :: ControllerContext, ?request :: Request) => IO [Asset]
 fetchAssetsFromParams =
@@ -367,73 +226,131 @@ buildMarket now market = market
 fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
 fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch
 
--- | Fetch and aggregate transaction data into OHLC format by day
-fetchChartData :: (?modelContext::ModelContext) => Id Market -> [Asset] -> Integer -> IO [AssetChartData]
-fetchChartData marketId assets beta = do
+-- | Fetch transaction data and aggregate into daily price points for line chart
+fetchChartData :: (?modelContext::ModelContext) => Market -> [Asset] -> Integer -> IO [AssetChartData]
+fetchChartData market assets beta = do
+    now <- getCurrentTime
+    let today = utctDay now
+
+    let endDay = min (utctDay market.closedAt) today
+
+    let startDay = case market.openedAt of
+            Just openedTime -> utctDay openedTime
+            Nothing         -> utctDay (get #createdAt market)
+
     transactions <- query @Transaction
-        |> filterWhere (#marketId, marketId)
+        |> filterWhere (#marketId, market.id)
         |> orderByAsc #createdAt
         |> fetch
 
-    now <- getCurrentTime
-    let currentTimestamp = floor (utcTimeToPOSIXSeconds now)
-    let qtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
-    let currentPrices = [(get #id a, assetPrice (get #id a) (Beta beta) qtyMap) | a <- assets]
+    let validTransactions = filter (\t -> get #marketState t /= Aeson.object []) transactions
 
-    if null transactions
-        then pure $ map (makeFlatChartData currentPrices assets currentTimestamp) assets
-        else pure $ map (aggregateTransactions transactions assets beta currentTimestamp) assets
+    let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
+    let currentPrices = allAssetPrices (Beta beta) currentQtyMap
+
+    if null validTransactions
+        then pure $ makeFlatLineFromDay startDay endDay assets currentPrices
+        else do
+            let filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
+            let assetTxns = groupAssetTransactions filteredTxns
+            let lastTxnPerDay = getLastTransactionPerDay assetTxns
+            let dayRange = generateDayRange startDay endDay
+            let pricesPerDay = computePricesPerDay lastTxnPerDay assets beta
+            let filledData = fillMissingDays dayRange pricesPerDay currentPrices
+
+            pure $ map (buildAssetChartData filledData endDay) assets
   where
-    -- For markets with no transactions, show flat line at current price
-    makeFlatChartData :: [(Id Asset, Double)] -> [Asset] -> Int -> Asset -> AssetChartData
-    makeFlatChartData prices allAssets currentTime asset =
-        let currentPrice = maybe 0.0 (\x -> x) (List.lookup (get #id asset) prices)
+    groupAssetTransactions :: [Transaction] -> M.Map (Id Asset) [(Day, Transaction)]
+    groupAssetTransactions txns = M.fromListWith (++)
+        [ (get #assetId t, [(utctDay (get #createdAt t), t)])
+        | t <- txns
+        ]
+
+    getLastTransactionPerDay :: M.Map (Id Asset) [(Day, Transaction)] -> M.Map (Id Asset) (M.Map Day Transaction)
+    getLastTransactionPerDay assetTxns = M.map processAssetTxns assetTxns
+      where
+        processAssetTxns :: [(Day, Transaction)] -> M.Map Day Transaction
+        processAssetTxns dayTxns =
+            let sorted = List.sortBy (\(d1, _) (d2, _) -> compare d1 d2) dayTxns
+            in M.fromList (getLastPerDay sorted)
+
+        getLastPerDay :: [(Day, Transaction)] -> [(Day, Transaction)]
+        getLastPerDay [] = []
+        getLastPerDay [x] = [x]
+        getLastPerDay ((d1, t1):(d2, t2):rest)
+            | d1 == d2 = getLastPerDay ((d1, t2):rest)
+            | otherwise = (d1, t1) : getLastPerDay ((d2, t2):rest)
+
+    generateDayRange :: Day -> Day -> [Day]
+    generateDayRange start end = takeWhile (<= end) (iterate (addDays 1) start)
+
+    computePricesPerDay :: M.Map (Id Asset) (M.Map Day Transaction) -> [Asset] -> Integer -> M.Map Day (M.Map (Id Asset) Double)
+    computePricesPerDay lastTxns assets' beta = M.fromListWith M.union
+        [ (day, prices)
+        | (assetId, dayTxns) <- M.toList lastTxns
+        , (day, txn) <- M.toList dayTxns
+        , let prices = case parseMarketState (get #marketState txn) of
+                Just qtyMap -> allAssetPrices (Beta beta) qtyMap
+                Nothing     -> M.empty
+        ]
+
+    parseMarketState :: Aeson.Value -> Maybe (M.Map (Id Asset) Quantity)
+    parseMarketState value = case Aeson.fromJSON value of
+        AesonTypes.Success (obj :: [(Text, Int)]) -> Just $ M.fromList
+            [ (Id uid, Quantity (fromIntegral qty))
+            | (key, qty) <- obj
+            , Just uid <- [UUID.fromText key]
+            ]
+        AesonTypes.Error _ -> Nothing
+
+    makeFlatLineFromDay :: Day -> Day -> [Asset] -> M.Map (Id Asset) Double -> [AssetChartData]
+    makeFlatLineFromDay startDay endDay assets' prices = do
+        let dayRange = generateDayRange startDay endDay
+        map (buildFlatAssetChart dayRange prices) assets'
+
+    buildFlatAssetChart :: [Day] -> M.Map (Id Asset) Double -> Asset -> AssetChartData
+    buildFlatAssetChart days prices asset =
+        let assetId = get #id asset
+            price = fromMaybe 0.0 (M.lookup assetId prices)
+            points = map (\d -> PricePoint (dayToTimestamp d) price) days
         in AssetChartData
-            { chartAssetId = get #id asset
+            { chartAssetId = assetId
+            , chartAssetSymbol = get #symbol asset
             , chartAssetName = get #name asset
-            , chartAssetColor = assetColorFor allAssets asset
-            , chartOhlcData = [OhlcPoint currentTime currentPrice currentPrice currentPrice currentPrice]
+            , chartAssetColor = assetColorFor assets asset
+            , chartData = points
             }
 
-    -- Aggregate transactions by day for each asset
-    aggregateTransactions :: [Transaction] -> [Asset] -> Integer -> Int -> Asset -> AssetChartData
-    aggregateTransactions txns allAssets beta currentTime asset =
-        let assetTxns = filter (\t -> get #assetId t == get #id asset) txns
-            byDay = List.groupBy (\t1 t2 -> utctDay (get #createdAt t1) == utctDay (get #createdAt t2)) assetTxns
-            ohlcPoints = if null assetTxns
-                then
-                    let qtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- allAssets]
-                        currentPrice = assetPrice (get #id asset) (Beta beta) qtyMap
-                    in [OhlcPoint currentTime currentPrice currentPrice currentPrice currentPrice]
-                else map transactionsToOhlc byDay
+    fillMissingDays :: [Day] -> M.Map Day (M.Map (Id Asset) Double) -> M.Map (Id Asset) Double -> M.Map Day (M.Map (Id Asset) Double)
+    fillMissingDays [] _ _ = M.empty
+    fillMissingDays (day:days) pricesPerDay lastKnownPrices =
+        let dayPrices = case M.lookup day pricesPerDay of
+                Just p  -> p
+                Nothing -> lastKnownPrices
+            nextPrices = if M.null dayPrices then lastKnownPrices else dayPrices
+            rest = fillMissingDays days pricesPerDay nextPrices
+        in M.insert day dayPrices rest
+
+    buildAssetChartData :: M.Map Day (M.Map (Id Asset) Double) -> Day -> Asset -> AssetChartData
+    buildAssetChartData filledData today asset =
+        let assetId = get #id asset
+            points = map (\day ->
+                let price = case M.lookup day filledData of
+                        Just dayPrices -> fromMaybe 0.0 (M.lookup assetId dayPrices)
+                        Nothing -> 0.0
+                in PricePoint (dayToTimestamp day) price
+                ) (sort $ M.keys filledData)
         in AssetChartData
-            { chartAssetId = get #id asset
+            { chartAssetId = assetId
+            , chartAssetSymbol = get #symbol asset
             , chartAssetName = get #name asset
-            , chartAssetColor = assetColorFor allAssets asset
-            , chartOhlcData = ohlcPoints
+            , chartAssetColor = assetColorFor assets asset
+            , chartData = points
             }
 
-    -- Convert a day's transactions to OHLC point
-    transactionsToOhlc :: [Transaction] -> OhlcPoint
-    transactionsToOhlc [] = OhlcPoint 0 0.0 0.0 0.0 0.0
-    transactionsToOhlc dayTxns =
-        let mkPoint :: Transaction -> (Int, Double)
-            mkPoint txn =
-                let time = floor (utcTimeToPOSIXSeconds (get #createdAt txn))
-                    price = get #priceAfter txn
-                in (time, price)
-            points :: [(Int, Double)]
-            points = map mkPoint dayTxns
-            times = map fst points
-            prices :: [Double]
-            prices = map snd points
-            minTime = minimum times
-            (open, high, low, close) = case prices of
-                [] -> (0.0, 0.0, 0.0, 0.0)
-                (p:ps) -> (p, maximum (p:ps), minimum (p:ps), case reverse (p:ps) of (x:_) -> x; _ -> p)
-        in OhlcPoint minTime open high low close
+    dayToTimestamp :: Day -> Int
+    dayToTimestamp day = floor (utcTimeToPOSIXSeconds (UTCTime day 0))
 
-    -- Assign colors to assets based on index
     assetColorFor :: [Asset] -> Asset -> Text
     assetColorFor allAssets asset =
         let colors = ["#2962FF", "#E91E63", "#4CAF50", "#FF9800", "#9C27B0", "#00BCD4"]

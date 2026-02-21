@@ -4,12 +4,15 @@ import Application.Domain.Types
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Text as Text
+import qualified IHP.QueryBuilder as QueryBuilder
 import Text.Printf (printf)
-import Web.Types (AssetChartData (..), OhlcPoint (..))
+import Web.Types (AssetChartData (..), PricePoint (..))
 import Web.View.Prelude
 
 data ShowView = ShowView
-    { market         :: Include' ["assets", "categoryId"] Market
+    { market         :: Market
+    , category       :: Category
+    , assets         :: [Asset]
     , tradingAssetId :: Maybe (Id Asset)
     , tradingAction  :: Maybe Text
     , chartData      :: [AssetChartData]
@@ -22,7 +25,7 @@ instance View ShowView where
                 <div class="col-12 col-lg-8 order-1 order-lg-1">
                     <div class="card shadow-sm">
                         <div class={classes ["card-header text-muted d-flex justify-content-between align-items-center py-2", (headerClass, True)]}>
-                            <span class="ms-2">{market.categoryId.name}</span>
+                            <span class="ms-2">{category.name}</span>
                             <div class="me-2">
                                 {statusBadge}
                             </div>
@@ -46,7 +49,7 @@ instance View ShowView where
                             </header>
 
                             <div class="assets-list border-top mt-4">
-                                {forEach market.assets renderAsset}
+                                {forEach assets renderAsset}
                             </div>
 
                             <div class="mt-4 pt-4">
@@ -97,7 +100,7 @@ instance View ShowView where
                 when (market.status /= MarketStatusOpen)
                     [hsx|<span>{marketStatusLabel market.status}</span>|]
 
-            lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- market.assets]
+            lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
                          in (qtyMap, Beta market.beta)
 
             renderAsset :: Asset -> Html
@@ -222,10 +225,10 @@ instance View ShowView where
             encodeChartData assetsData =
                 "[" <> Text.intercalate "," (map encodeAsset assetsData) <> "]"
                 where
-                    encodeAsset (AssetChartData aid' aname' acolor' ohlcs') =
-                        "{\"id\":\"" <> assetIdToText aid' <> "\",\"name\":\"" <> aname' <> "\",\"color\":\"" <> acolor' <> "\",\"data\":[" <> Text.intercalate "," (map encodeOhlc ohlcs') <> "]}"
-                    encodeOhlc (OhlcPoint time' open' high' low' close') =
-                        "{\"time\":" <> tshow time' <> ",\"open\":" <> tshow open' <> ",\"high\":" <> tshow high' <> ",\"low\":" <> tshow low' <> ",\"close\":" <> tshow close' <> "}"
+                    encodeAsset (AssetChartData aid' asym' aname' acolor' data') =
+                        "{\"id\":\"" <> assetIdToText aid' <> "\",\"symbol\":\"" <> asym' <> "\",\"name\":\"" <> aname' <> "\",\"color\":\"" <> acolor' <> "\",\"data\":[" <> Text.intercalate "," (map encodePrice data') <> "]}"
+                    encodePrice (PricePoint time' value') =
+                        "{\"time\":" <> tshow time' <> ",\"value\":" <> tshow value' <> "}"
                     tshow :: Show a => a -> Text
                     tshow x = cs (show x)
                     assetIdToText :: Id Asset -> Text
@@ -287,14 +290,10 @@ instance View ShowView where
                         chartContainer._chart = chart;
 
                         chartData.forEach(function(asset) {
-                            var series = chart.addSeries(LightweightCharts.CandlestickSeries, {
-                                upColor: asset.color,
-                                downColor: '#ef5350',
-                                borderUpColor: asset.color,
-                                borderDownColor: '#ef5350',
-                                wickUpColor: asset.color,
-                                wickDownColor: '#ef5350',
-                                title: asset.name,
+                            var series = chart.addSeries(LightweightCharts.LineSeries, {
+                                color: asset.color,
+                                lineWidth: 2,
+                                title: asset.symbol,
                             });
 
                             if (asset.data && asset.data.length > 0) {

@@ -52,9 +52,7 @@ data MarketsController
     | UpdateMarketAction { marketId :: !(Id Market) }
     | DeleteMarketAction { marketId :: !(Id Market) }
     | SetResolveAssetAction { marketId :: !(Id Market) }
-    | ResolveMarketAction { marketId :: !(Id Market) }
     | ConfirmRefundMarketAction { marketId :: !(Id Market) }
-    | RefundMarketAction { marketId :: !(Id Market) }
     deriving (Eq, Show, Data)
 
 data AssetsController
@@ -65,6 +63,8 @@ data AssetsController
 data TradesController
     = ExecuteTradeAction { assetId :: !(Id Asset) }
     | ClosePositionAction { assetId :: !(Id Asset) }
+    | ResolveMarketAction { marketId :: !(Id Market) }
+    | RefundMarketAction { marketId :: !(Id Market) }
     deriving (Eq, Show, Data)
 
 data DashboardController
@@ -77,20 +77,18 @@ data DashboardController
 
 deriving instance Data MarketStatus
 
--- | OHLC data point for candlestick charts
+-- | Single price point for line charts (time + price value)
 -- Time is stored as Unix timestamp in seconds for JavaScript compatibility
-data OhlcPoint = OhlcPoint
-    { ohlcTime  :: Int
-    , ohlcOpen  :: Double
-    , ohlcHigh  :: Double
-    , ohlcLow   :: Double
-    , ohlcClose :: Double
+data PricePoint = PricePoint
+    { priceTime  :: Int
+    , priceValue :: Double
     } deriving (Eq, Show)
 
 -- | Chart data for a single asset
 data AssetChartData = AssetChartData
-    { chartAssetId    :: Id Asset
-    , chartAssetName  :: Text
-    , chartAssetColor :: Text
-    , chartOhlcData   :: [OhlcPoint]
+    { chartAssetId     :: Id Asset
+    , chartAssetSymbol :: Text
+    , chartAssetName   :: Text
+    , chartAssetColor  :: Text
+    , chartData        :: [PricePoint]
     } deriving (Eq, Show)

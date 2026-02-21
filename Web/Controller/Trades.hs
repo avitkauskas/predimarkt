@@ -1,8 +1,11 @@
+{-# LANGUAGE BlockArguments #-}
 module Web.Controller.Trades where
 
 import Application.Domain.LMSR
+import Application.Domain.Position
 import Application.Domain.Types
 import Application.Helper.View (formatMoney)
+import qualified Data.Aeson as Aeson
 import qualified Data.Map.Strict as M
 import Web.Controller.Prelude
 
@@ -61,6 +64,7 @@ instance Controller TradesController where
                 |> updateRecord
 
             let txnQuantity = if isBuy then paramQty else (-paramQty)
+            let marketStateJson = Aeson.toJSON $ buildMarketState newQtyMap
             _ <- newRecord @Transaction
                 |> set #userId currentUserId
                 |> set #assetId assetId
@@ -69,6 +73,7 @@ instance Controller TradesController where
                 |> set #cashFlow cashFlowCents
                 |> set #priceBefore currentPrice
                 |> set #priceAfter priceAfter
+                |> set #marketState marketStateJson
                 |> createRecord
 
             case maybeDbPosition of
@@ -159,6 +164,7 @@ instance Controller TradesController where
                 |> set #cashFlow cashFlowCents
                 |> set #priceBefore currentPrice
                 |> set #priceAfter priceAfter
+                |> set #marketState (Aeson.toJSON $ buildMarketState newQtyMap)
                 |> createRecord
 
             let oldInvested = get #invested dbPosition
@@ -175,3 +181,158 @@ instance Controller TradesController where
         setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show (abs currentQty) <> " shares for " <> formatMoney tradeAmountCents
 
         redirectTo (DashboardPositionsAction Nothing)
+
+    action ResolveMarketAction { marketId } = do
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+        accessDeniedUnless (market.status == MarketStatusClosed)
+
+        let outcomeAssetId = param @(Id Asset) "outcomeAssetId"
+
+        outcomeAsset <- fetch outcomeAssetId
+        accessDeniedUnless (outcomeAsset.marketId == market.id)
+
+        positions <- query @Position
+            |> filterWhere (#marketId, market.id)
+            |> filterWhereNot (#quantity, 0)
+            |> fetch
+
+        assets <- query @Asset
+            |> filterWhere (#marketId, market.id)
+            |> fetch
+
+        let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
+        let beta = Beta market.beta
+
+        now <- getCurrentTime
+
+        withTransaction $ do
+            market <- market
+                |> set #status MarketStatusResolved
+                |> set #resolvedAt (Just now)
+                |> set #outcomeAssetId (Just outcomeAssetId)
+                |> updateRecord
+
+            forM_ positions \position -> do
+                wallet <- query @Wallet
+                    |> filterWhere (#userId, position.userId)
+                    |> fetchOne
+
+                let qty = position.quantity
+                    side = positionSide qty
+                    didWin = case side of
+                        Just Long  -> position.assetId == outcomeAssetId
+                        Just Short -> position.assetId /= outcomeAssetId
+                        Nothing    -> False
+                    Just s = side
+                    payoutCents = resolutionPayout (Quantity (abs qty)) s didWin
+
+                let priceBefore = assetPrice position.assetId beta qtyMap
+                let priceAfter = case side of
+                        Just Long  -> if didWin then 1.0 else 0.0
+                        Just Short -> if didWin then 0.0 else 1.0
+                        Nothing    -> 0.0
+
+                let Money payout = payoutCents
+                let marketStateJson = Aeson.toJSON $ buildMarketState qtyMap
+
+                wallet
+                    |> set #amount (wallet.amount + payout)
+                    |> updateRecord
+
+                _ <- newRecord @Transaction
+                    |> set #userId position.userId
+                    |> set #assetId position.assetId
+                    |> set #marketId market.id
+                    |> set #quantity (-position.quantity)
+                    |> set #cashFlow payout
+                    |> set #priceBefore priceBefore
+                    |> set #priceAfter priceAfter
+                    |> set #marketState marketStateJson
+                    |> createRecord
+
+                let newInvested = case side of
+                        Just Long  -> position.invested
+                        Just Short -> position.invested + payout
+                        Nothing    -> position.invested
+                let newReceived = case side of
+                        Just Long  -> position.received + payout
+                        Just Short -> position.received
+                        Nothing    -> position.received
+
+                position
+                    |> set #quantity 0
+                    |> set #invested newInvested
+                    |> set #received newReceived
+                    |> updateRecord
+
+        setSuccessMessage "Market resolved successfully"
+        redirectTo $ ShowMarketAction mId Nothing Nothing
+
+    action RefundMarketAction { marketId } = do
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+        accessDeniedUnless (market.status == MarketStatusClosed)
+
+        positions <- query @Position
+            |> filterWhere (#marketId, market.id)
+            |> fetch
+
+        assets <- query @Asset
+            |> filterWhere (#marketId, market.id)
+            |> fetch
+
+        let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
+        let beta = Beta market.beta
+
+        now <- getCurrentTime
+
+        withTransaction $ do
+            market <- market
+                |> set #status MarketStatusRefunded
+                |> set #refundedAt (Just now)
+                |> updateRecord
+
+            forM_ positions \position -> do
+                wallet <- query @Wallet
+                    |> filterWhere (#userId, position.userId)
+                    |> fetchOne
+
+                let invested = position.invested
+                let received = position.received
+                let refundAmount = negate (invested + received)
+
+                let priceBefore = assetPrice position.assetId beta qtyMap
+                let marketStateJson = Aeson.toJSON $ buildMarketState qtyMap
+
+                _ <- newRecord @Transaction
+                    |> set #userId position.userId
+                    |> set #assetId position.assetId
+                    |> set #marketId market.id
+                    |> set #quantity (-position.quantity)
+                    |> set #cashFlow refundAmount
+                    |> set #priceBefore priceBefore
+                    |> set #priceAfter 0.0
+                    |> set #marketState marketStateJson
+                    |> createRecord
+
+                wallet
+                    |> set #amount (wallet.amount + refundAmount)
+                    |> updateRecord
+
+                position
+                    |> set #quantity 0
+                    |> set #invested 0
+                    |> set #received 0
+                    |> updateRecord
+
+        setSuccessMessage "Market refunded successfully"
+        redirectTo $ ShowMarketAction mId Nothing Nothing
+
+buildMarketState :: M.Map (Id Asset) Quantity -> [(Text, Int)]
+buildMarketState qtyMap =
+    [ (cs (show assetId), fromIntegral qty)
+    | (assetId, Quantity qty) <- M.toList qtyMap
+    ]
