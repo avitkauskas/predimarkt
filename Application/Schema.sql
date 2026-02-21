@@ -107,7 +107,21 @@ CREATE INDEX positions_market_id_index ON positions (market_id);
 CREATE INDEX positions_asset_id_index ON positions (asset_id);
 CREATE UNIQUE INDEX positions_user_id_asset_id_index ON positions (user_id, asset_id);
 CREATE TRIGGER update_positions_updated_at BEFORE UPDATE ON positions FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+CREATE TABLE close_market_jobs (
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    status JOB_STATUS DEFAULT 'job_status_not_started' NOT NULL,
+    last_error TEXT DEFAULT NULL,
+    attempts_count INT DEFAULT 0 NOT NULL,
+    locked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    locked_by UUID DEFAULT NULL,
+    run_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    market_id UUID NOT NULL UNIQUE
+);
+CREATE INDEX close_market_jobs_market_id_index ON close_market_jobs (market_id);
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
+ALTER TABLE close_market_jobs ADD CONSTRAINT close_market_jobs_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_outcome_asset_id FOREIGN KEY (outcome_asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;

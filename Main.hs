@@ -10,6 +10,7 @@ import IHP.RouterSupport
 import qualified IHP.Server
 import Web.FrontController
 import Web.Types
+import Web.Worker
 
 instance FrontController RootApplication where
     controllers = [
@@ -18,7 +19,7 @@ instance FrontController RootApplication where
         ]
 
 instance Worker RootApplication where
-    workers _ = []
+    workers _ = workers WebApplication
 
 main :: IO ()
 main = IHP.Server.run config

@@ -4,10 +4,11 @@ import Application.Domain.LMSR as LMSR
 import Application.Domain.Types
 import qualified Data.Map as M
 import Web.Controller.Prelude
+import Web.Job.CloseMarket
 import Web.View.Dashboard.Markets
+import Web.View.Dashboard.OpenMarket
 import Web.View.Dashboard.Positions
 import Web.View.Dashboard.Transactions
-import Web.View.Dashboard.Wallets
 
 instance Controller DashboardController where
     beforeAction = ensureIsUser
@@ -99,12 +100,6 @@ instance Controller DashboardController where
             , wallet = wallet
             }
 
-    action DashboardWalletsAction = do
-        wallet <- query @Wallet
-            |> filterWhere (#userId, currentUserId)
-            |> fetchOne
-        render WalletsView { .. }
-
     action DashboardMarketsAction { statusFilter } = do
         let activeStatus = fromMaybe MarketStatusDraft $ statusFilter
                 <|> paramOrNothing @MarketStatus "statusFilter"
@@ -133,7 +128,15 @@ instance Controller DashboardController where
 
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
+
+        when (st == MarketStatusOpen && market.status `notElem` [MarketStatusDraft, MarketStatusClosed]) $ do
+            accessDeniedUnless False
+
         now <- getCurrentTime
+
+        when (st == MarketStatusOpen && market.closedAt <= now) $ do
+            setModal OpenMarketView { market }
+            jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status }
 
         let marketWithStatus = market |> set #status st
 
@@ -145,8 +148,63 @@ instance Controller DashboardController where
 
         marketWithTimestamps |> updateRecord
 
+        when (st == MarketStatusOpen) $ do
+            existingJobs <- query @CloseMarketJob
+                |> filterWhere (#marketId, market.id)
+                |> fetch
+            deleteRecords existingJobs
+            _ <- newRecord @CloseMarketJob
+                |> set #marketId market.id
+                |> set #runAt market.closedAt
+                |> createRecord
+            pure ()
+
         setSuccessMessage "Market status updated"
         redirectTo $ DashboardMarketsAction { statusFilter = Just st }
+
+    action OpenMarketAction { marketId } = do
+        let mId = case marketId of
+                Just id -> id
+                Nothing -> param @(Id Market) "marketId"
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+
+        let newClosedAt :: Maybe UTCTime = paramOrNothing "closedAt"
+        now <- getCurrentTime
+
+        case newClosedAt of
+            Nothing -> do
+                let marketWithError = market
+                        |> validateField #closedAt (const $ Failure "Please provide a closing time.")
+                setModal OpenMarketView { market = marketWithError }
+                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status }
+            Just closedAtVal ->
+                if closedAtVal <= now
+                    then do
+                        let marketWithError = market
+                                |> set #closedAt closedAtVal
+                                |> validateField #closedAt (const $ Failure "Closing time must be in the future.")
+                        setModal OpenMarketView { market = marketWithError }
+                        jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status }
+                    else do
+                        market
+                            |> set #closedAt closedAtVal
+                            |> set #status MarketStatusOpen
+                            |> set #openedAt (Just now)
+                            |> updateRecord
+
+                        existingJobs <- query @CloseMarketJob
+                            |> filterWhere (#marketId, market.id)
+                            |> fetch
+                        deleteRecords existingJobs
+                        _ <- newRecord @CloseMarketJob
+                            |> set #marketId market.id
+                            |> set #runAt closedAtVal
+                            |> createRecord
+                        pure ()
+
+                        setSuccessMessage "Market opened successfully"
+                        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen }
 
     action DashboardTransactionsAction { page } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")

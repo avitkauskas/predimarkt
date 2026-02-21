@@ -28,7 +28,12 @@ instance View MarketsView where
 renderMarket :: (?context :: ControllerContext) => Market -> Html
 renderMarket market = [hsx|
     <tr>
-        <td class="align-middle">{market.title}</td>
+        <td class="align-middle">
+            <a class="text-decoration-none"
+               href={ShowMarketAction market.id Nothing Nothing}>
+                {market.title}
+            </a>
+        </td>
         <td class="text-end">
             {renderActions market}
         </td>
@@ -81,14 +86,5 @@ renderActions market =
             <a href={SetResolveAssetAction market.id} class="btn btn-sm btn-outline-success me-2">Resolve</a>
             <a href={ConfirmRefundMarketAction market.id} class="btn btn-sm btn-outline-danger">Refund</a>
         |]
-        MarketStatusRefunded -> [hsx|
-            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
-            </form>
-        |]
-        MarketStatusResolved -> [hsx|
-            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
-            </form>
-        |]
-        -- _ -> mempty
+        MarketStatusRefunded -> mempty
+        MarketStatusResolved -> mempty

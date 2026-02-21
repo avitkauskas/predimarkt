@@ -24,6 +24,7 @@ defaultLayout inner = [hsx|
                     <div class="container-xxl mt-1">
                         {renderFlashMessages}
                         {inner}
+                        {modal}
                     </div>
                 </div>
             </body>

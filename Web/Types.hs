@@ -69,10 +69,10 @@ data TradesController
 
 data DashboardController
     = DashboardPositionsAction { page :: Maybe Int }
-    | DashboardWalletsAction
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
     | DashboardTransactionsAction { page :: Maybe Int }
     | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
+    | OpenMarketAction { marketId :: !(Maybe (Id Market)) }
     deriving (Eq, Show, Data)
 
 deriving instance Data MarketStatus

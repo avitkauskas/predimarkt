@@ -18,6 +18,7 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Web.Controller.Prelude
+import Web.Job.CloseMarket
 import Web.Types
 import Web.View.Markets.Edit
 import Web.View.Markets.Index
@@ -138,6 +139,16 @@ instance Controller MarketsController where
                                         then asset |> set #marketId market.id |> createRecord
                                         else asset |> set #marketId market.id |> updateRecord
 
+                                -- Delete old job and create new one with updated closed_at
+                                existingJobs <- query @CloseMarketJob
+                                    |> filterWhere (#marketId, market.id)
+                                    |> fetch
+                                deleteRecords existingJobs
+                                newRecord @CloseMarketJob
+                                    |> set #marketId market.id
+                                    |> set #runAt market.closedAt
+                                    |> createRecord
+
                             redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
 
     action CreateMarketAction = do
@@ -169,6 +180,11 @@ instance Controller MarketsController where
 
                                 forM_ assets \asset -> do
                                     asset |> set #marketId market.id |> createRecord
+
+                                newRecord @CloseMarketJob
+                                    |> set #marketId market.id
+                                    |> set #runAt market.closedAt
+                                    |> createRecord
 
                             setSuccessMessage "Market created"
                             redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }

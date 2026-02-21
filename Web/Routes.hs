@@ -1,4 +1,6 @@
 module Web.Routes where
+import Data.UUID (UUID)
+import qualified Data.UUID as UUID
 import Generated.Types
 import IHP.ModelSupport
 import IHP.Prelude
@@ -54,24 +56,24 @@ instance HasPath DashboardController where
         case page of
             Just p  -> "/DashboardPositions?page=" <> inputValue p
             Nothing -> "/DashboardPositions"
-    pathTo DashboardWalletsAction = "/DashboardWallets"
     pathTo DashboardMarketsAction { statusFilter } =
         case statusFilter of
             Just s  -> "/DashboardMarkets?statusFilter=" <> inputValue s
             Nothing -> "/DashboardMarkets"
     pathTo ChangeMarketStatusAction { marketId, status } =
-        "/ChangeMarketStatus"
-        <> (case marketId of Just id -> "?marketId=" <> inputValue id; Nothing -> "")
-        <> (case status of Just s -> (if isJust marketId then "&" else "?") <> "status=" <> inputValue s; Nothing -> "")
+        "/ChangeMarketStatus?marketId=" <> inputValue marketId <> "&status=" <> inputValue status
     pathTo DashboardTransactionsAction { page } =
         case page of
             Just p  -> "/DashboardTransactions?page=" <> inputValue p
             Nothing -> "/DashboardTransactions"
+    pathTo OpenMarketAction { marketId } =
+        "/OpenMarket"
+        <> (case marketId of Just id -> "?marketId=" <> inputValue id; Nothing -> "")
 
 instance CanRoute DashboardController where
     parseRoute' =
         (string "/DashboardPositions" >> pure (DashboardPositionsAction { page = Nothing }))
-        <|> (string "/DashboardWallets" >> pure DashboardWalletsAction)
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction { statusFilter = Nothing }))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction { page = Nothing }))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction { marketId = Nothing, status = Nothing }))
+        <|> (string "/OpenMarket" >> pure (OpenMarketAction { marketId = Nothing }))
