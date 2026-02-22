@@ -3,16 +3,11 @@
 
 module Web.View.Dashboard.Positions where
 
+import Application.Domain.Position (EnrichedPosition (..))
 import Web.View.Prelude
 
-data PositionWithValue = PositionWithValue
-    { position     :: Include' ["marketId", "assetId"] Position
-    , currentValue :: Maybe Integer
-    , assetPrice   :: Maybe Double
-    }
-
 data PositionsView = PositionsView
-    { positionsWithValue :: [PositionWithValue]
+    { positionsWithValue :: [EnrichedPosition]
     , currentPage        :: Int
     , totalPages         :: Int
     , wallet             :: Wallet
@@ -31,7 +26,7 @@ instance View PositionsView where
         </div>
     |]
 
-renderPositionsContent :: (?context :: ControllerContext) => [PositionWithValue] -> Int -> Int -> Html
+renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Html
 renderPositionsContent [] _ _ = [hsx|
     <div class="alert alert-info">
         No active positions. Browse <a href={MarketsAction} class="alert-link">markets</a> to trade.
@@ -46,9 +41,9 @@ renderPositionsContent positions currentPage totalPages = [hsx|
     </div>
 |]
 
-renderPositionCard :: (?context :: ControllerContext) => PositionWithValue -> Html
-renderPositionCard pvd =
-    let position = get #position pvd
+renderPositionCard :: (?context :: ControllerContext) => EnrichedPosition -> Html
+renderPositionCard ep =
+    let position = get #epPosition ep
         asset = get #assetId position
         market = get #marketId position
 
@@ -63,13 +58,13 @@ renderPositionCard pvd =
                     Just oid -> if asset.id == oid then "100.00%" else "0.00%"
                     Nothing  -> "0.00%"
             MarketStatusRefunded -> "--"
-            _ -> maybe "--" formatPricePercent (get #assetPrice pvd)
+            _ -> maybe "--" formatPricePercent (get #epAssetPrice ep)
 
         invested = get #invested position
         received = get #received position
         costBasis = abs (invested + received)
 
-        currentVal = fromMaybe 0 (get #currentValue pvd)
+        currentVal = fromMaybe 0 (get #epCurrentValue ep)
 
         currentPnL = if isOpen
                 then if isLong

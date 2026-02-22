@@ -1,5 +1,10 @@
-module Web.Types where
+module Web.Types
+    ( module Web.Types
+    , AssetChartData (..)
+    , PricePoint (..)
+    ) where
 
+import Application.Domain.ChartData (AssetChartData (..), PricePoint (..))
 import Generated.Types
 import IHP.LoginSupport.Types
 import IHP.ModelSupport
@@ -76,19 +81,3 @@ data DashboardController
     deriving (Eq, Show, Data)
 
 deriving instance Data MarketStatus
-
--- | Single price point for line charts (time + price value)
--- Time is stored as Unix timestamp in seconds for JavaScript compatibility
-data PricePoint = PricePoint
-    { priceTime  :: Int
-    , priceValue :: Double
-    } deriving (Eq, Show)
-
--- | Chart data for a single asset
-data AssetChartData = AssetChartData
-    { chartAssetId     :: Id Asset
-    , chartAssetSymbol :: Text
-    , chartAssetName   :: Text
-    , chartAssetColor  :: Text
-    , chartData        :: [PricePoint]
-    } deriving (Eq, Show)

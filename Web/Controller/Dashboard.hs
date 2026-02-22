@@ -1,6 +1,7 @@
 module Web.Controller.Dashboard where
 
 import Application.Domain.LMSR as LMSR
+import Application.Domain.Position
 import Application.Domain.Types
 import qualified Data.Map as M
 import Web.Controller.Prelude
@@ -52,43 +53,18 @@ instance Controller DashboardController where
                       (marketId, (market, lmsrData))
                     | (marketId, market, _, lmsrData) <- marketsWithAssets ]
 
-        -- Calculate current value for each position
-        positionsWithValue <- forM positions $ \position -> do
-            let mId = position.marketId.id
-                assetId = position.assetId.id
-                qty = position.quantity
+        let positionsWithValue = map enrichPosition' positions
+              where
+                enrichPosition' position =
+                  let mId = position.marketId.id
+                  in case M.lookup mId marketDataMap of
+                       Just (market, (qtyMap, beta)) -> enrichPosition position market qtyMap beta
+                       Nothing -> EnrichedPosition
+                         { epPosition = position
+                         , epCurrentValue = Nothing
+                         , epAssetPrice = Nothing
+                         }
 
-            case M.lookup mId marketDataMap of
-                Just (market, (qtyMap, beta)) ->
-                    let (currentValue, assetPrice) =
-                            if market.status == MarketStatusResolved
-                            then
-                                if qty == 0
-                                then (Nothing, Nothing)
-                                else
-                                    let isWinner = case market.outcomeAssetId of
-                                            Just oid -> assetId == oid
-                                            Nothing  -> False
-                                        displayValue = if isWinner then abs qty * 100 else 0
-                                        displayPrice = if isWinner then 1.0 else 0.0
-                                    in (Just displayValue, Just displayPrice)
-                            else if market.status == MarketStatusRefunded
-                            then (Just 0, Just 0.0)
-                            else
-                                if qty == 0
-                                then (Nothing, Just (LMSR.assetPrice assetId beta qtyMap))
-                                else if qty > 0
-                                then
-                                    let Money v = LMSR.tradeValue assetId (Quantity (-qty)) beta qtyMap
-                                    in (Just v, Just (LMSR.assetPrice assetId beta qtyMap))
-                                else
-                                    let Money v = LMSR.tradeValue assetId (Quantity (abs qty)) beta qtyMap
-                                    in (Just (-v), Just (LMSR.assetPrice assetId beta qtyMap))
-                    in return PositionWithValue { .. }
-                Nothing -> return PositionWithValue
-                    { position = position, currentValue = Nothing, assetPrice = Nothing }
-
-        -- Fetch wallet for balance display
         wallet <- query @Wallet
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
@@ -119,13 +95,8 @@ instance Controller DashboardController where
         render MarketsView { .. }
 
     action ChangeMarketStatusAction { marketId, status } = do
-        let mId = case marketId of
-                Just id -> id
-                Nothing -> param @(Id Market) "marketId"
-        let st = case status of
-                Just s  -> s
-                Nothing -> param @MarketStatus "status"
-
+        let mId = fromMaybe (param @(Id Market) "marketId") marketId
+        let st = fromMaybe (param @MarketStatus "status") status
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
 
@@ -163,9 +134,7 @@ instance Controller DashboardController where
         redirectTo $ DashboardMarketsAction { statusFilter = Just st }
 
     action OpenMarketAction { marketId } = do
-        let mId = case marketId of
-                Just id -> id
-                Nothing -> param @(Id Market) "marketId"
+        let mId = fromMaybe (param @(Id Market) "marketId") marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
 

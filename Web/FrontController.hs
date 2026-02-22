@@ -12,7 +12,6 @@ import Web.Controller.Assets
 import Web.Controller.Auth
 import Web.Controller.Dashboard
 import Web.Controller.Markets
-import Web.Controller.Static
 import Web.Controller.Trades
 import Web.Controller.Users
 

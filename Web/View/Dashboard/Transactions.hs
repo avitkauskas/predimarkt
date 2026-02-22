@@ -3,11 +3,10 @@
 
 module Web.View.Dashboard.Transactions where
 
-import Admin.Controller.Prelude (render)
+import Admin.Controller.Prelude
 import Application.Helper.View (formatMoney, formatPricePercent)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
-import Database.PostgreSQL.Simple.TypeInfo.Static (money)
 import Text.Printf (printf)
 import Web.View.Prelude
 
