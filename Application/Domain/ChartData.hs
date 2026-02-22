@@ -50,7 +50,7 @@ fetchChartData market assets beta = do
         |> orderByAsc #createdAt
         |> fetch
 
-    let validTransactions = filter (\t -> get #marketState t /= Aeson.object []) transactions
+    let validTransactions = transactions
 
     let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
     let currentPrices = allAssetPrices (Beta beta) currentQtyMap
@@ -63,53 +63,33 @@ fetchChartData market assets beta = do
             let lastTxnDay = maximum txnDays
             let endDay = min maxEndDay (max lastTxnDay today)
             let filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
-            let assetTxns = groupAssetTransactions filteredTxns
-            let lastTxnPerDay = getLastTransactionPerDay assetTxns
+            let lastTxnPerDay = getLastTxnPerDay filteredTxns
             let dayRange = generateDayRange startDay endDay
-            let pricesPerDay = computePricesPerDay lastTxnPerDay assets beta
+            let pricesPerDay = computePricesFromLastTxn lastTxnPerDay assets beta
             let filledData = fillMissingDays dayRange pricesPerDay currentPrices
 
             pure $ map (buildAssetChartData filledData) assets
   where
-    groupAssetTransactions :: [Transaction] -> M.Map (Id Asset) [(Day, Transaction)]
-    groupAssetTransactions txns = M.fromListWith (++)
-        [ (get #assetId t, [(utctDay (get #createdAt t), t)])
-        | t <- txns
-        ]
-
-    getLastTransactionPerDay
-        :: M.Map (Id Asset) [(Day, Transaction)]
-        -> M.Map (Id Asset) (M.Map Day Transaction)
-    getLastTransactionPerDay assetTxns = M.map processAssetTxns assetTxns
-      where
-        processAssetTxns :: [(Day, Transaction)] -> M.Map Day Transaction
-        processAssetTxns dayTxns =
-            let sorted = List.sortBy (\(d1, _) (d2, _) -> compare d1 d2) dayTxns
-            in M.fromList (getLastPerDay sorted)
-
-        getLastPerDay :: [(Day, Transaction)] -> [(Day, Transaction)]
-        getLastPerDay [] = []
-        getLastPerDay [x] = [x]
-        getLastPerDay ((d1, t1):(d2, t2):rest)
-            | d1 == d2 = getLastPerDay ((d1, t2):rest)
-            | otherwise = (d1, t1) : getLastPerDay ((d2, t2):rest)
+    getLastTxnPerDay :: [Transaction] -> M.Map Day Transaction
+    getLastTxnPerDay txns =
+        let sortedTxns = List.sortBy (\t1 t2 -> compare (get #createdAt t1) (get #createdAt t2)) txns
+            dayTxnsList = List.groupBy (\t1 t2 -> utctDay (get #createdAt t1) == utctDay (get #createdAt t2)) sortedTxns
+            lastPerDay = map List.last dayTxnsList
+        in M.fromList [(utctDay (get #createdAt t), t) | t <- lastPerDay]
 
     generateDayRange :: Day -> Day -> [Day]
     generateDayRange start end = takeWhile (<= end) (iterate (addDays 1) start)
 
-    computePricesPerDay
-        :: M.Map (Id Asset) (M.Map Day Transaction)
+    computePricesFromLastTxn
+        :: M.Map Day Transaction
         -> [Asset]
         -> Integer
         -> M.Map Day (M.Map (Id Asset) Double)
-    computePricesPerDay lastTxns assets' beta' = M.fromListWith M.union
-        [ (day, prices)
-        | (_, dayTxns) <- M.toList lastTxns
-        , (day, txn) <- M.toList dayTxns
-        , let prices = case parseMarketState (get #marketState txn) of
-                Just qtyMap -> allAssetPrices (Beta beta') qtyMap
-                Nothing     -> M.empty
-        ]
+    computePricesFromLastTxn lastTxns assets' beta' = M.map computeDayPrices lastTxns
+      where
+        computeDayPrices txn = case parseMarketState (get #marketState txn) of
+            Just qtyMap -> allAssetPrices (Beta beta') qtyMap
+            Nothing     -> M.empty
 
     parseMarketState :: Aeson.Value -> Maybe (M.Map (Id Asset) Quantity)
     parseMarketState value = case Aeson.fromJSON value of
@@ -141,9 +121,10 @@ fetchChartData market assets beta = do
     fillMissingDays [] _ _ = M.empty
     fillMissingDays (day:days) pricesPerDay lastKnownPrices =
         let dayPrices = case M.lookup day pricesPerDay of
-                Just p  -> p
-                Nothing -> lastKnownPrices
-            nextPrices = if M.null dayPrices then lastKnownPrices else dayPrices
+                Just p
+                    | not (M.null p) -> p
+                _ -> lastKnownPrices
+            nextPrices = dayPrices
             rest = fillMissingDays days pricesPerDay nextPrices
         in M.insert day dayPrices rest
 
