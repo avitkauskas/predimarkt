@@ -43,12 +43,7 @@ fetchChartData
 fetchChartData market assets beta = do
     now <- getCurrentTime
     let today = utctDay now
-
-    let endDay = min (utctDay market.closedAt) today
-
-    let startDay = case get #openedAt market of
-            Just openedTime -> utctDay openedTime
-            Nothing         -> utctDay (get #createdAt market)
+    let maxEndDay = min (utctDay market.closedAt) today
 
     transactions <- query @Transaction
         |> filterWhere (#marketId, get #id market)
@@ -61,8 +56,12 @@ fetchChartData market assets beta = do
     let currentPrices = allAssetPrices (Beta beta) currentQtyMap
 
     if null validTransactions
-        then pure $ makeFlatLineFromDay startDay endDay assets currentPrices
+        then pure $ map (buildFlatAssetChart [] currentPrices) assets
         else do
+            let txnDays = map (utctDay . get #createdAt) validTransactions
+            let startDay = minimum txnDays
+            let lastTxnDay = maximum txnDays
+            let endDay = min maxEndDay (max lastTxnDay today)
             let filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
             let assetTxns = groupAssetTransactions filteredTxns
             let lastTxnPerDay = getLastTransactionPerDay assetTxns
@@ -70,7 +69,7 @@ fetchChartData market assets beta = do
             let pricesPerDay = computePricesPerDay lastTxnPerDay assets beta
             let filledData = fillMissingDays dayRange pricesPerDay currentPrices
 
-            pure $ map (buildAssetChartData filledData endDay) assets
+            pure $ map (buildAssetChartData filledData) assets
   where
     groupAssetTransactions :: [Transaction] -> M.Map (Id Asset) [(Day, Transaction)]
     groupAssetTransactions txns = M.fromListWith (++)
@@ -121,12 +120,6 @@ fetchChartData market assets beta = do
             ]
         AesonTypes.Error _ -> Nothing
 
-    makeFlatLineFromDay
-        :: Day -> Day -> [Asset] -> M.Map (Id Asset) Double -> [AssetChartData]
-    makeFlatLineFromDay startDay endDay assets' prices = do
-        let dayRange = generateDayRange startDay endDay
-        map (buildFlatAssetChart dayRange prices) assets'
-
     buildFlatAssetChart :: [Day] -> M.Map (Id Asset) Double -> Asset -> AssetChartData
     buildFlatAssetChart days prices asset =
         let assetId = get #id asset
@@ -155,8 +148,8 @@ fetchChartData market assets beta = do
         in M.insert day dayPrices rest
 
     buildAssetChartData
-        :: M.Map Day (M.Map (Id Asset) Double) -> Day -> Asset -> AssetChartData
-    buildAssetChartData filledData _today asset =
+        :: M.Map Day (M.Map (Id Asset) Double) -> Asset -> AssetChartData
+    buildAssetChartData filledData asset =
         let assetId = get #id asset
             points = map (\day ->
                 let price = case M.lookup day filledData of
@@ -178,5 +171,5 @@ fetchChartData market assets beta = do
     assetColorFor :: [Asset] -> Asset -> Text
     assetColorFor allAssets asset =
         let colors = ["#2962FF", "#E91E63", "#4CAF50", "#FF9800", "#9C27B0", "#00BCD4"]
-            idx = fromMaybe 0 (List.elemIndex asset allAssets)
+            idx = fromMaybe 0 $ List.findIndex (\a -> get #id a == get #id asset) allAssets
         in colors !! (idx `mod` length colors)
