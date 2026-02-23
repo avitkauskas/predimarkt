@@ -115,6 +115,7 @@ instance Controller DashboardController where
                 MarketStatusOpen -> marketWithStatus |> set #openedAt (Just now)
                 MarketStatusResolved -> marketWithStatus |> set #resolvedAt (Just now)
                 MarketStatusRefunded -> marketWithStatus |> set #refundedAt (Just now)
+                MarketStatusClosed -> marketWithStatus |> set #closedAt now
                 _ -> marketWithStatus
 
         marketWithTimestamps |> updateRecord
