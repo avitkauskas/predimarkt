@@ -14,12 +14,14 @@ instance AutoRoute TradesController
 instance AutoRoute LeaderboardController
 
 instance HasPath AuthController where
-    pathTo LoginAction          = "/login"
+    pathTo LoginAction          = "/NewSession"
+    pathTo WorkOSLoginAction   = "/workos-login"
     pathTo WorkOSCallbackAction = "/auth/callback"
 
 instance CanRoute AuthController where
     parseRoute' =
-        (string "/login" >> pure LoginAction)
+        (string "/NewSession" >> pure LoginAction)
+        <|> (string "/workos-login" >> pure WorkOSLoginAction)
         <|> (string "/auth/callback" >> pure WorkOSCallbackAction)
 
 instance HasPath MarketsController where

@@ -24,6 +24,7 @@ data SessionsController
 
 data AuthController
     = LoginAction
+    | WorkOSLoginAction
     | WorkOSCallbackAction
     deriving (Eq, Show, Data)
 

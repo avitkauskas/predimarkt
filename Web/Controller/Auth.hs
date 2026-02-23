@@ -4,9 +4,13 @@ import Application.Helper.WorkOS
 import qualified Data.Text as Text
 import IHP.ControllerPrelude
 import Web.Controller.Prelude
+import Web.View.Sessions.New
 
 instance Controller AuthController where
     action LoginAction = do
+        render NewView { .. }
+
+    action WorkOSLoginAction = do
         let url = workOSAuthUrl workOSClientId
         redirectToUrl url
 
