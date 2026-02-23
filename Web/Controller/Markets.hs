@@ -19,7 +19,7 @@ import Web.View.Markets.Resolve
 import Web.View.Markets.Show
 
 instance Controller MarketsController where
-    action MarketsAction = autoRefresh do
+    action MarketsAction = do
         let categoryFilter = paramOrNothing "category"
 
         let applyCategoryFilter queryBuilder =
@@ -28,16 +28,24 @@ instance Controller MarketsController where
                     Nothing         -> queryBuilder
 
         let applyStatusFilter queryBuilder =
-                queryBuilder |> filterWhereNot (#status, MarketStatusDraft)
+                queryBuilder
+                    |> filterWhereNot (#status, MarketStatusDraft)
+
+        let applyRecentActivityFilter queryBuilder =
+                queryBuilder
+                    |> queryOr
+                        (filterWhere (#status, MarketStatusOpen))
+                        (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
 
         markets' <-
             query @Market
+                |> applyRecentActivityFilter
                 |> applyCategoryFilter
                 |> applyStatusFilter
                 |> orderByDesc #updatedAt
                 |> fetch
-                >>= collectionFetchRelated #assets
                 >>= collectionFetchRelated #categoryId
+                >>= collectionFetchRelated #assets
 
         categories <- fetchCategories
         let markets = map (\m -> m |> set #assets (sortAssetsForDisplay (get #assets m))) markets'
