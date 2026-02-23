@@ -6,8 +6,10 @@ module Web.Controller.Markets where
 import Application.Domain.ChartData
 import Application.Domain.Types
 import Data.List (zipWith4)
+import Data.Text.ICU.BiDi (open)
 import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
+import Network.Wai.Middleware.RequestLogger (RequestLoggerSettings (autoFlush))
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
 import Web.Types
@@ -19,7 +21,7 @@ import Web.View.Markets.Resolve
 import Web.View.Markets.Show
 
 instance Controller MarketsController where
-    action MarketsAction = do
+    action MarketsAction = autoRefresh do
         let categoryFilter = paramOrNothing "category"
 
         let applyCategoryFilter queryBuilder =
@@ -42,7 +44,7 @@ instance Controller MarketsController where
                 |> applyRecentActivityFilter
                 |> applyCategoryFilter
                 |> applyStatusFilter
-                |> orderByDesc #updatedAt
+                |> orderByDesc #openedAt
                 |> fetch
                 >>= collectionFetchRelated #categoryId
                 >>= collectionFetchRelated #assets

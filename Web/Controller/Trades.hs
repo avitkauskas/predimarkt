@@ -177,7 +177,7 @@ instance Controller TradesController where
                 |> set #quantity 0
                 |> updateRecord
 
-        let action = if currentQty > 0 then "sold" else "bought"
+        let action = if currentQty > 0 then "selling" else "buying back"
         setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show (abs currentQty) <> " shares for " <> formatMoney tradeAmountCents
 
         redirectTo (DashboardPositionsAction Nothing)

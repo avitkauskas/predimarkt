@@ -8,6 +8,7 @@ instance Controller SessionsController where
         case currentUserOrNothing of
             Just user -> logout user
             Nothing   -> pure ()
+        setSuccessMessage "Logged out successfully"
         redirectToPath "/"
 
 instance Sessions.SessionsControllerConfig User

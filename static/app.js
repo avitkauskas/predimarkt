@@ -200,7 +200,12 @@ function localizeTimes(root = document) {
     root.querySelectorAll(".local-time").forEach(el => {
         if (el.dataset.localized) return;
 
-        const date = new Date(el.dataset.time);
+        let timeStr = el.dataset.time;
+        timeStr = timeStr.replace(" UTC", "Z").replace(" ", "T");
+
+        const date = new Date(timeStr);
+        if (isNaN(date)) return; // safety guard
+
         el.textContent = formatLocalISO(date);
         el.dataset.localized = "true";
     });

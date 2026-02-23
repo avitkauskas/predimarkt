@@ -17,28 +17,26 @@ data IndexView = IndexView
 
 instance View IndexView where
     html IndexView { .. } = [hsx|
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-10 col-lg-8">
-                    <h2 class="mb-4">Leaderboard</h2>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th scope="col" class="text-center" style="width: 60px;">Rank</th>
-                                    <th scope="col">User</th>
-                                    <th scope="col" class="text-end">Cash</th>
-                                    <th scope="col" class="text-end">Positions Value</th>
-                                    <th scope="col" class="text-end">Total Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {forEach (zip [1..] rankedUsers) renderUserRow}
-                            </tbody>
-                        </table>
-                    </div>
-                    {when (null rankedUsers) renderEmptyState}
+        <div class="row">
+            <div class="col-md-9 col-lg-7 col-xl-6">
+                <h5 class="mb-3 ps-2">Leaderboard</h5>
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center" style="width: 60px;">Rank</th>
+                                <th scope="col">User</th>
+                                <th scope="col" class="text-end">Cash</th>
+                                <th scope="col" class="text-end">Positions</th>
+                                <th scope="col" class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {forEach (zip [1..] rankedUsers) renderUserRow}
+                        </tbody>
+                    </table>
                 </div>
+                {when (null rankedUsers) renderEmptyState}
             </div>
         </div>
     |]
@@ -46,11 +44,11 @@ instance View IndexView where
 renderUserRow :: (?context :: ControllerContext) => (Int, UserSummary) -> Html
 renderUserRow (rank, summary) = [hsx|
     <tr>
-        <td class="text-center">{rank}</td>
-        <td class="fw-medium">{get #nickname summary}</td>
-        <td class="text-end">{formatMoney (get #cash summary)}</td>
-        <td class="text-end">{formatMoney (get #positionsValue summary)}</td>
-        <td class="text-end fw-bold">{formatMoney (get #totalValue summary)}</td>
+        <td class="py-0 text-center">{rank}</td>
+        <td class="py-0 fw-medium">{get #nickname summary}</td>
+        <td class="py-0 text-end font-monospace small">{formatMoney (get #cash summary)}</td>
+        <td class="py-0 text-end font-monospace small">{formatMoney (get #positionsValue summary)}</td>
+        <td class="py-0 text-end font-monospace small">{formatMoney (get #totalValue summary)}</td>
     </tr>
 |]
 

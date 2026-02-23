@@ -16,6 +16,7 @@ instance View EditView where
                 <div class="card shadow-sm">
                     <div class="card-body px-4 px-md-5 py-2 py-md-4">
                         <h3 class="mb-4">Edit Market</h3>
+                        {renderFlashMessages}
                         {renderForm market assets categories}
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 module Web.View.Markets.Index where
+import Admin.Controller.Prelude (render)
 import Application.Domain.LMSR
 import Application.Domain.Types
 import Application.Helper.View (formatMoney)
@@ -25,6 +26,7 @@ instance View IndexView where
             </ul>
             <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap">+ New Market</a>
         </div>
+        {renderFlashMessages}
         <div class="row g-3">
             {forEach markets renderMarket}
         </div>
@@ -102,6 +104,7 @@ renderMarket market = [hsx|
                 <span title="Market closing time" style="font-size: 0.7rem;">
                     <i class="bi bi-alarm"></i>
                     {renderTime market.closedAt}
+                    <!-- {market.closedAt} -->
                 </span>
             </div>
 

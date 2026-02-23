@@ -4,6 +4,7 @@
 module Web.View.Dashboard.Transactions where
 
 import Admin.Controller.Prelude
+import Application.Domain.Types (Quantity (Quantity))
 import Application.Helper.View (formatMoney, formatPricePercent)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
@@ -24,7 +25,7 @@ data TransactionsView = TransactionsView
 instance View TransactionsView where
     html TransactionsView { .. } = dashboardLayout [hsx|
         <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5>Transactions</h5>
                 <div class="text-end me-1">
                     Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
@@ -44,7 +45,7 @@ renderTransactionsContent txns currentPage totalPages = [hsx|
     <div class="row g-3">
         {forEach txns renderTransactionCard}
     </div>
-    <div style="max-width: 900px;">
+    <div>
         {renderTxnPagination currentPage totalPages}
     </div>
 |]
@@ -55,7 +56,6 @@ renderTransactionCard twd =
         asset = get #assetId txn
         market = get #marketId txn
 
-        -- Derive isBuy from quantity sign: positive = buy (long), negative = sell (short)
         qty = get #quantity txn
         isBuy = qty > 0
         absQty = abs qty
@@ -79,9 +79,9 @@ renderTransactionCard twd =
                | otherwise -> "text-muted fw-medium"
     in [hsx|
         <div class="col-12">
-            <div class="card shadow-sm" style="max-width: 900px;">
+            <div class="card shadow-sm">
                 <div class="card-body px-3 py-2">
-                    <div class="d-flex justify-content-between align-items-start mb-2 overflow-x-auto scroll-no-bar">
+                    <div class="d-flex justify-content-between mb-2 overflow-x-auto scroll-no-bar">
                         <div>
                             <a href={marketUrl} class="text-decoration-none">
                                 <span class="h6 mb-0 fw-bold">{get #title market}</span> -
@@ -91,22 +91,28 @@ renderTransactionCard twd =
                     </div>
 
                     <div class="overflow-x-auto scroll-no-bar">
-                        <div class="d-flex justify-content-between text-center border-top pt-2 flex-nowrap" style="min-width: 580px;">
-                            <div class="flex-shrink-0 text-center" style="width: 145px;">
-                                <div class="small text-muted fw-medium text-nowrap" style="font-size: 0.7rem;">
+                        <div class="d-flex justify-content-start align-items-end border-top gap-5 pt-2 flex-nowrap">
+                            <div class="flex-shrink-0">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Data & Time</div>
+                                <div class="text-muted fw-medium text-nowrap" style="font-size: 0.9rem;">
                                     {renderTime txn.createdAt}
                                 </div>
+                            </div>
+                            <div class="flex-shrink-0 text-center">
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Type & Quantity</div>
                                 <div class={typeColor <> " fw-bold text-nowrap"}>{typeText} {show absQty}</div>
                             </div>
-                            <div class="flex-shrink-0 text-center" style="width: 145px;">
+                            <div class="flex-shrink-0 text-center">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Cash Flow</div>
                                 <div class={moneyClass cashFlow <> " text-nowrap"}>
                                     {formatMoneySigned cashFlow}
                                 </div>
                             </div>
-                            <div class="flex-shrink-0 text-center" style="width: 145px;">
+                            <div class="flex-shrink-0 text-center">
                                 <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Probability Impact</div>
-                                <div class="fw-medium text-nowrap">{priceImpact}</div>
+                                <div class="fw-medium text-nowrap">
+                                    {priceImpact}
+                                </div>
                             </div>
                         </div>
                     </div>

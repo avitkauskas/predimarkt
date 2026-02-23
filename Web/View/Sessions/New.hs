@@ -13,10 +13,11 @@ instance View NewView where
                 <div class="col-md-7 col-lg-5">
                     <div class="card shadow">
                         <div class="card-body p-4 text-center">
-                            <h4 class="mb-3">Predimarkt Login</h4>
+                            {renderFlashMessages}
+                            <h4 class="mb-3">Login</h4>
                             <p class="text-muted mb-4">
-                                We use WorkOS for secure authentication<br/>
-                                Please log in to continue
+                                We use WorkOS for secure authentication.<br/>
+                                Please log in to continue.
                             </p>
                             <a href={WorkOSLoginAction}
                                class="btn btn-primary btn-lg w-100"

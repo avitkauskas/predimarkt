@@ -4,24 +4,6 @@ import Web.Controller.Prelude
 import Web.View.Assets.New
 
 instance Controller AssetsController where
-    action DeleteAssetAction { assetId } = do
-        asset <- fetch assetId
-        market <- fetch asset.marketId
-        accessDeniedUnless (market.userId == Just currentUserId)
-
-        assetCount <- query @Asset
-            |> filterWhere (#marketId, asset.marketId)
-            |> fetchCount
-
-        if assetCount <= 2
-            then do
-                setErrorMessage "Cannot delete asset: A market must have at least 2 assets."
-                redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
-            else do
-                deleteRecord asset
-                setSuccessMessage "Asset deleted"
-                redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
-
     action NewAssetAction = do
         let asset = newRecord @Asset
         respondHtml $ renderAssetRow asset

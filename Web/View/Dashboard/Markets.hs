@@ -14,6 +14,7 @@ instance View MarketsView where
                 <h3>My Markets</h3>
                 <a href={NewMarketAction} class="btn btn-primary">+ New Market</a>
             </div>
+            {renderFlashMessages}
             <div class="table-responsive">
                 {renderTabs activeStatus}
                 <table class="table table-hover">

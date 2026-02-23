@@ -11,10 +11,9 @@ instance View EditView where
                 <div class="w-100">
                     <div style="max-width: 500px" class="mb-5">
                         <h3>Edit Profile</h3>
+                        {renderFlashMessages}
                         {renderForm user}
-
                         <hr class="my-4" />
-
                         <div class="card border-danger">
                             <div class="card-body">
                                 <h5 class="card-title text-danger">Danger Zone</h5>

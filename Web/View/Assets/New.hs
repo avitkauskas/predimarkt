@@ -38,7 +38,7 @@ renderAssetRow asset = [hsx|
             <a href="#"
                class="text-danger"
                onclick="if(document.querySelectorAll('.asset-row').length > 2) { this.closest('.asset-row').remove(); } else { alert('Market must have at least 2 assets.'); } return false;">
-                Delete
+                <i class="bi bi-x-lg"></i>
             </a>
         </div>
     </div>
