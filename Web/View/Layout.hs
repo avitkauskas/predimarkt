@@ -70,13 +70,18 @@ navbar = [hsx|
         navItems :: Html
         navItems = maybe loggedOutNav loggedInNav currentUserOrNothing
 
+        leaderboardNavItem :: Html
+        leaderboardNavItem = [hsx|<li class="nav-item"><a class="nav-link" href={LeaderboardAction}>Leaderboard</a></li>|]
+
         loggedOutNav :: Html
         loggedOutNav = [hsx|
+            {leaderboardNavItem}
             <li class="nav-item"><a class="nav-link" data-turbolinks="false" href={LoginAction}>Login</a></li>
         |]
 
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
+            {leaderboardNavItem}
             <li class="nav-item"><a class="nav-link" href={DashboardPositionsAction Nothing}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"

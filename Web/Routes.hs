@@ -11,6 +11,7 @@ instance AutoRoute UsersController
 instance AutoRoute CategoriesController
 instance AutoRoute AssetsController
 instance AutoRoute TradesController
+instance AutoRoute LeaderboardController
 
 instance HasPath AuthController where
     pathTo LoginAction          = "/login"

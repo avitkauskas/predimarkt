@@ -80,4 +80,8 @@ data DashboardController
     | OpenMarketAction { marketId :: !(Maybe (Id Market)) }
     deriving (Eq, Show, Data)
 
+data LeaderboardController
+    = LeaderboardAction
+    deriving (Eq, Show, Data)
+
 deriving instance Data MarketStatus

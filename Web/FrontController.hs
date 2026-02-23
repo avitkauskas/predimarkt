@@ -11,6 +11,7 @@ import Web.View.Layout (defaultLayout)
 import Web.Controller.Assets
 import Web.Controller.Auth
 import Web.Controller.Dashboard
+import Web.Controller.Leaderboard
 import Web.Controller.Markets
 import Web.Controller.Trades
 import Web.Controller.Users
@@ -23,6 +24,7 @@ instance FrontController WebApplication where
         -- Generator Marker
         , parseRoute @AssetsController
         , parseRoute @DashboardController
+        , parseRoute @LeaderboardController
         , parseRoute @MarketsController
         , parseRoute @TradesController
         , parseRoute @UsersController
