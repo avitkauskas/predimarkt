@@ -10,6 +10,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as AesonTypes
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Data.Time (Day, addDays, utctDay)
 import Data.Time.Clock (UTCTime (..), getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -45,18 +46,24 @@ fetchChartData market assets beta = do
     let today = utctDay now
     let maxEndDay = min (utctDay market.closedAt) today
 
+    let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
+    let currentPrices = allAssetPrices (Beta beta) currentQtyMap
+
+    let topAssets = take 6 $ sortBy (\a1 a2 ->
+            let p1 = fromMaybe 0.0 (M.lookup (get #id a1) currentPrices)
+                p2 = fromMaybe 0.0 (M.lookup (get #id a2) currentPrices)
+             in compare p2 p1) assets
+    let topAssetIds = S.fromList (map (get #id) topAssets)
+
     transactions <- query @Transaction
         |> filterWhere (#marketId, get #id market)
         |> orderByAsc #createdAt
         |> fetch
 
-    let validTransactions = transactions
-
-    let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
-    let currentPrices = allAssetPrices (Beta beta) currentQtyMap
+    let validTransactions = filter (\t -> get #assetId t `S.member` topAssetIds) transactions
 
     if null validTransactions
-        then pure $ map (buildFlatAssetChart [] currentPrices) assets
+        then pure $ map (buildFlatAssetChart [] currentPrices) topAssets
         else do
             let txnDays = map (utctDay . get #createdAt) validTransactions
             let startDay = minimum txnDays
@@ -65,10 +72,10 @@ fetchChartData market assets beta = do
             let filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
             let lastTxnPerDay = getLastTxnPerDay filteredTxns
             let dayRange = generateDayRange startDay endDay
-            let pricesPerDay = computePricesFromLastTxn lastTxnPerDay assets beta
+            let pricesPerDay = computePricesFromLastTxn lastTxnPerDay topAssets beta
             let filledData = fillMissingDays dayRange pricesPerDay currentPrices
 
-            pure $ map (buildAssetChartData filledData) assets
+            pure $ map (buildAssetChartData filledData) topAssets
   where
     getLastTxnPerDay :: [Transaction] -> M.Map Day Transaction
     getLastTxnPerDay txns =

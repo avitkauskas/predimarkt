@@ -65,11 +65,23 @@ renderUserRow summary currentUserNickname =
         userBg :: Text = if (isCurrentUser && rank `notElem` [1..3]) then "bg-info-subtle" else ""
     in [hsx|
             <tr class="align-middle">
-                <td class={"py-0 text-center " <> userBg} style={cellBg <> " width: 60px;"}>{get #rank summary}</td>
+                <td class={"py-0 text-center " <> userBg}
+                    style={cellBg <> " width: 60px;"}>
+                    {get #rank summary}
+                </td>
                 <td class={"py-0 " <> userBg} style={cellBg}>{get #nickname summary}</td>
-                <td class={"py-0 text-end font-monospace small " <> userBg} style={cellBg}>{formatMoney (get #cash summary)}</td>
-                <td class={"py-0 text-end font-monospace small " <> userBg} style={cellBg}>{formatMoney (get #positionsValue summary)}</td>
-                <td class={"py-0 text-end font-monospace small " <> userBg} style={cellBg}>{formatMoney (get #totalValue summary)}</td>
+                <td class={"py-0 text-end font-monospace small " <> userBg}
+                    style={"font-size: 0.85rem;" <> cellBg}>
+                    {formatMoney (get #cash summary)}
+                </td>
+                <td class={"py-0 text-end font-monospace small " <> userBg}
+                    style={"font-size: 0.85rem;" <> cellBg}>
+                    {formatMoney (get #positionsValue summary)}
+                </td>
+                <td class={"py-0 text-end font-monospace small " <> userBg}
+                    style={"font-size: 0.85rem;" <> cellBg}>
+                    {formatMoney (get #totalValue summary)}
+                </td>
             </tr>
         |]
 
