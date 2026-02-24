@@ -1,7 +1,9 @@
 module Web.View.Markets.Show where
+
 import Application.Domain.LMSR
 import Application.Domain.Types
 import Application.Helper.View (formatPricePercent)
+import qualified CMark as CMark
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -65,14 +67,13 @@ instance View ShowView where
                                 <div id="price-chart" style="height: 300px; margin-bottom: 1.5rem;">
                                 </div>
                                 {chartDataScript}
-                                <!-- Debug: Chart data count: {show (length chartData)} assets -->
 
                                 <h6 class="info-label mb-3" style="cursor: pointer;"
                                     onclick="document.getElementById('market-description').classList.toggle('d-none')">
                                     Rules & Description
                                 </h6>
                                 <div id="market-description" class="d-none">
-                                    <p class="text-muted mb-0">{market.description}</p>
+                                    {renderMarkdown market.description}
                                 </div>
                             </div>
                             {chartScript}
@@ -101,6 +102,9 @@ instance View ShowView where
         </div>
     |]
         where
+            renderMarkdown :: Text -> Html
+            renderMarkdown = preEscapedToHtml . CMark.commonmarkToHtml []
+
             headerClass = marketStatusHeaderClasses market.status
             statusBadge =
                 when (market.status /= MarketStatusOpen)
