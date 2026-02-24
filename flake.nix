@@ -36,6 +36,7 @@
                         http-conduit
                         jwt
                         base64
+                        cmark
 
                         # Uncomment on local development for testing
                         hspec
