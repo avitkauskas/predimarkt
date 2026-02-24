@@ -1,8 +1,10 @@
 module Web.View.Markets.Show where
 import Application.Domain.LMSR
 import Application.Domain.Types
+import Application.Helper.View (formatPricePercent)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import qualified Data.Text as Text
 import qualified IHP.QueryBuilder as QueryBuilder
 import Text.Printf (printf)
@@ -53,6 +55,8 @@ instance View ShowView where
                                 {forEach assets renderAsset}
                             </div>
 
+                            {toggleAssetsButton}
+
                             <div class="mt-4 pt-4">
                                 <h6 class="info-label mb-3" style="cursor: pointer;"
                                     onclick="document.getElementById('price-chart').classList.toggle('d-none'); initPriceChart();">
@@ -72,6 +76,7 @@ instance View ShowView where
                                 </div>
                             </div>
                             {chartScript}
+                            {toggleAssetsScript}
                         </div>
                     </div>
                 </div>
@@ -104,11 +109,60 @@ instance View ShowView where
             lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
                          in (qtyMap, Beta market.beta)
 
+            currentPrices :: M.Map (Id Asset) Double
+            currentPrices = M.map (\a -> assetPrice a.id (snd lmsrState) (fst lmsrState))
+                               (M.fromList [(a.id, a) | a <- assets])
+
+            leadingAssetIds :: S.Set (Id Asset)
+            leadingAssetIds = S.fromList
+                [ a.id
+                | a <- assets
+                , let p = fromMaybe 0.0 (M.lookup a.id currentPrices)
+                , p >= 0.05 || Just a.id == tradingAssetId
+                ]
+
+            hasLeadingAssets :: Bool
+            hasLeadingAssets = length assets > 6 && length (filter (\a -> a.id `S.member` leadingAssetIds) assets) /= length assets
+
+            toggleAssetsButton :: Html
+            toggleAssetsButton = if hasLeadingAssets
+                then [hsx|
+                    <div class="text-end mt-3">
+                        <a href="javascript:void(0)" id="toggle-assets-btn" class="text-decoration-none me-2">
+                            Show all assets
+                        </a>
+                    </div>
+                |]
+                else [hsx||]
+
+            toggleAssetsScript :: Html
+            toggleAssetsScript = preEscapedToHtml $ Text.concat
+                [ "<script>"
+                , "document.addEventListener('turbolinks:load', function() {"
+                , "var btn = document.getElementById('toggle-assets-btn');"
+                , "if (!btn) return;"
+                , "var hidden = true;"
+                , "btn.addEventListener('click', function() {"
+                , "hidden = !hidden;"
+                , "var cards = document.querySelectorAll('.asset-card[data-leading=\"false\"]');"
+                , "cards.forEach(function(card) { card.classList.toggle('d-none', hidden); });"
+                , "btn.textContent = hidden ? 'Show all assets' : 'Show only leading assets';"
+                , "});"
+                , "var cards = document.querySelectorAll('.asset-card[data-leading=\"false\"]');"
+                , "cards.forEach(function(card) { card.classList.add('d-none'); });"
+                , "});"
+                , "</script>"
+                ]
+
+            isLeading :: Asset -> Text
+            isLeading a = if a.id `S.member` leadingAssetIds then "true" else "false"
+
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
-                <div class={classes ["py-3 border-bottom",
+                <div class={classes ["py-3 border-bottom asset-card",
                                      ("market-status-resolved-asset", isResolvedWinner)]}
-                     id={"asset-" <> show asset.id}>
+                     id={"asset-" <> show asset.id}
+                     data-leading={isLeading asset}>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="asset-info ms-3">
                             <div class="fw-semibold fs-5">
@@ -138,8 +192,9 @@ instance View ShowView where
                         _ -> assetPrice asset.id (snd lmsrState) (fst lmsrState)
 
                     priceDisplay = [hsx|
-                        <div class="text-end fw-medium pe-3" style="width: 100px;">
-                            €{printf "%.4f" assetPriceVal :: String}
+                        <div class="d-flex justify-content-end align-items-center gap-2 fw-medium" style="width: 100px;">
+                            <div class="text-secondary me-3">{formatPriceRounded assetPriceVal}</div>
+                            <div class="me-2">€{printf "%.4f" assetPriceVal :: String}</div>
                         </div>
                     |]
 

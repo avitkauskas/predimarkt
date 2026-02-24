@@ -52,7 +52,7 @@ renderTime time =
 -- | Format price as percentage with 2 decimals (e.g., "23.45%")
 formatPricePercent :: Double -> Text
 formatPricePercent price =
-    pack $ printf "%.2f%%" (price * 100)
+    pack $ printf "%.1f%%" (price * 100)
 
 -- | Format price as decimal with 4 decimals (e.g., "0.2345")
 formatPriceDecimal :: Double -> Text
