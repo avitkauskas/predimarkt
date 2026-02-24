@@ -6,11 +6,11 @@ data EditView = EditView { user :: User }
 
 instance View EditView where
     html EditView { .. } = dashboardLayout [hsx|
-        <div class="h-100" id="users-edit">
+        <div class="container-fluid ps-2" id="users-edit">
             <div class="d-flex align-items-center">
                 <div class="w-100">
                     <div style="max-width: 500px" class="mb-5">
-                        <h3>Edit Profile</h3>
+                        <h5>Profile</h5>
                         {renderFlashMessages}
                         {renderForm user}
                         <hr class="my-4" />
@@ -34,7 +34,6 @@ instance View EditView where
 renderForm :: User -> Html
 renderForm user = formFor user [hsx|
     <div class="mb-3">
-        <label class="form-label">Email</label>
         <input type="email" class="form-control" value={user.email} disabled />
     </div>
     {(textField #nickname) {required = True}}

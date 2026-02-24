@@ -24,7 +24,7 @@ data TransactionsView = TransactionsView
 
 instance View TransactionsView where
     html TransactionsView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid">
+        <div class="container-fluid ps-2">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5>Transactions</h5>
                 <div class="text-end me-1">

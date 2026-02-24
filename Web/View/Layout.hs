@@ -110,10 +110,10 @@ navbar = [hsx|
 dashboardLayout :: Html -> Html
 dashboardLayout inner = [hsx|
     <div class="container-fluid mt-2">
-        <div class="row">
-            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="d-flex">
+            <div class="dashboard-sidebar d-none d-md-block">
                 <div class="position-sticky">
-                    <div class="mb-2">
+                    <div class="mb-2 ps-3">
                         <h5>Dashboard</h5>
                     </div>
                     <ul class="nav flex-column">
@@ -122,7 +122,7 @@ dashboardLayout inner = [hsx|
                                     ["nav-link",
                                     ("active", isActivePath (pathTo (DashboardPositionsAction Nothing)))]}
                                href={DashboardPositionsAction Nothing}>
-                              Positions
+                              <i class="bi bi-wallet"></i>Positions
                             </a>
                         </li>
                         <li class="nav-item">
@@ -130,7 +130,7 @@ dashboardLayout inner = [hsx|
                                     ["nav-link",
                                     ("active", isActivePath (pathTo (DashboardTransactionsAction Nothing)))]}
                                href={DashboardTransactionsAction Nothing}>
-                              Transactions
+                              <i class="bi bi-arrow-left-right"></i>Transactions
                             </a>
                         </li>
                         <li class="nav-item">
@@ -140,7 +140,7 @@ dashboardLayout inner = [hsx|
                                         isActivePath (pathTo (DashboardMarketsAction s))
                                     ) (Nothing : map Just allEnumValues))]}
                                href={DashboardMarketsAction (Just MarketStatusOpen)}>
-                              Markets
+                              <i class="bi bi-cart3"></i>Markets
                             </a>
                         </li>
                         <li class="nav-item">
@@ -148,14 +148,14 @@ dashboardLayout inner = [hsx|
                                     ["nav-link",
                                     ("active", isActivePath (pathTo (EditUserAction currentUserId)))]}
                                 href={EditUserAction currentUserId}>
-                              Profile
+                              <i class="bi bi-person"></i>Profile
                             </a>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-2">
+            <main class="dashboard-content ms-3">
                 {inner}
             </main>
         </div>

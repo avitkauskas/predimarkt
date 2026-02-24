@@ -15,7 +15,7 @@ data PositionsView = PositionsView
 
 instance View PositionsView where
     html PositionsView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid">
+        <div class="container-fluid ps-2">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5>Positions</h5>
                 <div class="text-end me-1">

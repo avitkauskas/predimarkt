@@ -24,7 +24,7 @@ instance View IndexView where
                 </li>
                 {forEach categories (renderCategoryTab categoryFilter)}
             </ul>
-            <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap">+ New Market</a>
+            <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
         </div>
         {renderFlashMessages}
         <div class="row g-3">
