@@ -50,42 +50,67 @@ instance Controller LeaderboardController where
                 M.fromListWith (<>) $
                     map (\p -> (p.userId, [p])) positions
 
-        let userSummaries =
-                flip map users $ \user ->
-                    let userId = user.id
-                        cashAmount = fromMaybe 0 (M.lookup userId walletAmountMap)
-                        userPos = fromMaybe [] (M.lookup userId userPositions)
-                        positionsValue =
-                            sum $
-                                map
-                                    ( \position ->
-                                        let asset = get #assetId position
-                                            assetId = get #id asset
-                                            market = get #marketId position
-                                            mId = get #id market
-                                            qty = get #quantity position
-                                         in case M.lookup mId marketAssetMap of
-                                                Just (beta, assetMap) ->
-                                                    let Money v =
-                                                            positionValue
-                                                                assetId
-                                                                (Quantity qty)
-                                                                beta
-                                                                assetMap
-                                                     in v
-                                                Nothing -> 0
-                                    )
-                                    userPos
-                        totalValue = cashAmount + positionsValue
-                     in UserSummary
-                        { userId = userId
-                        , nickname = user.nickname
-                        , cash = cashAmount
-                        , positionsValue = positionsValue
-                        , totalValue = totalValue
-                        }
+        let userSummariesWithRank =
+                let summaries :: [UserSummary]
+                    summaries =
+                        flip map users $ \user ->
+                            let cashAmount = fromMaybe 0 (M.lookup user.id walletAmountMap)
+                                userPos = fromMaybe [] (M.lookup user.id userPositions)
+                                positionsValue =
+                                    sum $
+                                        map
+                                            ( \position ->
+                                                let asset = get #assetId position
+                                                    assetId = get #id asset
+                                                    market = get #marketId position
+                                                    mId = get #id market
+                                                    qty = get #quantity position
+                                                 in case M.lookup mId marketAssetMap of
+                                                        Just (beta, assetMap) ->
+                                                            let Money v =
+                                                                    positionValue
+                                                                        assetId
+                                                                        (Quantity qty)
+                                                                        beta
+                                                                        assetMap
+                                                             in v
+                                                        Nothing -> 0
+                                            )
+                                            userPos
+                                totalValue = cashAmount + positionsValue
+                             in UserSummary
+                                { nickname = user.nickname
+                                , cash = cashAmount
+                                , positionsValue = positionsValue
+                                , totalValue = totalValue
+                                , rank = 0
+                                }
+                    sorted = reverse $ sortOn (\s -> get #totalValue s) summaries
+                 in zipWith (\s r -> s { rank = r }) sorted [1 ..]
 
-        let rankedUsers =
-                reverse $ sortOn (\s -> get #totalValue s) userSummaries
+        let topCount = 20
+        let topUsers = take topCount userSummariesWithRank
 
-        render IndexView { rankedUsers }
+        let currentUserNickname :: Maybe Text = get #nickname <$> (currentUserOrNothing @User)
+        let currentUserData :: Maybe UserSummary
+            currentUserData = do
+                nick <- currentUserNickname
+                find (\s -> get #nickname s == nick) userSummariesWithRank
+
+        let displayUsers :: [UserSummary]
+            displayUsers =
+                case currentUserData of
+                    Nothing -> topUsers
+                    Just user ->
+                        let userRank = get #rank user
+                         in if userRank <= topCount
+                                then topUsers
+                                else topUsers <> [user]
+
+        let showOverflow = maybe False (\u -> get #rank u > topCount + 1) currentUserData
+
+        render IndexView
+            { displayUsers
+            , currentUserNickname
+            , showOverflow
+            }

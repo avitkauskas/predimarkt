@@ -87,7 +87,7 @@ instance View ShowView where
                                 <button class="btn btn-primary" type="button">Send</button>
                             </div>
                             <div class="flex-grow-1 rounded p-3 mb-3" style="overflow-y: auto;">
-                                <p class="text-muted">Chat messages will appear here</p>
+                                <p class="text-muted">Chat is not implemented yet.</p>
                             </div>
                         </div>
                     </div>
