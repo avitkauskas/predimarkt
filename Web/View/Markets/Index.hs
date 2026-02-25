@@ -27,7 +27,7 @@ instance View IndexView where
             <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
         </div>
         {renderFlashMessages}
-        <div class="row g-3">
+        <div class="row g-3 mb-5">
             {forEach markets renderMarket}
         </div>
     |]

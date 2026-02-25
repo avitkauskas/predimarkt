@@ -140,23 +140,23 @@ instance View ShowView where
                 else [hsx||]
 
             toggleAssetsScript :: Html
-            toggleAssetsScript = preEscapedToHtml $ Text.concat
-                [ "<script>"
-                , "document.addEventListener('turbolinks:load', function() {"
-                , "var btn = document.getElementById('toggle-assets-btn');"
-                , "if (!btn) return;"
-                , "var hidden = true;"
-                , "btn.addEventListener('click', function() {"
-                , "hidden = !hidden;"
-                , "var cards = document.querySelectorAll('.asset-card[data-leading=\"false\"]');"
-                , "cards.forEach(function(card) { card.classList.toggle('d-none', hidden); });"
-                , "btn.textContent = hidden ? 'Show all assets' : 'Show only leading assets';"
-                , "});"
-                , "var cards = document.querySelectorAll('.asset-card[data-leading=\"false\"]');"
-                , "cards.forEach(function(card) { card.classList.add('d-none'); });"
-                , "});"
-                , "</script>"
-                ]
+            toggleAssetsScript = [hsx|
+                <script>
+                    document.addEventListener('turbolinks:load', function() {
+                        var btn = document.getElementById('toggle-assets-btn');
+                        if (!btn) return;
+                        var hidden = true;
+                        btn.addEventListener('click', function() {
+                            hidden = !hidden;
+                            var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
+                            cards.forEach(function(card) { card.classList.toggle('d-none', hidden); });
+                            btn.textContent = hidden ? 'Show all assets' : 'Show only leading assets';
+                        });
+                        var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
+                        cards.forEach(function(card) { card.classList.add('d-none'); });
+                    });
+                </script>
+            |]
 
             isLeading :: Asset -> Text
             isLeading a = if a.id `S.member` leadingAssetIds then "true" else "false"
