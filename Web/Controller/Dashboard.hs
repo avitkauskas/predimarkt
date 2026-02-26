@@ -4,6 +4,7 @@ import Application.Domain.LMSR as LMSR
 import Application.Domain.Position
 import Application.Domain.Types
 import qualified Data.Map as M
+import Data.UUID (UUID)
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
 import Web.View.Dashboard.Markets
@@ -18,23 +19,53 @@ instance Controller DashboardController where
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
         let itemsPerPage = 5
 
-        -- Get total count for pagination
-        totalCount <- query @Position
+        -- Fetch all positions for the user (without related data first for sorting)
+        allPositionsRaw <- query @Position
             |> filterWhere (#userId, currentUserId)
-            |> fetchCount
+            |> fetch
 
+        let totalCount = length allPositionsRaw
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
         let pageOffset = (validPage - 1) * itemsPerPage
 
-        positions <- query @Position
-            |> filterWhere (#userId, currentUserId)
-            |> orderByDesc #updatedAt
-            |> limit itemsPerPage
-            |> offset pageOffset
+        -- Build a map of market_id (as UUID) -> max(updated_at) for efficient sorting
+        let marketMaxUpdatedMap = M.fromListWith max
+                [ (let Id uuid = get #marketId p in uuid, get #updatedAt p)
+                | p <- allPositionsRaw
+                ]
+
+        -- Sort positions by market groups:
+        -- 1. Markets ordered by their most recently updated position (desc)
+        -- 2. Within each market, positions ordered by updated_at (desc)
+        let paginatedIds = allPositionsRaw
+                |> sortBy (\p1 p2 ->
+                    let Id m1Uuid = get #marketId p1
+                        Id m2Uuid = get #marketId p2
+                        m1Max = M.findWithDefault (get #updatedAt p1) m1Uuid marketMaxUpdatedMap
+                        m2Max = M.findWithDefault (get #updatedAt p2) m2Uuid marketMaxUpdatedMap
+                        marketCompare = compare m2Max m1Max
+                    in if marketCompare == EQ
+                        then compare (get #updatedAt p2) (get #updatedAt p1)
+                        else marketCompare
+                    )
+                |> drop pageOffset
+                |> take itemsPerPage
+                |> map (get #id)
+
+        -- Fetch full position data for paginated IDs, with related data
+        positionsFetched <- query @Position
+            |> filterWhereIn (#id, paginatedIds)
             |> fetch
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #marketId
+
+        -- Re-establish the sorted order since filterWhereIn doesn't preserve it
+        let idToIndex = M.fromList (zip paginatedIds [0..])
+        let positions = sortBy (\p1 p2 ->
+                compare (M.findWithDefault 0 (get #id p1) idToIndex)
+                        (M.findWithDefault 0 (get #id p2) idToIndex)
+                ) positionsFetched
 
         -- Get unique market IDs from positions
         let marketIds = nub (map (\p -> p.marketId.id) positions)
