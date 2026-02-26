@@ -1,12 +1,11 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Web.Controller.Dashboard where
 
 import Application.Domain.LMSR as LMSR
 import Application.Domain.Position
 import Application.Domain.Types
 import qualified Data.Map as M
-import Data.UUID (UUID)
-import Database.PostgreSQL.Simple (Query)
-import Database.PostgreSQL.Simple.FromRow
+import Text.RawString.QQ (r)
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
 import Web.View.Dashboard.Markets
@@ -33,8 +32,16 @@ instance Controller DashboardController where
         -- Use raw SQL with window function for efficient sorting:
         -- 1. Markets ordered by their most recently updated position (desc)
         -- 2. Within each market, positions ordered by updated_at (desc)
-        let positionQuery :: Query
-            positionQuery = "SELECT id, user_id, market_id, asset_id, quantity, invested, received, updated_at FROM (SELECT id, user_id, market_id, asset_id, quantity, invested, received, updated_at, MAX(updated_at) OVER (PARTITION BY market_id) as market_max FROM positions WHERE user_id = ?) sub ORDER BY market_max DESC, updated_at DESC LIMIT ? OFFSET ?"
+        let positionQuery = [r|
+            SELECT id, user_id, market_id, asset_id, quantity, invested, received, updated_at
+            FROM (
+                SELECT *, MAX(updated_at) OVER (PARTITION BY market_id) as market_max
+                FROM positions
+                WHERE user_id = ?
+            ) sub
+            ORDER BY market_max DESC, updated_at DESC
+            LIMIT ? OFFSET ?
+        |]
 
         -- Fetch positions with pagination using raw SQL
         let userId = currentUserId :: Id User

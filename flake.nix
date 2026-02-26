@@ -37,6 +37,7 @@
                         jwt
                         base64
                         cmark
+                        raw-strings-qq
 
                         # Uncomment on local development for testing
                         hspec
