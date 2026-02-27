@@ -17,7 +17,7 @@ data IndexView = IndexView
 instance View IndexView where
     html IndexView { .. } = [hsx|
         <div id="markets-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
                     <li class="nav-item">
                         <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}

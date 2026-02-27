@@ -349,16 +349,81 @@ instance View ShowView where
 
                         chartContainer._chart = chart;
 
+                        var seriesArray = [];
+
                         chartData.forEach(function(asset) {
                             var series = chart.addSeries(LightweightCharts.LineSeries, {
                                 color: asset.color,
                                 lineWidth: 2,
                                 title: asset.symbol,
+                                priceLineVisible: false,
+                                lastValueVisible: false,
                             });
 
                             if (asset.data && asset.data.length > 0) {
                                 series.setData(asset.data.sort(function(a, b) { return a.time - b.time; }));
                             }
+
+                            seriesArray.push({
+                                series: series,
+                                label: asset.symbol,
+                                color: asset.color
+                            });
+                        });
+
+                        var legend = document.createElement('div');
+                        legend.style.position = 'absolute';
+                        legend.style.top = '8px';
+                        legend.style.left = '8px';
+                        legend.style.background = 'rgba(255, 255, 255, 0.95)';
+                        legend.style.border = '1px solid rgba(128, 128, 128, 0.3)';
+                        legend.style.borderRadius = '4px';
+                        legend.style.padding = '8px 12px';
+                        legend.style.fontSize = '12px';
+                        legend.style.color = '#000';
+                        legend.style.zIndex = '10';
+                        legend.style.display = 'none';
+                        chartContainer.style.position = 'relative';
+                        chartContainer.appendChild(legend);
+
+                        var valueElements = {};
+
+                        var legendHtml = '';
+                        seriesArray.forEach(function(item) {
+                            legendHtml += '<div class="legend-item" data-label="' + item.label + '" style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">' +
+                                '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ' + item.color + ';"></span>' +
+                                '<span style="font-weight: 500; color: #000;">' + item.label + '</span>' +
+                                '<span class="legend-value" data-label="' + item.label + '" style="color: #000; margin-left: auto; text-align: right; min-width: 35px;">--</span>' +
+                                '</div>';
+                        });
+                        legend.innerHTML = legendHtml;
+
+                        seriesArray.forEach(function(item) {
+                            valueElements[item.label] = legend.querySelector('.legend-value[data-label="' + item.label + '"]');
+                        });
+
+                        chartContainer.addEventListener('mouseenter', function() {
+                            legend.style.display = 'block';
+                        });
+
+                        chartContainer.addEventListener('mouseleave', function() {
+                            legend.style.display = 'none';
+                        });
+
+                        chart.subscribeCrosshairMove(function(param) {
+                            seriesArray.forEach(function(item) {
+                                var data = param.seriesData.get(item.series);
+                                var value = data ? data.value : null;
+                                var el = valueElements[item.label];
+                                if (el) {
+                                    if (value !== null) {
+                                        var percent = Math.round(value * 100);
+                                        el.textContent = percent + '%';
+                                    } else {
+                                        el.textContent = '--';
+                                    }
+                                }
+                            });
                         });
 
                         chart.timeScale().fitContent();

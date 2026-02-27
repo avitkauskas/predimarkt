@@ -33,11 +33,11 @@ defaultLayout inner = [hsx|
 
 navbar :: (?request :: Request) => Html
 navbar = [hsx|
-        <nav class="navbar navbar-expand-lg bg-body">
+        <nav class="navbar navbar-expand-md bg-body">
             <div class="container-fluid">
                 <a class="navbar-brand fw-bold gradient-text fs-3 ms-2"
                    href="/">Predimarkt</a>
-                <div class="d-flex d-lg-none ms-auto align-items-center gap-1">
+                <div class="d-flex d-md-none ms-auto align-items-center gap-1">
                     <button
                         aria-controls="navbar-collapse"
                         aria-expanded="false"
@@ -60,7 +60,7 @@ navbar = [hsx|
                 <div class="collapse navbar-collapse" id="navbar-collapse">
                     <ul class="navbar-nav ms-auto">
                         {navItems}
-                        <li class="nav-item d-none d-lg-flex align-items-center">{renderThemeToggle}</li>
+                        <li class="nav-item d-none d-md-flex align-items-center">{renderThemeToggle}</li>
                     </ul>
                 </div>
             </div>
