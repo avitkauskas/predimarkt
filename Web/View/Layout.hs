@@ -5,7 +5,6 @@ import Application.Helper.View
 import Generated.Types
 import IHP.Environment
 import IHP.ViewPrelude
-import Web.Controller.Prelude (paramOrNothing)
 import Web.Routes
 import Web.Types
 
@@ -59,7 +58,6 @@ navbar = [hsx|
                     {renderThemeToggle}
                 </div>
                 <div class="collapse navbar-collapse" id="navbar-collapse">
-                    {searchForm}
                     <ul class="navbar-nav ms-auto">
                         {navItems}
                         <li class="nav-item d-none d-lg-flex align-items-center">{renderThemeToggle}</li>
@@ -108,44 +106,6 @@ navbar = [hsx|
                 </ul>
             </li>
         |]
-
-        searchFilter :: Maybe Text
-        searchFilter = paramOrNothing "search"
-
-        categoryFilter :: Maybe (Id Category)
-        categoryFilter = paramOrNothing "category"
-
-        searchForm :: Html
-        searchForm = [hsx|
-            <div class="d-flex my-2 my-lg-0 navbar-search" id="search-form-container">
-                <form class="w-100 position-relative"
-                      action="/Markets"
-                      method="GET"
-                      hx-get="/Markets"
-                      hx-target="body"
-                      hx-swap="innerHTML"
-                      hx-push-url="true"
-                      hx-trigger="input delay:300ms from:input[type='search']"
-                      hx-vals={categoryVals}
-                      onsubmit="return false;">
-                    <i class="bi bi-search text-muted position-absolute"
-                       style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
-                    </i>
-                    <input type="search"
-                               class="form-control"
-                               name="search"
-                               value={fromMaybe "" searchFilter}
-                               placeholder="Search markets..."
-                               aria-label="Search markets"
-                               style="padding-left: 36px;">
-                </form>
-            </div>
-        |]
-
-        categoryVals :: Text
-        categoryVals = case categoryFilter of
-            Just catId -> "{\"category\": \"" <> show catId <> "\"}"
-            Nothing    -> "{}"
 
 dashboardLayout :: Html -> Html
 dashboardLayout inner = [hsx|

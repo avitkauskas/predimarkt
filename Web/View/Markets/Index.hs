@@ -4,6 +4,7 @@ import Application.Domain.LMSR
 import Application.Domain.Types
 import Application.Helper.View (formatMoney)
 import qualified Data.Map.Strict as M
+import Web.Controller.Prelude (paramOrNothing)
 import Web.View.Prelude
 
 data IndexView = IndexView
@@ -28,6 +29,9 @@ instance View IndexView where
                 </ul>
                 <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
             </div>
+            <div class="mb-3">
+                {searchForm}
+            </div>
             {renderFlashMessages}
             <div class="row g-3 mb-5">
                 {forEach markets renderMarket}
@@ -39,6 +43,38 @@ instance View IndexView where
             allMarketsLink = case searchFilter of
                 Just query -> pathTo MarketsAction <> "?search=" <> query
                 Nothing    -> pathTo MarketsAction
+
+            searchForm :: Html
+            searchForm = [hsx|
+                <div class="d-flex" id="search-form-container">
+                    <form class="w-100 position-relative"
+                          action="/Markets"
+                          method="GET"
+                          hx-get="/Markets"
+                          hx-target="body"
+                          hx-swap="innerHTML"
+                          hx-push-url="true"
+                          hx-trigger="input delay:300ms from:input[type='search']"
+                          hx-vals={categoryVals}
+                          onsubmit="return false;">
+                        <i class="bi bi-search text-muted position-absolute"
+                           style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
+                        </i>
+                        <input type="search"
+                                   class="form-control"
+                                   name="search"
+                                   value={fromMaybe "" searchFilter}
+                                   placeholder="Search markets..."
+                                   aria-label="Search markets"
+                                   style="padding-left: 36px;">
+                    </form>
+                </div>
+            |]
+
+            categoryVals :: Text
+            categoryVals = case categoryFilter of
+                Just catId -> "{\"category\": \"" <> show catId <> "\"}"
+                Nothing    -> "{}"
 
 renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> Maybe Text -> Category -> Html
 renderCategoryTab categoryFilter searchFilter category = [hsx|
