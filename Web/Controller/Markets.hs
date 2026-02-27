@@ -23,11 +23,17 @@ import Web.View.Markets.Show
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do
         let categoryFilter = paramOrNothing "category"
+        let searchFilter = paramOrNothing "search"
 
         let applyCategoryFilter queryBuilder =
                 case categoryFilter of
                     Just categoryId -> queryBuilder |> filterWhere (#categoryId, categoryId)
                     Nothing         -> queryBuilder
+
+        let applySearchFilter queryBuilder =
+                case searchFilter of
+                    Just searchQuery -> queryBuilder |> filterWhereILike (#title, "%" <> searchQuery <> "%")
+                    Nothing          -> queryBuilder
 
         let applyStatusFilter queryBuilder =
                 queryBuilder
@@ -43,6 +49,7 @@ instance Controller MarketsController where
             query @Market
                 |> applyRecentActivityFilter
                 |> applyCategoryFilter
+                |> applySearchFilter
                 |> applyStatusFilter
                 |> orderByDesc #openedAt
                 |> fetch

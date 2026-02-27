@@ -10,37 +10,51 @@ data IndexView = IndexView
     { markets        :: [Include' ["categoryId", "assets"] Market]
     , categories     :: [Category]
     , categoryFilter :: Maybe (Id Category)
+    , searchFilter   :: Maybe Text
     }
 
 instance View IndexView where
     html IndexView { .. } = [hsx|
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
-                <li class="nav-item">
-                    <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
-                       href={MarketsAction}>
-                        All
-                    </a>
-                </li>
-                {forEach categories (renderCategoryTab categoryFilter)}
-            </ul>
-            <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
-        </div>
-        {renderFlashMessages}
-        <div class="row g-3 mb-5">
-            {forEach markets renderMarket}
+        <div id="markets-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
+                    <li class="nav-item">
+                        <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
+                           href={allMarketsLink}>
+                            All
+                        </a>
+                    </li>
+                    {forEach categories (renderCategoryTab categoryFilter searchFilter)}
+                </ul>
+                <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
+            </div>
+            {renderFlashMessages}
+            <div class="row g-3 mb-5">
+                {forEach markets renderMarket}
+            </div>
         </div>
     |]
+        where
+            allMarketsLink :: Text
+            allMarketsLink = case searchFilter of
+                Just query -> pathTo MarketsAction <> "?search=" <> query
+                Nothing    -> pathTo MarketsAction
 
-renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> Category -> Html
-renderCategoryTab categoryFilter category = [hsx|
+renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> Maybe Text -> Category -> Html
+renderCategoryTab categoryFilter searchFilter category = [hsx|
     <li class="nav-item">
         <a class={classes ["nav-link text-reset", ("active", categoryFilter == Just category.id)]}
-           href={pathTo MarketsAction <> "?category=" <> show category.id}>
+           href={categoryLink}>
             {category.name}
         </a>
     </li>
 |]
+    where
+        categoryLink :: Text
+        categoryLink = pathTo MarketsAction <> "?category=" <> show category.id <> searchParam
+        searchParam = case searchFilter of
+            Just query -> "&search=" <> query
+            Nothing    -> ""
 
 renderMarket :: (?context :: ControllerContext) => Include' ["categoryId", "assets"] Market -> Html
 renderMarket market = [hsx|

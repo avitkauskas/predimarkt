@@ -26,6 +26,36 @@ $(document).on('ready turbolinks:load', function () {
     }
 });
 
+// Preserve search input value and focus after HTMX swaps
+(function() {
+    var savedSearchValue = '';
+    var savedCursorPosition = 0;
+    var preserveFocus = false;
+
+    document.addEventListener('input', function(evt) {
+        if (evt.target && evt.target.matches && evt.target.matches('input[type="search"]')) {
+            savedSearchValue = evt.target.value;
+            savedCursorPosition = evt.target.selectionStart;
+            preserveFocus = true;
+        }
+    });
+
+    document.addEventListener('htmx:after:swap', function() {
+        var searchInput = document.querySelector('#search-form-container input[type="search"]');
+        if (searchInput) {
+            if (savedSearchValue) {
+                searchInput.value = savedSearchValue;
+            }
+            if (preserveFocus) {
+                searchInput.focus();
+                searchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
+            }
+        }
+    });
+})();
+
+
+
 // document.addEventListener('turbolinks:load', () => {
 //     htmx.process(document.body);
 //     _hyperscript.processNode(document.body);
