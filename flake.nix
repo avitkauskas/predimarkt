@@ -17,7 +17,7 @@
             systems = import systems;
             imports = [ ihp.flakeModules.default ];
 
-            perSystem = { pkgs, ... }: {
+            perSystem = { pkgs, lib, ... }: {
                 ihp = {
                     appName = "app"; # Change this to your project name
                     enable = true;
@@ -48,7 +48,14 @@
                 devenv.shells.default = {
                     # Start Mailhog on local development to catch outgoing emails
                     # services.mailhog.enable = true;
-                    services.postgres.package = pkgs.postgresql_18;
+                    services.postgres = {
+                        enable = true;
+                        package = pkgs.postgresql_18;
+
+                        settings = {
+                            listen_addresses = lib.mkForce "127.0.0.1";
+                        };
+                    };
 
                     # Custom processes that don't appear in https://devenv.sh/reference/options/
                     processes = {

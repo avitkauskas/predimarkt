@@ -133,7 +133,7 @@ instance View ShowView where
                 then [hsx|
                     <div class="text-end mt-3">
                         <a href="javascript:void(0)" id="toggle-assets-btn" class="text-decoration-none me-2">
-                            Show all assets
+                            Show All Assets
                         </a>
                     </div>
                 |]
@@ -150,7 +150,7 @@ instance View ShowView where
                             hidden = !hidden;
                             var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
                             cards.forEach(function(card) { card.classList.toggle('d-none', hidden); });
-                            btn.textContent = hidden ? 'Show all assets' : 'Show only leading assets';
+                            btn.textContent = hidden ? 'Show All Assets' : 'Show Only Leading Assets';
                         });
                         var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
                         cards.forEach(function(card) { card.classList.add('d-none'); });
