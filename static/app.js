@@ -5,6 +5,9 @@ $(document).on('ready turbolinks:load', function () {
     // Localize any times on the page
     localizeTimes()
 
+    // Initialize asset percentage calculations for market forms
+    initAssetPercentageCalculations()
+
     // Initialize info blocks for any pre-opened trade forms (only on market show pages)
     const buyForms = document.querySelectorAll('[id^="buy-form-"]:not(.d-none)');
     const sellForms = document.querySelectorAll('[id^="sell-form-"]:not(.d-none)');
@@ -254,3 +257,116 @@ function localizeTimes(root = document) {
         el.dataset.localized = "true";
     });
 }
+
+// LMSR Probability Calculations for Market Forms
+window.calculateLMSRProbabilities = function (quantities, beta) {
+    if (beta === 0 || quantities.length === 0) {
+        return quantities.map(() => 0);
+    }
+
+    const scaled = quantities.map(q => q / beta);
+    const max = Math.max(...scaled);
+    const exps = scaled.map(s => Math.exp(s - max));
+    const sum = exps.reduce((a, b) => a + b, 0);
+
+    return exps.map(e => e / sum);
+};
+
+window.updateAssetPercentages = function () {
+    const assetsList = document.getElementById('assets-list');
+    if (!assetsList) return;
+
+    const beta = parseFloat(assetsList.dataset.beta) || 300;
+    const rows = assetsList.querySelectorAll('.asset-row');
+
+    const quantities = [];
+    const percentageElements = [];
+
+    rows.forEach(row => {
+        const qtyInput = row.querySelector('.asset-quantity');
+        const pctDisplay = row.querySelector('.asset-percentage');
+
+        if (qtyInput && pctDisplay) {
+            const qty = parseFloat(qtyInput.value) || 0;
+            quantities.push(qty);
+            percentageElements.push(pctDisplay);
+        }
+    });
+
+    const probabilities = calculateLMSRProbabilities(quantities, beta);
+
+    percentageElements.forEach((el, index) => {
+        const pct = Math.round(probabilities[index] * 100);
+        el.textContent = pct + '%';
+    });
+};
+
+window.deleteAssetRow = function (element) {
+    const rows = document.querySelectorAll('.asset-row');
+    if (rows.length <= 2) {
+        alert('Market must have at least 2 assets.');
+        return;
+    }
+
+    const row = element.closest('.asset-row');
+    if (row) {
+        row.remove();
+        updateAssetPercentages();
+    }
+};
+
+function initAssetPercentageCalculations() {
+    const assetsList = document.getElementById('assets-list');
+    if (!assetsList) return;
+
+    // Remove existing listener to avoid duplicates
+    assetsList.removeEventListener('input', handleAssetQuantityInput);
+    // Listen for input events on quantity fields (use event delegation)
+    assetsList.addEventListener('input', handleAssetQuantityInput);
+
+    // Set up mutation observer to watch for new asset rows being added
+    if (assetsList._mutationObserver) {
+        assetsList._mutationObserver.disconnect();
+    }
+    assetsList._mutationObserver = new MutationObserver(function (mutations) {
+        // Recalculate when child nodes are added or removed
+        updateAssetPercentages();
+    });
+    assetsList._mutationObserver.observe(assetsList, { childList: true });
+
+    // Initial calculation
+    updateAssetPercentages();
+}
+
+function handleAssetQuantityInput(e) {
+    if (e.target.classList.contains('asset-quantity')) {
+        updateAssetPercentages();
+    }
+}
+
+// HTMX after swap handler for adding new assets
+document.addEventListener('htmx:afterSwap', function (e) {
+    // Check if this swap is targeting the assets-list (where new assets are added via beforeend)
+    // e.target is the element that received the swapped content
+    if (e.target.id === 'assets-list') {
+        // Use a small delay to ensure the new DOM elements are fully inserted
+        setTimeout(updateAssetPercentages, 50)
+        return
+    }
+
+    // Also check if the swapped fragment itself contains an asset row
+    // (handles cases where the response is a single asset row)
+    if (e.detail && e.detail.fragment) {
+        if (e.detail.fragment.querySelector && e.detail.fragment.querySelector('.asset-row')) {
+            setTimeout(updateAssetPercentages, 50)
+            return
+        }
+    }
+})
+
+// Also handle HTMX after settle (when content is fully settled in DOM)
+document.addEventListener('htmx:afterSettle', function (e) {
+    if (e.target.id === 'assets-list' || e.target.querySelector('.asset-row')) {
+        setTimeout(updateAssetPercentages, 50)
+    }
+})

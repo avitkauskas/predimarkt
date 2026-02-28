@@ -173,7 +173,7 @@ instance View ShowView where
                                 {asset.name}
                             </div>
                         </div>
-                        <div class="asset-actions d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2">
                             {priceDisplay}
                             {when (isTradable) buySellButtons}
                         </div>

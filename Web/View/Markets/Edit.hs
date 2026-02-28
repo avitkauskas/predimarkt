@@ -27,32 +27,43 @@ instance View EditView where
 renderForm :: Market -> [Asset] -> [Category] -> Html
 renderForm market assets categories = formFor market [hsx|
     {(textField #title)}
-    {(textareaField #description)}
-    {(selectField #categoryId categories)}
-    {(dateTimeField #closedAt) {
-        fieldLabel = "Closing time",
-        additionalAttributes =
-            [ ("data-alt-format", "Y-m-d H:i")
-            , ("data-month-selector-type", "static")
-            , ("data-allow-input", "true")
-            ]
-    }}
-    <div class="mb-4">
-        <div class="row">
-            <div class="col form-label">
-                Asset Name
-            </div>
-            <div class="col-auto form-label" style="width: 100px">
-                Symbol
-            </div>
-             <div class="col-auto form-label" style="width: 100px">
-                Quantity
-            </div>
-            <div class="col-auto" style="width: 70px">
-            </div>
+    {(textareaField #description) { additionalAttributes = [("rows", "3")] }}
+    <div class="row">
+        <div class="col-12 col-md-6">
+            {(selectField #categoryId categories)}
         </div>
-        <div id="assets-list">
-            {forEach assets renderAssetRow}
+        <div class="col-12 col-md-6">
+            {(dateTimeField #closedAt) {
+                fieldLabel = "Closing time",
+                additionalAttributes =
+                    [ ("data-alt-format", "Y-m-d H:i")
+                    , ("data-month-selector-type", "static")
+                    , ("data-allow-input", "true")
+                    ]
+            }}
+        </div>
+    </div>
+    <div class="mb-4">
+        <div class="overflow-auto">
+            <div class="row flex-nowrap" style="min-width: 600px">
+                <div class="col form-label" style="max-width: 375px">
+                    Asset Name
+                </div>
+                <div class="col form-label" style="max-width: 120px">
+                    Symbol
+                </div>
+                <div class="col form-label text-center" style="max-width: 80px">
+                    Prob
+                </div>
+                <div class="col form-label" style="max-width: 120px">
+                    Quantity
+                </div>
+                <div class="col" style="max-width: 40px">
+                </div>
+            </div>
+            <div id="assets-list" data-beta={show market.beta}>
+                {forEach assets (\asset -> renderAssetRow asset market.beta)}
+            </div>
         </div>
          <div class="mt-2">
             <a href="#"
