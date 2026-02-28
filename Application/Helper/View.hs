@@ -111,27 +111,28 @@ data PaginationItem
     deriving (Eq, Show)
 
 -- | Generate the list of pagination items for smart pagination
--- Shows up to 15 items total: [1,2,3,...,window,...,last-2,last-1,last]
--- When on early pages: [1..11], ellipsis, [last-2,last-1,last]
--- When on late pages: [1,2,3], ellipsis, [last-10..last]
--- When in middle: [1,2,3], ellipsis, window around current, ellipsis, [last-2,last-1,last]
+-- Shows: [1,2,...,window,...,last-1,last]
+-- When on early pages: [1..8], ellipsis, [last-1,last]
+-- When on late pages: [1,2], ellipsis, [last-7..last]
+-- When in middle: [1,2], ellipsis, window around current, ellipsis, [last-1,last]
+-- Uses 2 pages for initial/final blocks and 2 pages on each side of current
 generatePaginationItems :: Int -> Int -> [PaginationItem]
 generatePaginationItems currentPage totalPages
-    | totalPages <= 15 = map PageNumber [1..totalPages]
-    | currentPage < 9 =
-        let firstEllipsisPage = (10 + totalPages) `div` 2
-        in map PageNumber [1..11] ++ [Ellipsis firstEllipsisPage] ++ map PageNumber [totalPages - 2, totalPages - 1, totalPages]
-    | currentPage > totalPages - 8 =
-        let lastEllipsisPage = (totalPages - 6) `div` 2
-        in map PageNumber [1, 2, 3] ++ [Ellipsis lastEllipsisPage] ++ map PageNumber [totalPages - 10..totalPages]
+    | totalPages <= 11 = map PageNumber [1..totalPages]
+    | currentPage < 7 =
+        let firstEllipsisPage = (8 + totalPages - 1) `div` 2
+        in map PageNumber [1..8] ++ [Ellipsis firstEllipsisPage] ++ map PageNumber [totalPages - 1, totalPages]
+    | currentPage > totalPages - 6 =
+        let lastEllipsisPage = (2 + totalPages - 7) `div` 2
+        in map PageNumber [1, 2] ++ [Ellipsis lastEllipsisPage] ++ map PageNumber [totalPages - 7..totalPages]
     | otherwise =
-        let firstPages = [1, 2, 3]
-            lastPages = [totalPages - 2, totalPages - 1, totalPages]
-            windowStart = max 4 (currentPage - 3)
-            windowEnd = min (totalPages - 3) (currentPage + 3)
+        let firstPages = [1, 2]
+            lastPages = [totalPages - 1, totalPages]
+            windowStart = max 3 (currentPage - 2)
+            windowEnd = min (totalPages - 2) (currentPage + 2)
             middlePages = [windowStart..windowEnd]
-            firstEllipsisMid = (3 + windowStart) `div` 2
-            lastEllipsisMid = (windowEnd + totalPages - 2) `div` 2
+            firstEllipsisMid = (2 + windowStart) `div` 2
+            lastEllipsisMid = (windowEnd + totalPages - 1) `div` 2
         in concat [
             map PageNumber firstPages,
             [Ellipsis firstEllipsisMid],
