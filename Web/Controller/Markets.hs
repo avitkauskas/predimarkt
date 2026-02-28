@@ -6,6 +6,7 @@ module Web.Controller.Markets where
 import Application.Domain.ChartData
 import Application.Domain.Types
 import Data.List (zipWith4)
+import Data.Text (strip)
 import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
 import Web.Controller.Prelude
@@ -119,8 +120,13 @@ instance Controller MarketsController where
                     setErrorMessage errorMsg
                     categories <- fetchCategories
                     render EditView { market = marketWithFormData, .. }
-                Nothing -> do
-                    marketWithFormData
+                Nothing -> case validateAssetNames assets of
+                    Just errorMsg -> do
+                        setErrorMessage errorMsg
+                        categories <- fetchCategories
+                        render EditView { market = marketWithFormData, .. }
+                    Nothing -> do
+                        marketWithFormData
                         |> buildMarket now
                         |> ifValid \case
                             Left market -> do
@@ -175,8 +181,13 @@ instance Controller MarketsController where
                     setErrorMessage errorMsg
                     categories <- fetchCategories
                     render NewView { market = marketWithFormData, .. }
-                Nothing -> do
-                    marketWithFormData
+                Nothing -> case validateAssetNames assets of
+                    Just errorMsg -> do
+                        setErrorMessage errorMsg
+                        categories <- fetchCategories
+                        render NewView { market = marketWithFormData, .. }
+                    Nothing -> do
+                        marketWithFormData
                         |> buildMarket now
                         |> set #userId (Just currentUserId)
                         |> ifValid \case
@@ -232,8 +243,8 @@ fetchAssetsFromParams :: (?context :: ControllerContext, ?request :: Request) =>
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->
         let asset = newRecord @Asset
-                |> set #name name
-                |> set #symbol symbol
+                |> set #name (strip name)
+                |> set #symbol (strip symbol)
                 |> set #quantity quantity
         in if assetId == def
             then asset
@@ -248,7 +259,7 @@ fetchAssetsFromParams =
 validateAssetSymbols :: [Asset] -> Maybe Text
 validateAssetSymbols assets =
     let symbols = map (get #symbol) assets
-        emptySymbols = filter isEmpty symbols
+        emptySymbols = filter (isEmpty . strip) symbols
         uniqueSymbols = nub symbols
     in if not (null emptySymbols)
         then Just "Asset symbols cannot be empty"
@@ -256,15 +267,28 @@ validateAssetSymbols assets =
             then Just "Asset symbols must be unique within the market"
             else Nothing
 
+validateAssetNames :: [Asset] -> Maybe Text
+validateAssetNames assets =
+    let names = map (get #name) assets
+        emptyNames = filter (isEmpty . strip) names
+        uniqueNames = nub names
+    in if not (null emptyNames)
+        then Just "Asset names cannot be empty"
+        else if length uniqueNames /= length names
+            then Just "Asset names must be unique within the market"
+            else Nothing
+
 fillMarketWithFormData :: (?context :: ControllerContext, ?request :: Request) => Market -> Market
 fillMarketWithFormData market =
     let title = fromMaybe (get #title market) (paramOrNothing @Text "title")
         description = fromMaybe (get #description market) (paramOrNothing @Text "description")
         categoryId = fromMaybe (get #categoryId market) (paramOrNothing @(Id Category) "categoryId")
+        closedAt = fromMaybe (get #closedAt market) (paramOrNothing @UTCTime "closedAt")
     in market
-        |> set #title title
+        |> set #title (strip title)
         |> set #description description
         |> set #categoryId categoryId
+        |> set #closedAt closedAt
 
 buildMarket now market = market
     |> validateField #title nonEmpty
