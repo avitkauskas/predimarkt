@@ -69,7 +69,7 @@ CREATE TABLE assets (
     quantity BIGINT DEFAULT 0 NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
-CREATE INDEX assets_market_id_index ON assets (market_id);
+CREATE UNIQUE INDEX assets_market_id_symbol_index ON assets (market_id, symbol);
 CREATE TRIGGER update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
 CREATE TABLE wallets (
     id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
