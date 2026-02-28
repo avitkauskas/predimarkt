@@ -388,18 +388,30 @@ instance View ShowView where
 
                         var valueElements = {};
 
-                        var legendHtml = '';
                         seriesArray.forEach(function(item) {
-                            legendHtml += '<div class="legend-item" data-label="' + item.label + '" style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">' +
-                                '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ' + item.color + ';"></span>' +
-                                '<span style="font-weight: 500; color: #000;">' + item.label + '</span>' +
-                                '<span class="legend-value" data-label="' + item.label + '" style="color: #000; margin-left: auto; text-align: right; min-width: 35px;">--</span>' +
-                                '</div>';
-                        });
-                        legend.innerHTML = legendHtml;
+                            var row = document.createElement('div');
+                            row.className = 'legend-item';
+                            row.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-bottom: 2px;';
 
-                        seriesArray.forEach(function(item) {
-                            valueElements[item.label] = legend.querySelector('.legend-value[data-label="' + item.label + '"]');
+                            var badge = document.createElement('span');
+                            badge.style.cssText = 'display: inline-block; width: 8px; height: 8px; border-radius: 50%;';
+                            badge.style.background = item.color;
+
+                            var labelSpan = document.createElement('span');
+                            labelSpan.style.cssText = 'font-weight: 500;';
+                            labelSpan.textContent = item.label;
+
+                            var valueSpan = document.createElement('span');
+                            valueSpan.className = 'legend-value';
+                            valueSpan.style.cssText = 'margin-left: auto; text-align: right; min-width: 35px;';
+                            valueSpan.textContent = '--';
+
+                            row.appendChild(badge);
+                            row.appendChild(labelSpan);
+                            row.appendChild(valueSpan);
+                            legend.appendChild(row);
+
+                            valueElements[item.label] = valueSpan;
                         });
 
                         chartContainer.addEventListener('mouseenter', function() {

@@ -27,25 +27,44 @@ $(document).on('ready turbolinks:load', function () {
 });
 
 // Preserve search input value and focus after HTMX swaps
-(function() {
-    var savedCursorPosition = 0;
-
-    document.addEventListener('input', function(evt) {
+(function () {
+    document.addEventListener('input', function (evt) {
         if (evt.target && evt.target.matches && evt.target.matches('input[type="search"]')) {
-            localStorage.setItem('searchValue', evt.target.value);
-            savedCursorPosition = evt.target.selectionStart;
+            const value = evt.target.value;
+            if (value) {
+                localStorage.setItem('searchValue', value);
+                localStorage.setItem('searchCursor', evt.target.selectionStart.toString());
+            } else {
+                localStorage.removeItem('searchValue');
+                localStorage.removeItem('searchCursor');
+            }
         }
     });
 
-    document.addEventListener('htmx:after:swap', function() {
+    document.addEventListener('htmx:after:swap', function () {
         var savedSearchValue = localStorage.getItem('searchValue') || '';
+        var savedCursorPos = parseInt(localStorage.getItem('searchCursor') || '0', 10);
         var searchInput = document.querySelector('#search-form-container input[type="search"]');
-        
+
         if (searchInput && savedSearchValue) {
             searchInput.value = savedSearchValue;
             searchInput.focus();
-            searchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
+            searchInput.setSelectionRange(savedCursorPos, savedCursorPos);
         }
+    });
+
+    // Clear stored search data on form submission
+    document.addEventListener('submit', function (evt) {
+        if (evt.target && evt.target.action && evt.target.action.includes('/Markets')) {
+            localStorage.removeItem('searchValue');
+            localStorage.removeItem('searchCursor');
+        }
+    });
+
+    // Clear stored search data on page unload
+    window.addEventListener('beforeunload', function () {
+        localStorage.removeItem('searchValue');
+        localStorage.removeItem('searchCursor');
     });
 })();
 

@@ -1,10 +1,8 @@
 module Web.View.Markets.Index where
-import Admin.Controller.Prelude (render)
 import Application.Domain.LMSR
 import Application.Domain.Types
-import Application.Helper.View (formatMoney)
 import qualified Data.Map.Strict as M
-import Web.Controller.Prelude (paramOrNothing)
+import Network.URI (escapeURIString)
 import Web.View.Prelude
 
 data IndexView = IndexView
