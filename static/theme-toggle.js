@@ -32,6 +32,7 @@
 
 
     document.addEventListener('turbolinks:load', syncUI)
+    document.addEventListener('htmx:after:swap', syncUI)
     document.addEventListener('turbolinks:before-render', (event) => {
         const theme = document.documentElement.getAttribute('data-bs-theme') || getPreferredTheme()
         const newBody = event.data.newBody
