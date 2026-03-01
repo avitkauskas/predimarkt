@@ -105,12 +105,16 @@ $(document).on('ready turbolinks:load', function () {
     });
 })();
 
-
-
-// document.addEventListener('turbolinks:load', () => {
-//     htmx.process(document.body);
-//     _hyperscript.processNode(document.body);
-// });
+// Remove empty search parameter from HTMX requests to keep URLs clean
+document.addEventListener('htmx:config:request', function (evt) {
+    if (evt.detail.ctx && evt.detail.ctx.request && evt.detail.ctx.request.body) {
+        const body = evt.detail.ctx.request.body;
+        const searchValue = body.get('search');
+        if (searchValue === '' || searchValue === null) {
+            body.delete('search');
+        }
+    }
+});
 
 window.toggleAssetForm = function (assetId, type) {
     const buyForm = document.getElementById(`buy-form-${assetId}`);
