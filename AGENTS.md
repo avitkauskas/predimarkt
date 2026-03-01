@@ -99,8 +99,8 @@ Config/
 Web/
   Controller/         # HTTP controllers
   View/               # HSX templates
+  Job/                # Jobs modules
   Types.hs            # Web-specific types
-  Types/              # Domain types (Money, etc.)
   Routes.hs           # URL routing
 
 Admin/

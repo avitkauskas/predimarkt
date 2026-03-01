@@ -16,7 +16,7 @@ import Web.View.Dashboard.Transactions
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardPositionsAction { page, searchFilter } = do
+    action DashboardPositionsAction { page, searchFilter } = autoRefresh do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
         let searchQuery = searchFilter <|> paramOrNothing @Text "search"
         let itemsPerPage = 5
