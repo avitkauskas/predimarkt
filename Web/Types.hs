@@ -75,7 +75,7 @@ data TradesController
 data DashboardController
     = DashboardPositionsAction { page :: Maybe Int, searchFilter :: Maybe Text }
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus }
-    | DashboardTransactionsAction { page :: Maybe Int }
+    | DashboardTransactionsAction { page :: Maybe Int, searchFilter :: Maybe Text }
     | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
     | OpenMarketAction { marketId :: !(Maybe (Id Market)) }
     deriving (Eq, Show, Data)

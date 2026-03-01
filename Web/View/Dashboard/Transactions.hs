@@ -20,33 +20,68 @@ data TransactionsView = TransactionsView
     , currentPage             :: Int
     , totalPages              :: Int
     , wallet                  :: Wallet
+    , searchFilter            :: Maybe Text
     }
 
 instance View TransactionsView where
     html TransactionsView { .. } = dashboardLayout [hsx|
         <div class="container-fluid ps-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
                 <h5>Transactions</h5>
                 <div class="text-end me-1">
                     Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
                 </div>
             </div>
-            {renderTransactionsContent transactionsWithDetails currentPage totalPages}
+            <div class="mb-3">
+                {renderSearchForm searchFilter}
+            </div>
+            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilter}
         </div>
     |]
 
-renderTransactionsContent :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Html
-renderTransactionsContent [] _ _ = [hsx|
-    <div class="alert alert-info">
-        No transactions yet. Start trading to see your history here.
+renderSearchForm :: Maybe Text -> Html
+renderSearchForm searchFilter = [hsx|
+    <div class="d-flex" id="search-form-container">
+        <form class="w-100 position-relative"
+              action={DashboardTransactionsAction Nothing Nothing}
+              method="GET"
+              hx-get={DashboardTransactionsAction Nothing Nothing}
+              hx-target="body"
+              hx-swap="innerHTML"
+              hx-push-url="true"
+              hx-trigger="input delay:300ms from:input[type='search']"
+              onsubmit="return false;">
+            <i class="bi bi-search text-muted position-absolute"
+               style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
+            </i>
+            <input type="search"
+                       class="form-control"
+                       name="search"
+                       value={fromMaybe "" searchFilter}
+                       placeholder="Search transactions by market or asset..."
+                       aria-label="Search transactions"
+                       style="padding-left: 36px;">
+        </form>
     </div>
 |]
-renderTransactionsContent txns currentPage totalPages = [hsx|
+
+renderTransactionsContent :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Html
+renderTransactionsContent [] _ _ Nothing = [hsx|
+    <div class="alert alert-info">
+        No transactions found. Start trading to see your history here.
+    </div>
+|]
+renderTransactionsContent [] _ _ (Just _) = [hsx|
+    <div class="alert alert-info">
+        No transactions match your search. Try a different search term.
+    </div>
+|]
+renderTransactionsContent txns currentPage totalPages searchFilter = [hsx|
     <div class="row g-3">
         {forEach txns renderTransactionCard}
     </div>
     <div>
-        {renderTxnPagination currentPage totalPages}
+        {renderTxnPagination currentPage totalPages searchFilter}
     </div>
 |]
 
@@ -80,7 +115,7 @@ renderTransactionCard twd =
     in [hsx|
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-body px-3 py-2">
+                <div class="card-body px-3 py-1">
                     <div class="d-flex justify-content-between mb-2 overflow-x-auto scroll-no-bar">
                         <div>
                             <a href={marketUrl} class="text-decoration-none">
@@ -121,7 +156,7 @@ renderTransactionCard twd =
         </div>
     |]
 
-renderTxnPagination :: Int -> Int -> Html
-renderTxnPagination currentPage totalPages =
+renderTxnPagination :: Int -> Int -> Maybe Text -> Html
+renderTxnPagination currentPage totalPages searchFilter =
     renderSmartPagination currentPage totalPages "Transaction pagination"
-        (\pageNum -> pathTo (DashboardTransactionsAction (Just pageNum)))
+        (\pageNum -> pathTo (DashboardTransactionsAction (Just pageNum) searchFilter))

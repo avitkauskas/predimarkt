@@ -76,11 +76,11 @@ instance Controller DashboardController where
 
         -- Fetch positions with pagination using raw SQL
         let userId = currentUserId :: Id User
-        let limit = itemsPerPage :: Int
-        let offset = pageOffset :: Int
+        let posLimit = itemsPerPage :: Int
+        let posOffset = pageOffset :: Int
         positionsRaw <- case searchQuery of
-            Just query -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", limit, offset) :: IO [Position]
-            Nothing -> sqlQuery positionQuery (userId, limit, offset) :: IO [Position]
+            Just query -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", posLimit, posOffset) :: IO [Position]
+            Nothing -> sqlQuery positionQuery (userId, posLimit, posOffset) :: IO [Position]
         positions <- collectionFetchRelated #assetId positionsRaw >>= collectionFetchRelated #marketId
 
         -- Get unique market IDs from positions
@@ -224,28 +224,68 @@ instance Controller DashboardController where
                         setSuccessMessage "Market opened successfully"
                         redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen }
 
-    action DashboardTransactionsAction { page } = do
+    action DashboardTransactionsAction { page, searchFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
+        let searchQuery = searchFilter <|> paramOrNothing @Text "search"
         let itemsPerPage = 5
 
-        -- Get total count for pagination
-        totalCount <- query @Transaction
-            |> filterWhere (#userId, currentUserId)
-            |> fetchCount
+        -- Get total count for pagination (with search filter if provided)
+        totalCount <- case searchQuery of
+            Just query -> do
+                -- Use sqlQueryScalar for efficient counting
+                -- Search in both market title and asset name
+                count :: Int <- sqlQueryScalar
+                    [r|
+                        SELECT COUNT(*)
+                        FROM transactions t
+                        JOIN markets m ON t.market_id = m.id
+                        JOIN assets a ON t.asset_id = a.id
+                        WHERE t.user_id = ?
+                        AND (m.title ILIKE ? OR a.name ILIKE ?)
+                    |]
+                    (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
+                pure count
+            Nothing -> query @Transaction
+                |> filterWhere (#userId, currentUserId)
+                |> fetchCount
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
         let pageOffset = (validPage - 1) * itemsPerPage
 
-        -- Fetch transactions with pagination using IHP's limit and offset
-        transactions <- query @Transaction
-            |> filterWhere (#userId, currentUserId)
-            |> orderByDesc #createdAt
-            |> limit itemsPerPage
-            |> offset pageOffset
-            |> fetch
-            >>= collectionFetchRelated #assetId
-            >>= collectionFetchRelated #marketId
+        -- Fetch transactions with pagination
+        -- For search, first get matching IDs then fetch full records (avoids JSONB decoding issues)
+        let userId = currentUserId :: Id User
+        let txnLimit = itemsPerPage :: Int
+        let txnOffset = pageOffset :: Int
+        transactions <- case searchQuery of
+            Just query -> do
+                -- First get matching transaction IDs
+                (txnIdRows :: [Only UUID]) <- sqlQuery
+                    [r|
+                        SELECT t.id
+                        FROM transactions t
+                        JOIN markets m ON t.market_id = m.id
+                        JOIN assets a ON t.asset_id = a.id
+                        WHERE t.user_id = ?
+                        AND (m.title ILIKE ? OR a.name ILIKE ?)
+                        ORDER BY t.created_at DESC
+                        LIMIT ? OFFSET ?
+                    |]
+                    (userId, "%" <> query <> "%", "%" <> query <> "%", txnLimit, txnOffset)
+                -- Fetch full records by IDs (N+1 acceptable for small page size)
+                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                txnRecords <- mapM fetch txnIds
+                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+            Nothing ->
+                query @Transaction
+                    |> filterWhere (#userId, currentUserId)
+                    |> orderByDesc #createdAt
+                    |> limit itemsPerPage
+                    |> offset pageOffset
+                    |> fetch
+                    >>= collectionFetchRelated #assetId
+                    >>= collectionFetchRelated #marketId
 
         let transactionsWithDetails = map (\t -> TransactionWithDetails { transaction = t }) transactions
 
@@ -259,4 +299,5 @@ instance Controller DashboardController where
             , currentPage = validPage
             , totalPages = totalPages
             , wallet = wallet
+            , searchFilter = searchQuery
             }

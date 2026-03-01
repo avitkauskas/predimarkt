@@ -52,15 +52,11 @@ instance CanRoute MarketsController where
 
 instance HasPath DashboardController where
     pathTo DashboardPositionsAction { page, searchFilter } =
-        let pageParam = maybe "" (\p -> "?page=" <> inputValue p) page
-            searchParam = case (page, searchFilter) of
-                (_, Just search) -> (if isNothing page then "?" else "&") <> "search=" <> search
-                _ -> "" :: Text
-        in "/DashboardPositions" <> pageParam <> searchParam
+        buildPaginatedSearchPath "/DashboardPositions" page searchFilter
     pathTo DashboardMarketsAction { statusFilter } =
         "/DashboardMarkets" <> maybe "" (\s -> "?statusFilter=" <> inputValue s) statusFilter
-    pathTo DashboardTransactionsAction { page } =
-        "/DashboardTransactions" <> maybe "" (\p -> "?page=" <> inputValue p) page
+    pathTo DashboardTransactionsAction { page, searchFilter } =
+        buildPaginatedSearchPath "/DashboardTransactions" page searchFilter
     pathTo ChangeMarketStatusAction { marketId, status } =
         "/ChangeMarketStatus"
         <> maybe "" (\mid -> "?marketId=" <> inputValue mid) marketId
@@ -72,6 +68,14 @@ instance CanRoute DashboardController where
     parseRoute' =
         (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing))
-        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing))
+        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing))
         <|> (string "/OpenMarket" >> pure (OpenMarketAction Nothing))
+
+buildPaginatedSearchPath :: Text -> Maybe Int -> Maybe Text -> Text
+buildPaginatedSearchPath basePath page searchFilter =
+    let pageParam = maybe "" (\p -> "?page=" <> inputValue p) page
+        searchParam = case (page, searchFilter) of
+            (_, Just search) -> (if isNothing page then "?" else "&") <> "search=" <> inputValue search
+            _ -> ""
+    in basePath <> pageParam <> searchParam

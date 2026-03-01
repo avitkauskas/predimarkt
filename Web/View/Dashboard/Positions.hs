@@ -35,9 +35,9 @@ renderSearchForm :: Maybe Text -> Html
 renderSearchForm searchFilter = [hsx|
     <div class="d-flex" id="search-form-container">
         <form class="w-100 position-relative"
-              action="/DashboardPositions"
+              action={DashboardPositionsAction Nothing Nothing}
               method="GET"
-              hx-get="/DashboardPositions"
+              hx-get={DashboardPositionsAction Nothing Nothing}
               hx-target="body"
               hx-swap="innerHTML"
               hx-push-url="true"
@@ -50,7 +50,7 @@ renderSearchForm searchFilter = [hsx|
                        class="form-control"
                        name="search"
                        value={fromMaybe "" searchFilter}
-                       placeholder="Search positions by market..."
+                       placeholder="Search positions by market or asset..."
                        aria-label="Search positions"
                        style="padding-left: 36px;">
         </form>
@@ -58,9 +58,14 @@ renderSearchForm searchFilter = [hsx|
 |]
 
 renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Html
-renderPositionsContent [] _ _ _ = [hsx|
+renderPositionsContent [] _ _ Nothing = [hsx|
     <div class="alert alert-info">
-        No positions found. Browse <a href={MarketsAction} class="alert-link">markets</a> to trade.
+        No positions found. Start trading to see your positions here.
+    </div>
+|]
+renderPositionsContent [] _ _ (Just _) = [hsx|
+    <div class="alert alert-info">
+        No positions match your search. Try a different search term.
     </div>
 |]
 renderPositionsContent positions currentPage totalPages searchFilter = [hsx|

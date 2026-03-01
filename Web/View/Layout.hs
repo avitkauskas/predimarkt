@@ -93,7 +93,7 @@ navbar = [hsx|
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href={DashboardPositionsAction Nothing Nothing}>Positions</a></li>
-                    <li><a  class="dropdown-item" href={DashboardTransactionsAction Nothing}>Transactions</a></li>
+                    <li><a  class="dropdown-item" href={DashboardTransactionsAction Nothing Nothing}>Transactions</a></li>
                     <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen)}>Markets</a></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li><a  class="dropdown-item" href={EditUserAction user.id}>Profile</a></li>
@@ -128,8 +128,8 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", isActivePath (pathTo (DashboardTransactionsAction Nothing)))]}
-                               href={DashboardTransactionsAction Nothing}>
+                                    ("active", isActivePath (pathTo (DashboardTransactionsAction Nothing Nothing)))]}
+                               href={DashboardTransactionsAction Nothing Nothing}>
                               <i class="bi bi-arrow-left-right"></i>Transactions
                             </a>
                         </li>

@@ -34,7 +34,14 @@ $(document).on('ready turbolinks:load', function () {
     // Helper to get storage key based on current page
     function getStorageKey(baseKey) {
         var path = window.location.pathname;
-        var pageKey = path.includes('/DashboardPositions') ? 'positions' : 'markets';
+        var pageKey;
+        if (path.includes('/DashboardPositions')) {
+            pageKey = 'positions';
+        } else if (path.includes('/DashboardTransactions')) {
+            pageKey = 'transactions';
+        } else {
+            pageKey = 'markets';
+        }
         return baseKey + '_' + pageKey;
     }
 
@@ -75,20 +82,26 @@ $(document).on('ready turbolinks:load', function () {
                 localStorage.removeItem('searchValue_markets');
                 localStorage.removeItem('searchCursor_markets');
             }
-            if (action.includes('/DashboardPositions')) {
+            else if (action.includes('/DashboardPositions')) {
                 localStorage.removeItem('searchValue_positions');
                 localStorage.removeItem('searchCursor_positions');
+            }
+            else if (action.includes('/DashboardTransactions')) {
+                localStorage.removeItem('searchValue_transactions');
+                localStorage.removeItem('searchCursor_transactions');
             }
         }
     });
 
     // Clear stored search data on page unload
     window.addEventListener('beforeunload', function () {
-        // Clear both keys on unload to avoid stale data
+        // Clear all keys on unload to avoid stale data
         localStorage.removeItem('searchValue_markets');
         localStorage.removeItem('searchCursor_markets');
         localStorage.removeItem('searchValue_positions');
         localStorage.removeItem('searchCursor_positions');
+        localStorage.removeItem('searchValue_transactions');
+        localStorage.removeItem('searchCursor_transactions');
     });
 })();
 
@@ -366,7 +379,10 @@ function handleAssetQuantityInput(e) {
 }
 
 // HTMX after swap handler for adding new assets
-document.addEventListener('htmx:afterSwap', function (e) {
+document.addEventListener('htmx:after:swap', function (e) {
+    // Localize times in the swapped content
+    localizeTimes(e.target)
+
     // Check if this swap is targeting the assets-list (where new assets are added via beforeend)
     // e.target is the element that received the swapped content
     if (e.target.id === 'assets-list') {
@@ -386,7 +402,7 @@ document.addEventListener('htmx:afterSwap', function (e) {
 })
 
 // Also handle HTMX after settle (when content is fully settled in DOM)
-document.addEventListener('htmx:afterSettle', function (e) {
+document.addEventListener('htmx:after:settle', function (e) {
     if (e.target.id === 'assets-list' || e.target.querySelector('.asset-row')) {
         setTimeout(updateAssetPercentages, 50)
     }
