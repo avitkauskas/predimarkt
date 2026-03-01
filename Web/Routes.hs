@@ -15,7 +15,7 @@ instance AutoRoute LeaderboardController
 
 instance HasPath AuthController where
     pathTo LoginAction          = "/NewSession"
-    pathTo WorkOSLoginAction   = "/workos-login"
+    pathTo WorkOSLoginAction    = "/workos-login"
     pathTo WorkOSCallbackAction = "/auth/callback"
 
 instance CanRoute AuthController where
@@ -51,8 +51,12 @@ instance CanRoute MarketsController where
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
 instance HasPath DashboardController where
-    pathTo DashboardPositionsAction { page } =
-        "/DashboardPositions" <> maybe "" (\p -> "?page=" <> inputValue p) page
+    pathTo DashboardPositionsAction { page, searchFilter } =
+        let pageParam = maybe "" (\p -> "?page=" <> inputValue p) page
+            searchParam = case (page, searchFilter) of
+                (_, Just search) -> (if isNothing page then "?" else "&") <> "search=" <> search
+                _ -> "" :: Text
+        in "/DashboardPositions" <> pageParam <> searchParam
     pathTo DashboardMarketsAction { statusFilter } =
         "/DashboardMarkets" <> maybe "" (\s -> "?statusFilter=" <> inputValue s) statusFilter
     pathTo DashboardTransactionsAction { page } =
@@ -66,7 +70,7 @@ instance HasPath DashboardController where
 
 instance CanRoute DashboardController where
     parseRoute' =
-        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing))
+        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing))

@@ -31,22 +31,33 @@ $(document).on('ready turbolinks:load', function () {
 
 // Preserve search input value and focus after HTMX swaps
 (function () {
+    // Helper to get storage key based on current page
+    function getStorageKey(baseKey) {
+        var path = window.location.pathname;
+        var pageKey = path.includes('/DashboardPositions') ? 'positions' : 'markets';
+        return baseKey + '_' + pageKey;
+    }
+
     document.addEventListener('input', function (evt) {
         if (evt.target && evt.target.matches && evt.target.matches('input[type="search"]')) {
             const value = evt.target.value;
+            const searchValueKey = getStorageKey('searchValue');
+            const searchCursorKey = getStorageKey('searchCursor');
             if (value) {
-                localStorage.setItem('searchValue', value);
-                localStorage.setItem('searchCursor', evt.target.selectionStart.toString());
+                localStorage.setItem(searchValueKey, value);
+                localStorage.setItem(searchCursorKey, evt.target.selectionStart.toString());
             } else {
-                localStorage.removeItem('searchValue');
-                localStorage.removeItem('searchCursor');
+                localStorage.removeItem(searchValueKey);
+                localStorage.removeItem(searchCursorKey);
             }
         }
     });
 
     document.addEventListener('htmx:after:swap', function () {
-        var savedSearchValue = localStorage.getItem('searchValue') || '';
-        var savedCursorPos = parseInt(localStorage.getItem('searchCursor') || '0', 10);
+        var searchValueKey = getStorageKey('searchValue');
+        var searchCursorKey = getStorageKey('searchCursor');
+        var savedSearchValue = localStorage.getItem(searchValueKey) || '';
+        var savedCursorPos = parseInt(localStorage.getItem(searchCursorKey) || '0', 10);
         var searchInput = document.querySelector('#search-form-container input[type="search"]');
 
         if (searchInput && savedSearchValue) {
@@ -58,16 +69,26 @@ $(document).on('ready turbolinks:load', function () {
 
     // Clear stored search data on form submission
     document.addEventListener('submit', function (evt) {
-        if (evt.target && evt.target.action && evt.target.action.includes('/Markets')) {
-            localStorage.removeItem('searchValue');
-            localStorage.removeItem('searchCursor');
+        if (evt.target && evt.target.action) {
+            var action = evt.target.action;
+            if (action.includes('/Markets')) {
+                localStorage.removeItem('searchValue_markets');
+                localStorage.removeItem('searchCursor_markets');
+            }
+            if (action.includes('/DashboardPositions')) {
+                localStorage.removeItem('searchValue_positions');
+                localStorage.removeItem('searchCursor_positions');
+            }
         }
     });
 
     // Clear stored search data on page unload
     window.addEventListener('beforeunload', function () {
-        localStorage.removeItem('searchValue');
-        localStorage.removeItem('searchCursor');
+        // Clear both keys on unload to avoid stale data
+        localStorage.removeItem('searchValue_markets');
+        localStorage.removeItem('searchCursor_markets');
+        localStorage.removeItem('searchValue_positions');
+        localStorage.removeItem('searchCursor_positions');
     });
 })();
 

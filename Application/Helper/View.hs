@@ -154,7 +154,7 @@ renderSmartPagination currentPage totalPages ariaLabel pageUrlFn =
     if totalPages <= 1
     then [hsx||]
     else [hsx|
-        <nav aria-label={ariaLabel} class="mt-4">
+        <nav aria-label={ariaLabel} class="mt-3">
             <ul class="pagination pagination-sm justify-content-center mb-0">
                 {renderPrev}
                 {renderPages}

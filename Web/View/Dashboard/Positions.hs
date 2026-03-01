@@ -11,34 +11,64 @@ data PositionsView = PositionsView
     , currentPage        :: Int
     , totalPages         :: Int
     , wallet             :: Wallet
+    , searchFilter       :: Maybe Text
     }
 
 instance View PositionsView where
     html PositionsView { .. } = dashboardLayout [hsx|
         <div class="container-fluid ps-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
                 <h5>Positions</h5>
                 <div class="text-end me-1">
                     Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
                 </div>
             </div>
             {renderFlashMessages}
-            {renderPositionsContent positionsWithValue currentPage totalPages}
+            <div class="mb-3">
+                {renderSearchForm searchFilter}
+            </div>
+            {renderPositionsContent positionsWithValue currentPage totalPages searchFilter}
         </div>
     |]
 
-renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Html
-renderPositionsContent [] _ _ = [hsx|
-    <div class="alert alert-info">
-        No active positions. Browse <a href={MarketsAction} class="alert-link">markets</a> to trade.
+renderSearchForm :: Maybe Text -> Html
+renderSearchForm searchFilter = [hsx|
+    <div class="d-flex" id="search-form-container">
+        <form class="w-100 position-relative"
+              action="/DashboardPositions"
+              method="GET"
+              hx-get="/DashboardPositions"
+              hx-target="body"
+              hx-swap="innerHTML"
+              hx-push-url="true"
+              hx-trigger="input delay:300ms from:input[type='search']"
+              onsubmit="return false;">
+            <i class="bi bi-search text-muted position-absolute"
+               style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
+            </i>
+            <input type="search"
+                       class="form-control"
+                       name="search"
+                       value={fromMaybe "" searchFilter}
+                       placeholder="Search positions by market..."
+                       aria-label="Search positions"
+                       style="padding-left: 36px;">
+        </form>
     </div>
 |]
-renderPositionsContent positions currentPage totalPages = [hsx|
+
+renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Html
+renderPositionsContent [] _ _ _ = [hsx|
+    <div class="alert alert-info">
+        No positions found. Browse <a href={MarketsAction} class="alert-link">markets</a> to trade.
+    </div>
+|]
+renderPositionsContent positions currentPage totalPages searchFilter = [hsx|
     <div class="row g-3">
         {forEach positions renderPositionCard}
     </div>
     <div>
-        {renderPositionsPagination currentPage totalPages}
+        {renderPositionsPagination currentPage totalPages searchFilter}
     </div>
 |]
 
@@ -96,7 +126,7 @@ renderPositionCard ep =
     in [hsx|
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-body px-3 py-2">
+                <div class="card-body px-3 py-1">
                     <div class="d-flex justify-content-between align-items-start mb-2 overflow-x-auto scroll-no-bar">
                         <a href={marketUrl} class="text-decoration-none">
                             <span class="mb-0 h6 fw-bold">{get #title market}</span> -
@@ -205,10 +235,10 @@ renderStatusButton marketId cls txt =
            style="width: 94px;">{txt}</a>
     |]
 
-renderPositionsPagination :: Int -> Int -> Html
-renderPositionsPagination currentPage totalPages =
+renderPositionsPagination :: Int -> Int -> Maybe Text -> Html
+renderPositionsPagination currentPage totalPages searchFilter =
     renderSmartPagination currentPage totalPages "Positions pagination"
-        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum)))
+        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilter))
 
 renderClosedPnL :: Integer -> Html
 renderClosedPnL pnl

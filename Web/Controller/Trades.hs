@@ -112,7 +112,7 @@ instance Controller TradesController where
 
         when (currentQty == 0) $ do
             setErrorMessage "No position to close"
-            redirectTo (DashboardPositionsAction Nothing)
+            redirectTo (DashboardPositionsAction Nothing Nothing)
 
         asset <- fetch assetId
         market <- fetch asset.marketId
@@ -180,7 +180,7 @@ instance Controller TradesController where
         let action = if currentQty > 0 then "selling" else "buying back"
         setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show (abs currentQty) <> " shares for " <> formatMoney tradeAmountCents
 
-        redirectTo (DashboardPositionsAction Nothing)
+        redirectTo (DashboardPositionsAction Nothing Nothing)
 
     action ResolveMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
