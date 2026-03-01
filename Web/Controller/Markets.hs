@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE QuasiQuotes    #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
@@ -9,6 +10,7 @@ import Data.List (zipWith4)
 import Data.Text (strip)
 import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
+import Text.RawString.QQ (r)
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
 import Web.Types
@@ -29,10 +31,23 @@ instance Controller MarketsController where
                     Just categoryId -> queryBuilder |> filterWhere (#categoryId, categoryId)
                     Nothing         -> queryBuilder
 
+        matchingMarketIds <- case searchFilter of
+            Just searchQuery -> do
+                (rows :: [Only (Id Market)]) <- sqlQuery
+                    [r|
+                        SELECT DISTINCT m.id
+                        FROM markets m
+                        LEFT JOIN assets a ON a.market_id = m.id
+                        WHERE m.title ILIKE ? OR a.name ILIKE ?
+                    |]
+                    ("%" <> searchQuery <> "%", "%" <> searchQuery <> "%")
+                pure $ map fromOnly rows
+            Nothing -> pure []
+
         let applySearchFilter queryBuilder =
                 case searchFilter of
-                    Just searchQuery -> queryBuilder |> filterWhereILike (#title, "%" <> searchQuery <> "%")
-                    Nothing          -> queryBuilder
+                    Just _  -> queryBuilder |> filterWhereIn (#id, matchingMarketIds)
+                    Nothing -> queryBuilder
 
         let applyStatusFilter queryBuilder =
                 queryBuilder
