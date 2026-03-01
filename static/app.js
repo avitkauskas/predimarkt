@@ -67,7 +67,7 @@ $(document).on('ready turbolinks:load', function () {
         var savedCursorPos = parseInt(localStorage.getItem(searchCursorKey) || '0', 10);
         var searchInput = document.querySelector('#search-form-container input[type="search"]');
 
-        if (searchInput && savedSearchValue) {
+        if (searchInput) {
             searchInput.value = savedSearchValue;
             searchInput.focus();
             searchInput.setSelectionRange(savedCursorPos, savedCursorPos);
