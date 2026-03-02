@@ -1,4 +1,5 @@
 .DS_Store
+.fastembed_cache
 .idea
 .env
 tmp
