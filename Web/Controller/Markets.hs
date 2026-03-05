@@ -10,6 +10,7 @@ import Data.List (zipWith4)
 import Data.Text (strip)
 import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
+import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
@@ -24,7 +25,10 @@ import Web.View.Markets.Show
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do
         let categoryFilter = paramOrNothing "category"
-        let searchFilter = paramOrNothing "search"
+        let searchFilter = normalizeSearchQuery (paramOrNothing "search")
+
+        when (isJust searchFilter) do
+            trackTableRead "assets"
 
         let applyCategoryFilter queryBuilder =
                 case categoryFilter of
@@ -313,3 +317,8 @@ buildMarket now market = market
 
 fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
 fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch
+
+normalizeSearchQuery :: Maybe Text -> Maybe Text
+normalizeSearchQuery (Just query)
+    | strip query /= "" = Just (strip query)
+normalizeSearchQuery _ = Nothing

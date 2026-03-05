@@ -76,6 +76,6 @@ buildPaginatedSearchPath :: Text -> Maybe Int -> Maybe Text -> Text
 buildPaginatedSearchPath basePath page searchFilter =
     let pageParam = maybe "" (\p -> "?page=" <> inputValue p) page
         searchParam = case (page, searchFilter) of
-            (_, Just search) -> (if isNothing page then "?" else "&") <> "search=" <> inputValue search
+            (_, Just search) | search /= "" -> (if isNothing page then "?" else "&") <> "search=" <> inputValue search
             _ -> ""
     in basePath <> pageParam <> searchParam

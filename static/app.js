@@ -29,92 +29,29 @@ $(document).on('ready turbolinks:load', function () {
     }
 });
 
-// Preserve search input value and focus after HTMX swaps
-(function () {
-    // Helper to get storage key based on current page
-    function getStorageKey(baseKey) {
-        var path = window.location.pathname;
-        var pageKey;
-        if (path.includes('/DashboardPositions')) {
-            pageKey = 'positions';
-        } else if (path.includes('/DashboardTransactions')) {
-            pageKey = 'transactions';
+function syncAutoRefreshSessionFromHtmxResponse(evt) {
+    const target = evt.detail && evt.detail.target;
+    if (!target || !['positions-results', 'markets-results'].includes(target.id)) return;
+
+    const xhr = evt.detail && evt.detail.xhr;
+    const responseText = xhr && xhr.responseText;
+    if (!responseText) return;
+
+    const parsed = new DOMParser().parseFromString(responseText, 'text/html');
+    const responseMeta = parsed.querySelector('meta[property="ihp-auto-refresh-id"]');
+    const currentMeta = document.querySelector('meta[property="ihp-auto-refresh-id"]');
+
+    if (responseMeta) {
+        if (currentMeta) {
+            currentMeta.setAttribute('content', responseMeta.getAttribute('content'));
         } else {
-            pageKey = 'markets';
+            document.head.appendChild(responseMeta.cloneNode(true));
         }
-        return baseKey + '_' + pageKey;
+        document.dispatchEvent(new CustomEvent('turbolinks:load'));
     }
+}
 
-    document.addEventListener('input', function (evt) {
-        if (evt.target && evt.target.matches && evt.target.matches('input[type="search"]')) {
-            const value = evt.target.value;
-            const searchValueKey = getStorageKey('searchValue');
-            const searchCursorKey = getStorageKey('searchCursor');
-            if (value) {
-                localStorage.setItem(searchValueKey, value);
-                localStorage.setItem(searchCursorKey, evt.target.selectionStart.toString());
-            } else {
-                localStorage.removeItem(searchValueKey);
-                localStorage.removeItem(searchCursorKey);
-            }
-        }
-    });
-
-    document.addEventListener('htmx:after:swap', function () {
-        var searchValueKey = getStorageKey('searchValue');
-        var searchCursorKey = getStorageKey('searchCursor');
-        var savedSearchValue = localStorage.getItem(searchValueKey) || '';
-        var savedCursorPos = parseInt(localStorage.getItem(searchCursorKey) || '0', 10);
-        var searchInput = document.querySelector('#search-form-container input[type="search"]');
-
-        if (searchInput) {
-            searchInput.value = savedSearchValue;
-            searchInput.focus();
-            searchInput.setSelectionRange(savedCursorPos, savedCursorPos);
-        }
-    });
-
-    // Clear stored search data on form submission
-    document.addEventListener('submit', function (evt) {
-        if (evt.target && evt.target.action) {
-            var action = evt.target.action;
-            if (action.includes('/Markets')) {
-                localStorage.removeItem('searchValue_markets');
-                localStorage.removeItem('searchCursor_markets');
-            }
-            else if (action.includes('/DashboardPositions')) {
-                localStorage.removeItem('searchValue_positions');
-                localStorage.removeItem('searchCursor_positions');
-            }
-            else if (action.includes('/DashboardTransactions')) {
-                localStorage.removeItem('searchValue_transactions');
-                localStorage.removeItem('searchCursor_transactions');
-            }
-        }
-    });
-
-    // Clear stored search data on page unload
-    window.addEventListener('beforeunload', function () {
-        // Clear all keys on unload to avoid stale data
-        localStorage.removeItem('searchValue_markets');
-        localStorage.removeItem('searchCursor_markets');
-        localStorage.removeItem('searchValue_positions');
-        localStorage.removeItem('searchCursor_positions');
-        localStorage.removeItem('searchValue_transactions');
-        localStorage.removeItem('searchCursor_transactions');
-    });
-})();
-
-// Remove empty search parameter from HTMX requests to keep URLs clean
-document.addEventListener('htmx:config:request', function (evt) {
-    if (evt.detail.ctx && evt.detail.ctx.request && evt.detail.ctx.request.body) {
-        const body = evt.detail.ctx.request.body;
-        const searchValue = body.get('search');
-        if (searchValue === '' || searchValue === null) {
-            body.delete('search');
-        }
-    }
-});
+document.addEventListener('htmx:afterSwap', syncAutoRefreshSessionFromHtmxResponse);
 
 window.toggleAssetForm = function (assetId, type) {
     const buyForm = document.getElementById(`buy-form-${assetId}`);

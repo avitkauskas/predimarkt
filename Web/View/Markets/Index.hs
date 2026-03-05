@@ -2,7 +2,6 @@ module Web.View.Markets.Index where
 import Application.Domain.LMSR
 import Application.Domain.Types
 import qualified Data.Map.Strict as M
-import Network.URI (escapeURIString)
 import Web.View.Prelude
 
 data IndexView = IndexView
@@ -15,64 +14,74 @@ data IndexView = IndexView
 instance View IndexView where
     html IndexView { .. } = [hsx|
         <div id="markets-content">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
-                    <li class="nav-item">
-                        <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
-                           href={allMarketsLink}>
-                            All
-                        </a>
-                    </li>
-                    {forEach categories (renderCategoryTab categoryFilter searchFilter)}
-                </ul>
-                <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
-            </div>
             <div class="mb-3">
-                {searchForm}
+                {renderSearchForm categoryFilter searchFilter}
             </div>
             {renderFlashMessages}
-            <div class="row g-3 mb-5">
-                {forEach markets renderMarket}
-            </div>
+            {renderMarketsResults markets categories categoryFilter searchFilter}
         </div>
     |]
-        where
-            allMarketsLink :: Text
-            allMarketsLink = case searchFilter of
-                Just query -> pathTo MarketsAction <> "?search=" <> query
-                Nothing    -> pathTo MarketsAction
 
-            searchForm :: Html
-            searchForm = [hsx|
-                <div class="d-flex" id="search-form-container">
-                    <form class="w-100 position-relative"
-                          action="/Markets"
-                          method="GET"
-                          hx-get="/Markets"
-                          hx-target="body"
-                          hx-swap="innerHTML"
-                          hx-push-url="true"
-                          hx-trigger="input delay:300ms from:input[type='search']"
-                          hx-vals={categoryVals}
-                          onsubmit="return false;">
-                        <i class="bi bi-search text-muted position-absolute"
-                           style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
-                        </i>
-                        <input type="search"
-                                   class="form-control"
-                                   name="search"
-                                   value={fromMaybe "" searchFilter}
-                                   placeholder="Search markets..."
-                                   aria-label="Search markets"
-                                   style="padding-left: 36px;">
-                    </form>
-                </div>
-            |]
+renderSearchForm :: Maybe (Id Category) -> Maybe Text -> Html
+renderSearchForm categoryFilter searchFilter = [hsx|
+    <div class="d-flex" id="markets-search-form-container">
+        <form class="w-100 position-relative"
+              action={pathTo MarketsAction}
+              method="GET">
+            {forEach (maybeToList categoryFilter) renderCategoryInput}
+            <i class="bi bi-search text-muted position-absolute"
+               style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
+            </i>
+            <input type="search"
+                       class="form-control"
+                       name="search"
+                       value={fromMaybe "" searchFilter}
+                       placeholder="Search markets..."
+                       aria-label="Search markets"
+                       hx-get={pathTo MarketsAction}
+                       hx-include="closest form"
+                       hx-target="#markets-results"
+                       hx-select="#markets-results"
+                       hx-swap="outerHTML"
+                       hx-push-url="true"
+                       hx-sync="closest form:replace"
+                       hx-trigger="input changed delay:300ms, search"
+                       style="padding-left: 36px;">
+        </form>
+    </div>
+|]
 
-            categoryVals :: Text
-            categoryVals = case categoryFilter of
-                Just catId -> "{\"category\": \"" <> show catId <> "\"}"
-                Nothing    -> "{}"
+renderCategoryInput :: Id Category -> Html
+renderCategoryInput categoryId = [hsx|
+    <input type="hidden" name="category" value={inputValue categoryId} />
+|]
+
+renderMarketsResults
+    :: (?context :: ControllerContext)
+    => [Include' ["categoryId", "assets"] Market]
+    -> [Category]
+    -> Maybe (Id Category)
+    -> Maybe Text
+    -> Html
+renderMarketsResults markets categories categoryFilter searchFilter = [hsx|
+    <div id="markets-results">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
+                <li class="nav-item">
+                    <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
+                       href={buildMarketsPath Nothing searchFilter}>
+                        All
+                    </a>
+                </li>
+                {forEach categories (renderCategoryTab categoryFilter searchFilter)}
+            </ul>
+            <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
+        </div>
+        <div class="row g-3 mb-5">
+            {forEach markets renderMarket}
+        </div>
+    </div>
+|]
 
 renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> Maybe Text -> Category -> Html
 renderCategoryTab categoryFilter searchFilter category = [hsx|
@@ -85,10 +94,15 @@ renderCategoryTab categoryFilter searchFilter category = [hsx|
 |]
     where
         categoryLink :: Text
-        categoryLink = pathTo MarketsAction <> "?category=" <> show category.id <> searchParam
+        categoryLink = buildMarketsPath (Just category.id) searchFilter
+
+buildMarketsPath :: Maybe (Id Category) -> Maybe Text -> Text
+buildMarketsPath categoryFilter searchFilter =
+    let categoryParam = maybe "" (\categoryId -> "?category=" <> inputValue categoryId) categoryFilter
         searchParam = case searchFilter of
-            Just query -> "&search=" <> query
-            Nothing    -> ""
+            Just query -> (if isNothing categoryFilter then "?" else "&") <> "search=" <> inputValue query
+            Nothing -> ""
+    in pathTo MarketsAction <> categoryParam <> searchParam
 
 renderMarket :: (?context :: ControllerContext) => Include' ["categoryId", "assets"] Market -> Html
 renderMarket market = [hsx|

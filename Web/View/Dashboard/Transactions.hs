@@ -35,22 +35,22 @@ instance View TransactionsView where
             <div class="mb-3">
                 {renderSearchForm searchFilter}
             </div>
-            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilter}
+            {renderTransactionsResults transactionsWithDetails currentPage totalPages searchFilter}
         </div>
     |]
 
 renderSearchForm :: Maybe Text -> Html
 renderSearchForm searchFilter = [hsx|
-    <div class="d-flex" id="search-form-container">
+    <div class="d-flex" id="transactions-search-form-container">
         <form class="w-100 position-relative"
               action={DashboardTransactionsAction Nothing Nothing}
               method="GET"
               hx-get={DashboardTransactionsAction Nothing Nothing}
-              hx-target="body"
-              hx-swap="innerHTML"
+              hx-target="#transactions-results"
+              hx-select="#transactions-results"
+              hx-swap="outerHTML"
               hx-push-url="true"
-              hx-trigger="input delay:300ms from:input[type='search']"
-              onsubmit="return false;">
+              hx-trigger="input delay:300ms from:input[name='search']">
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
@@ -62,6 +62,18 @@ renderSearchForm searchFilter = [hsx|
                        aria-label="Search transactions"
                        style="padding-left: 36px;">
         </form>
+    </div>
+|]
+
+renderTransactionsResults :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Html
+renderTransactionsResults txns currentPage totalPages searchFilter = [hsx|
+    <div id="transactions-results"
+         hx-boost="true"
+         hx-target="#transactions-results"
+         hx-select="#transactions-results"
+         hx-swap="outerHTML"
+         hx-push-url="true">
+        {renderTransactionsContent txns currentPage totalPages searchFilter}
     </div>
 |]
 

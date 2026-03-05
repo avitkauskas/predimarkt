@@ -5,6 +5,8 @@ import Application.Domain.LMSR as LMSR
 import Application.Domain.Position
 import Application.Domain.Types
 import qualified Data.Map as M
+import Data.Text (strip)
+import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
@@ -18,8 +20,13 @@ instance Controller DashboardController where
 
     action DashboardPositionsAction { page, searchFilter } = autoRefresh do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
-        let searchQuery = searchFilter <|> paramOrNothing @Text "search"
+        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
         let itemsPerPage = 5
+
+        trackTableRead "positions"
+        when (isJust searchQuery) $ do
+            trackTableRead "markets"
+            trackTableRead "assets"
 
         -- Get total count for pagination (with search filter if provided)
         totalCount <- case searchQuery of
@@ -226,7 +233,7 @@ instance Controller DashboardController where
 
     action DashboardTransactionsAction { page, searchFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
-        let searchQuery = searchFilter <|> paramOrNothing @Text "search"
+        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
         let itemsPerPage = 5
 
         -- Get total count for pagination (with search filter if provided)
@@ -301,3 +308,8 @@ instance Controller DashboardController where
             , wallet = wallet
             , searchFilter = searchQuery
             }
+
+normalizeSearchQuery :: Maybe Text -> Maybe Text
+normalizeSearchQuery (Just query)
+    | strip query /= "" = Just (strip query)
+normalizeSearchQuery _ = Nothing
