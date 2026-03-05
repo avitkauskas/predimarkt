@@ -2,6 +2,7 @@ module Web.View.Markets.Index where
 import Application.Domain.LMSR
 import Application.Domain.Types
 import qualified Data.Map.Strict as M
+import Data.Text (intercalate)
 import Web.View.Prelude
 
 data IndexView = IndexView
@@ -9,6 +10,9 @@ data IndexView = IndexView
     , categories     :: [Category]
     , categoryFilter :: Maybe (Id Category)
     , searchFilter   :: Maybe Text
+    , currentPage    :: Int
+    , totalMarkets   :: Int
+    , hasMoreMarkets :: Bool
     }
 
 instance View IndexView where
@@ -18,7 +22,7 @@ instance View IndexView where
                 {renderSearchForm categoryFilter searchFilter}
             </div>
             {renderFlashMessages}
-            {renderMarketsResults markets categories categoryFilter searchFilter}
+            {renderMarketsResults markets categories categoryFilter searchFilter currentPage totalMarkets hasMoreMarkets}
         </div>
     |]
 
@@ -56,14 +60,17 @@ renderMarketsResults
     -> [Category]
     -> Maybe (Id Category)
     -> Maybe Text
+    -> Int
+    -> Int
+    -> Bool
     -> Html
-renderMarketsResults markets categories categoryFilter searchFilter = [hsx|
+renderMarketsResults markets categories categoryFilter searchFilter currentPage totalMarkets hasMoreMarkets = [hsx|
     <div id="markets-results">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
                 <li class="nav-item">
                     <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
-                       href={buildMarketsPath Nothing searchFilter}>
+                       href={buildMarketsPath Nothing searchFilter Nothing}>
                         All
                     </a>
                 </li>
@@ -71,11 +78,41 @@ renderMarketsResults markets categories categoryFilter searchFilter = [hsx|
             </ul>
             <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
         </div>
-        <div class="row g-3 mb-5">
-            {forEach markets renderMarket}
-        </div>
+        {renderMarketsList markets}
+        {renderLoadMoreButton categoryFilter searchFilter currentPage (length markets) totalMarkets hasMoreMarkets}
     </div>
 |]
+
+renderMarketsList :: (?context :: ControllerContext) => [Include' ["categoryId", "assets"] Market] -> Html
+renderMarketsList [] = [hsx|
+    <div class="alert alert-info mb-5">
+        No markets match the current filters.
+    </div>
+|]
+renderMarketsList markets = [hsx|
+    <div class="row g-3 mb-4">
+        {forEach markets renderMarket}
+    </div>
+|]
+
+renderLoadMoreButton
+    :: (?context :: ControllerContext)
+    => Maybe (Id Category)
+    -> Maybe Text
+    -> Int
+    -> Int
+    -> Int
+    -> Bool
+    -> Html
+renderLoadMoreButton categoryFilter searchFilter currentPage shownMarkets totalMarkets hasMoreMarkets =
+    when hasMoreMarkets [hsx|
+        <div class="d-flex justify-content-center mb-5">
+            <a href={buildMarketsPath categoryFilter searchFilter (Just (currentPage + 1))}
+               class="btn btn-sm btn-outline-secondary text-nowrap">
+                Showing {shownMarkets} of {totalMarkets} markets · Load 12 more
+            </a>
+        </div>
+    |]
 
 renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> Maybe Text -> Category -> Html
 renderCategoryTab categoryFilter searchFilter category = [hsx|
@@ -88,15 +125,19 @@ renderCategoryTab categoryFilter searchFilter category = [hsx|
 |]
     where
         categoryLink :: Text
-        categoryLink = buildMarketsPath (Just category.id) searchFilter
+        categoryLink = buildMarketsPath (Just category.id) searchFilter Nothing
 
-buildMarketsPath :: Maybe (Id Category) -> Maybe Text -> Text
-buildMarketsPath categoryFilter searchFilter =
-    let categoryParam = maybe "" (\categoryId -> "?category=" <> inputValue categoryId) categoryFilter
-        searchParam = case searchFilter of
-            Just query -> (if isNothing categoryFilter then "?" else "&") <> "search=" <> inputValue query
-            Nothing -> ""
-    in pathTo MarketsAction <> categoryParam <> searchParam
+buildMarketsPath :: Maybe (Id Category) -> Maybe Text -> Maybe Int -> Text
+buildMarketsPath categoryFilter searchFilter page =
+    let queryParams = catMaybes
+            [ fmap (\categoryId -> "category=" <> inputValue categoryId) categoryFilter
+            , fmap (\query -> "search=" <> inputValue query) searchFilter
+            , fmap (\pageNumber -> "page=" <> inputValue pageNumber) page
+            ]
+        queryString = case queryParams of
+            [] -> ""
+            _  -> "?" <> intercalate "&" queryParams
+    in pathTo MarketsAction <> queryString
 
 renderMarket :: (?context :: ControllerContext) => Include' ["categoryId", "assets"] Market -> Html
 renderMarket market = [hsx|

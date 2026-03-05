@@ -26,6 +26,9 @@ instance Controller MarketsController where
     action MarketsAction = autoRefresh do
         let categoryFilter = paramOrNothing "category"
         let searchFilter = normalizeSearchQuery (paramOrNothing "search")
+        let currentPage = max 1 $ fromMaybe 1 (paramOrNothing @Int "page")
+        let marketsPerPage = 12
+        let visibleMarkets = currentPage * marketsPerPage
 
         when (isJust searchFilter) do
             trackTableRead "assets"
@@ -45,12 +48,12 @@ instance Controller MarketsController where
                         WHERE m.title ILIKE ? OR a.name ILIKE ?
                     |]
                     ("%" <> searchQuery <> "%", "%" <> searchQuery <> "%")
-                pure $ map fromOnly rows
-            Nothing -> pure []
+                pure $ Just (map fromOnly rows)
+            Nothing -> pure Nothing
 
         let applySearchFilter queryBuilder =
-                case searchFilter of
-                    Just _  -> queryBuilder |> filterWhereIn (#id, matchingMarketIds)
+                case matchingMarketIds of
+                    Just marketIds -> queryBuilder |> filterWhereIn (#id, marketIds)
                     Nothing -> queryBuilder
 
         let applyStatusFilter queryBuilder =
@@ -63,19 +66,28 @@ instance Controller MarketsController where
                         (filterWhere (#status, MarketStatusOpen))
                         (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
 
-        markets' <-
-            query @Market
-                |> applyRecentActivityFilter
-                |> applyCategoryFilter
-                |> applySearchFilter
-                |> applyStatusFilter
-                |> orderByDesc #openedAt
-                |> fetch
-                >>= collectionFetchRelated #categoryId
-                >>= collectionFetchRelated #assets
+        (totalMarkets, markets') <- case matchingMarketIds of
+            Just [] -> pure (0, [])
+            _ -> do
+                let filteredMarketsQuery =
+                        query @Market
+                            |> applyRecentActivityFilter
+                            |> applyCategoryFilter
+                            |> applySearchFilter
+                            |> applyStatusFilter
+
+                totalMarkets <- filteredMarketsQuery |> fetchCount
+                markets' <- filteredMarketsQuery
+                    |> orderByDesc #openedAt
+                    |> limit visibleMarkets
+                    |> fetch
+                    >>= collectionFetchRelated #categoryId
+                    >>= collectionFetchRelated #assets
+                pure (totalMarkets, markets')
 
         categories <- fetchCategories
         let markets = map (\m -> m |> set #assets (sortAssetsForDisplay (get #assets m))) markets'
+        let hasMoreMarkets = length markets < totalMarkets
         render IndexView { .. }
 
     action NewMarketAction = do
