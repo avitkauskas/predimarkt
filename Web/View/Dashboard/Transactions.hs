@@ -35,7 +35,7 @@ instance View TransactionsView where
             <div class="mb-3">
                 {renderSearchForm searchFilter}
             </div>
-            {renderTransactionsResults transactionsWithDetails currentPage totalPages searchFilter}
+            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilter}
         </div>
     |]
 
@@ -45,16 +45,12 @@ renderSearchForm searchFilter = [hsx|
         <form class="w-100 position-relative"
               action={DashboardTransactionsAction Nothing Nothing}
               method="GET"
-              hx-get={DashboardTransactionsAction Nothing Nothing}
-              hx-target="#transactions-results"
-              hx-select="#transactions-results"
-              hx-swap="outerHTML"
-              hx-push-url="true"
-              hx-trigger="input delay:300ms from:input[name='search']">
+              data-auto-submit-delay="300">
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
             <input type="search"
+                       id="transactions-search-input"
                        class="form-control"
                        name="search"
                        value={fromMaybe "" searchFilter}
@@ -62,18 +58,6 @@ renderSearchForm searchFilter = [hsx|
                        aria-label="Search transactions"
                        style="padding-left: 36px;">
         </form>
-    </div>
-|]
-
-renderTransactionsResults :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Html
-renderTransactionsResults txns currentPage totalPages searchFilter = [hsx|
-    <div id="transactions-results"
-         hx-boost="true"
-         hx-target="#transactions-results"
-         hx-select="#transactions-results"
-         hx-swap="outerHTML"
-         hx-push-url="true">
-        {renderTransactionsContent txns currentPage totalPages searchFilter}
     </div>
 |]
 

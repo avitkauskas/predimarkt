@@ -2,6 +2,8 @@ $(document).on('ready turbolinks:load', function () {
     // This is called on the first page load *and* also when the page is changed by turbolinks
     htmx.process(document.body);
 
+    initAutoSubmitSearchForms();
+
     // Localize any times on the page
     localizeTimes()
 
@@ -29,29 +31,39 @@ $(document).on('ready turbolinks:load', function () {
     }
 });
 
-function syncAutoRefreshSessionFromHtmxResponse(evt) {
-    const target = evt.detail && evt.detail.target;
-    if (!target || !['positions-results', 'markets-results'].includes(target.id)) return;
+function initAutoSubmitSearchForms() {
+    const forms = document.querySelectorAll('form[data-auto-submit-delay]');
 
-    const xhr = evt.detail && evt.detail.xhr;
-    const responseText = xhr && xhr.responseText;
-    if (!responseText) return;
+    forms.forEach(form => {
+        if (form.autoSubmitInitialized) return;
+        form.autoSubmitInitialized = true;
 
-    const parsed = new DOMParser().parseFromString(responseText, 'text/html');
-    const responseMeta = parsed.querySelector('meta[property="ihp-auto-refresh-id"]');
-    const currentMeta = document.querySelector('meta[property="ihp-auto-refresh-id"]');
+        const delay = Number(form.dataset.autoSubmitDelay || '300');
+        const searchInput = form.querySelector('input[type="search"]');
+        if (!searchInput) return;
 
-    if (responseMeta) {
-        if (currentMeta) {
-            currentMeta.setAttribute('content', responseMeta.getAttribute('content'));
-        } else {
-            document.head.appendChild(responseMeta.cloneNode(true));
-        }
-        document.dispatchEvent(new CustomEvent('turbolinks:load'));
-    }
+        const scheduleSubmit = () => {
+            if (form.autoSubmitTimeout) {
+                clearTimeout(form.autoSubmitTimeout);
+            }
+
+            form.autoSubmitTimeout = setTimeout(() => {
+                window.submitForm(form);
+            }, delay);
+        };
+
+        const clearScheduledSubmit = () => {
+            if (form.autoSubmitTimeout) {
+                clearTimeout(form.autoSubmitTimeout);
+                form.autoSubmitTimeout = null;
+            }
+        };
+
+        searchInput.addEventListener('input', scheduleSubmit);
+        searchInput.addEventListener('search', scheduleSubmit);
+        form.addEventListener('submit', clearScheduledSubmit);
+    });
 }
-
-document.addEventListener('htmx:afterSwap', syncAutoRefreshSessionFromHtmxResponse);
 
 window.toggleAssetForm = function (assetId, type) {
     const buyForm = document.getElementById(`buy-form-${assetId}`);

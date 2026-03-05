@@ -27,7 +27,7 @@ instance View PositionsView where
             <div class="mb-3">
                 {renderSearchForm searchFilter}
             </div>
-            {renderPositionsResults positionsWithValue currentPage totalPages searchFilter}
+            {renderPositionsContent positionsWithValue currentPage totalPages searchFilter}
         </div>
     |]
 
@@ -36,38 +36,20 @@ renderSearchForm searchFilter = [hsx|
     <div class="d-flex" id="positions-search-form-container">
         <form class="w-100 position-relative"
               action={DashboardPositionsAction Nothing Nothing}
-              method="GET">
+              method="GET"
+              data-auto-submit-delay="300">
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
             <input type="search"
+                       id="positions-search-input"
                        class="form-control"
                        name="search"
                        value={fromMaybe "" searchFilter}
                        placeholder="Search positions by market or asset..."
                        aria-label="Search positions"
-                       hx-get={DashboardPositionsAction Nothing Nothing}
-                       hx-include="closest form"
-                       hx-target="#positions-results"
-                       hx-select="#positions-results"
-                       hx-swap="outerHTML"
-                       hx-push-url="true"
-                       hx-sync="closest form:replace"
-                       hx-trigger="input changed delay:300ms, search"
                        style="padding-left: 36px;">
         </form>
-    </div>
-|]
-
-renderPositionsResults :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Html
-renderPositionsResults positions currentPage totalPages searchFilter = [hsx|
-    <div id="positions-results"
-         hx-boost="true"
-         hx-target="#positions-results"
-         hx-select="#positions-results"
-         hx-swap="outerHTML"
-         hx-push-url="true">
-        {renderPositionsContent positions currentPage totalPages searchFilter}
     </div>
 |]
 

@@ -27,25 +27,19 @@ renderSearchForm categoryFilter searchFilter = [hsx|
     <div class="d-flex" id="markets-search-form-container">
         <form class="w-100 position-relative"
               action={pathTo MarketsAction}
-              method="GET">
+              method="GET"
+              data-auto-submit-delay="300">
             {forEach (maybeToList categoryFilter) renderCategoryInput}
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
             <input type="search"
+                       id="markets-search-input"
                        class="form-control"
                        name="search"
                        value={fromMaybe "" searchFilter}
                        placeholder="Search markets..."
                        aria-label="Search markets"
-                       hx-get={pathTo MarketsAction}
-                       hx-include="closest form"
-                       hx-target="#markets-results"
-                       hx-select="#markets-results"
-                       hx-swap="outerHTML"
-                       hx-push-url="true"
-                       hx-sync="closest form:replace"
-                       hx-trigger="input changed delay:300ms, search"
                        style="padding-left: 36px;">
         </form>
     </div>
