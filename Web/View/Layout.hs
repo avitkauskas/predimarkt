@@ -36,7 +36,11 @@ navbar = [hsx|
         <nav class="navbar navbar-expand-md bg-body">
             <div class="container-fluid">
                 <a class="navbar-brand fw-bold gradient-text fs-3 ms-2"
-                   href="/">Predimarkt</a>
+                   href="/">Predimarkt
+                </a>
+                <span class="navbar-text d-none d-lg-block fs-4 gradient-subtitle">
+                    =| educational play money prediction markets
+                </span>
                 <div class="d-flex d-md-none ms-auto align-items-center gap-1">
                     <button
                         aria-controls="navbar-collapse"

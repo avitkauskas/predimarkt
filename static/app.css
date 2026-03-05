@@ -5,6 +5,13 @@
     background-clip: text;
 }
 
+.gradient-subtitle {
+    background: linear-gradient(to right, #C22B66, #0ea5e9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 /* Custom hamburger menu button - Bootstrap doesn't have an unstyled toggle */
 .navbar-toggler-custom {
     background: none;

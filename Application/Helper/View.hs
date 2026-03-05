@@ -74,12 +74,13 @@ formatMoney cents =
         (intPart, decPart) = break (== '.') formatted
         intWithSeps = reverse . Data.List.intercalate "'" . chunksOf3 . reverse $ intPart
         sign = if cents < 0 then "-" else ""
-    in sign <> "€" <> pack (intWithSeps ++ decPart)
+        -- The ⲙﾱﾓ𐌼𐓀ƤṖⱣႴᵩ are possible placeholders for the currency symbol
+    in sign <> pack (intWithSeps ++ decPart)
   where
     chunksOf3 [] = []
     chunksOf3 xs = take 3 xs : chunksOf3 (drop 3 xs)
 
--- | Format cents as signed money (e.g., "+€10.23" or "-€5.00")
+-- | Format cents as signed money (e.g., "+10.23" or "-5.00")
 formatMoneySigned :: Integral a => a -> Text
 formatMoneySigned cents
     | cents > 0 = "+" <> formatMoney cents

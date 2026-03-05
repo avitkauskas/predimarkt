@@ -202,7 +202,7 @@ window.updateBuyInfo = function (input) {
         <div class="trade-info-grid">
             <div class="info-item">
                 <span class="info-label">Invest</span>
-                <span class="info-value">€${money.toFixed(2)}</span>
+                <span class="info-value">${money.toFixed(2)}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Return</span>
@@ -210,7 +210,7 @@ window.updateBuyInfo = function (input) {
             </div>
             <div class="info-item">
                 <span class="info-label">Gain</span>
-                <span class="info-value text-success">€${net.toFixed(2)}</span>
+                <span class="info-value text-success">${net.toFixed(2)}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Probability</span>
@@ -246,7 +246,7 @@ window.updateSellInfo = function (input) {
         <div class="trade-info-grid">
             <div class="info-item">
                 <span class="info-label">Receive</span>
-                <span class="info-value">€${money.toFixed(2)}</span>
+                <span class="info-value">${money.toFixed(2)}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Return</span>
@@ -254,7 +254,7 @@ window.updateSellInfo = function (input) {
             </div>
             <div class="info-item">
                 <span class="info-label">Risk</span>
-                <span class="info-value text-danger">€${net.toFixed(2)}</span>
+                <span class="info-value text-danger">${net.toFixed(2)}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Probability</span>

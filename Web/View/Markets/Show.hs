@@ -198,7 +198,7 @@ instance View ShowView where
                     priceDisplay = [hsx|
                         <div class="d-flex justify-content-end align-items-center gap-2 fw-medium" style="width: 100px;">
                             <div class="text-secondary me-3">{formatPriceRounded assetPriceVal}</div>
-                            <div class="me-2">€{printf "%.4f" assetPriceVal :: String}</div>
+                            <div class="me-2">{printf "%.4f" assetPriceVal :: String}</div>
                         </div>
                     |]
 
