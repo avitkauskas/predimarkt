@@ -28,11 +28,11 @@ instance View IndexView where
                     <table class="table table-borderless table-hover">
                         <thead>
                             <tr class="align-middle">
-                                <th scope="col" class="text-center" style="width: 60px; font-size: 0.7rem; color: #6c757d;">Rank</th>
-                                <th scope="col" style="font-size: 0.7rem; color: #6c757d;">User</th>
-                                <th scope="col" class="text-end" style="font-size: 0.7rem; color: #6c757d;">Cash</th>
-                                <th scope="col" class="text-end" style="font-size: 0.7rem; color: #6c757d;">Positions</th>
-                                <th scope="col" class="text-end" style="font-size: 0.7rem; color: #6c757d;">Total Value</th>
+                                <th scope="col" class="py-1 info-label text-center">Rank</th>
+                                <th scope="col" class="py-1 info-label">User</th>
+                                <th scope="col" class="py-1 info-label text-end">Cash</th>
+                                <th scope="col" class="py-1 info-label text-end">Positions</th>
+                                <th scope="col" class="py-1 info-label text-end text-nowrap">Total Value</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,21 +65,24 @@ renderUserRow summary currentUserNickname =
         userBg :: Text = if (isCurrentUser && rank `notElem` [1..3]) then "bg-info-subtle" else ""
     in [hsx|
             <tr class="align-middle">
-                <td class={"py-0 text-center " <> userBg}
+                <td class={"py-1 text-center fw-medium " <> userBg}
                     style={cellBg <> " width: 60px;"}>
                     {get #rank summary}
                 </td>
-                <td class={"py-0 " <> userBg} style={cellBg}>{get #nickname summary}</td>
-                <td class={"py-0 text-end font-monospace small " <> userBg}
-                    style={"font-size: 0.85rem;" <> cellBg}>
+                <td class={"py-1 fw-medium " <> userBg}
+                    style={cellBg}>
+                    {get #nickname summary}
+                </td>
+                <td class={"py-1 text-end fw-medium " <> userBg}
+                    style={cellBg}>
                     {formatMoney (get #cash summary)}
                 </td>
-                <td class={"py-0 text-end font-monospace small " <> userBg}
-                    style={"font-size: 0.85rem;" <> cellBg}>
+                <td class={"py-1 text-end fw-medium " <> userBg}
+                    style={cellBg}>
                     {formatMoney (get #positionsValue summary)}
                 </td>
-                <td class={"py-0 text-end font-monospace small " <> userBg}
-                    style={"font-size: 0.85rem;" <> cellBg}>
+                <td class={"py-1 text-end fw-medium " <> userBg}
+                    style={cellBg}>
                     {formatMoney (get #totalValue summary)}
                 </td>
             </tr>

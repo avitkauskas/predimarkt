@@ -2,7 +2,6 @@ module Web.View.Markets.Show where
 
 import Application.Domain.LMSR
 import Application.Domain.Types
-import Application.Helper.View (formatPricePercent)
 import qualified CMark as CMark
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
@@ -59,8 +58,8 @@ instance View ShowView where
 
                             {toggleAssetsButton}
 
-                            <div class="mt-4 pt-4">
-                                <h6 class="info-label mb-3" style="cursor: pointer;"
+                            <div class="mt-4">
+                                <h6 class="info-label" style="cursor: pointer;"
                                     onclick="document.getElementById('price-chart').classList.toggle('d-none'); initPriceChart();">
                                     Price Chart
                                 </h6>
@@ -77,6 +76,7 @@ instance View ShowView where
                                 </div>
                             </div>
                             {chartScript}
+                            {assetLayoutScript}
                             {toggleAssetsScript}
                         </div>
                     </div>
@@ -128,6 +128,9 @@ instance View ShowView where
             hasLeadingAssets :: Bool
             hasLeadingAssets = length assets > 6 && length (filter (\a -> a.id `S.member` leadingAssetIds) assets) /= length assets
 
+            showAssetSymbols :: Bool
+            showAssetSymbols = any (\asset -> asset.symbol /= asset.name) assets
+
             toggleAssetsButton :: Html
             toggleAssetsButton = if hasLeadingAssets
                 then [hsx|
@@ -138,6 +141,63 @@ instance View ShowView where
                     </div>
                 |]
                 else [hsx||]
+
+            assetLayoutScript :: Html
+            assetLayoutScript = [hsx|
+                <script>
+                    function parsePx(value) {
+                        return Number.parseFloat(value) || 0;
+                    }
+
+                    function outerScrollWidth(element) {
+                        var style = window.getComputedStyle(element);
+                        return element.scrollWidth
+                            + parsePx(style.marginLeft)
+                            + parsePx(style.marginRight);
+                    }
+
+                    function updateMarketAssetRows() {
+                        var rows = Array.from(document.querySelectorAll('.market-asset-row'));
+                        var shouldWrap = false;
+
+                        rows.forEach(function(row) {
+                            row.classList.remove('is-wrapped');
+                            if (row.offsetParent === null) return;
+
+                            var main = row.querySelector('.market-asset-main');
+                            var side = row.querySelector('.market-asset-side');
+                            if (!main || !side) return;
+
+                            var style = window.getComputedStyle(row);
+                            var gap = parsePx(style.columnGap || style.gap);
+                            var requiredWidth = outerScrollWidth(main) + outerScrollWidth(side) + gap;
+
+                            if (requiredWidth > row.clientWidth + 1) {
+                                shouldWrap = true;
+                            }
+                        });
+
+                        rows.forEach(function(row) {
+                            if (row.offsetParent === null) {
+                                row.classList.remove('is-wrapped');
+                                return;
+                            }
+                            row.classList.toggle('is-wrapped', shouldWrap);
+                        });
+                    }
+
+                    document.addEventListener('turbolinks:load', function() {
+                        window.updateMarketAssetRows = updateMarketAssetRows;
+                        if (!window.marketAssetRowsResizeBound) {
+                            window.addEventListener('resize', function() {
+                                if (window.updateMarketAssetRows) window.updateMarketAssetRows();
+                            });
+                            window.marketAssetRowsResizeBound = true;
+                        }
+                        requestAnimationFrame(updateMarketAssetRows);
+                    });
+                </script>
+            |]
 
             toggleAssetsScript :: Html
             toggleAssetsScript = [hsx|
@@ -151,9 +211,11 @@ instance View ShowView where
                             var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
                             cards.forEach(function(card) { card.classList.toggle('d-none', hidden); });
                             btn.textContent = hidden ? 'Show All Assets' : 'Show Only Leading Assets';
+                            if (window.updateMarketAssetRows) requestAnimationFrame(window.updateMarketAssetRows);
                         });
                         var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
                         cards.forEach(function(card) { card.classList.add('d-none'); });
+                        if (window.updateMarketAssetRows) requestAnimationFrame(window.updateMarketAssetRows);
                     });
                 </script>
             |]
@@ -167,13 +229,16 @@ instance View ShowView where
                                      ("market-status-resolved-asset", isResolvedWinner)]}
                      id={"asset-" <> show asset.id}
                      data-leading={isLeading asset}>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="asset-info ms-3">
-                            <div class="fw-semibold fs-5">
-                                {asset.name}
+                    <div class="market-asset-row">
+                        <div class="market-asset-main">
+                            <div class="asset-info flex-shrink-0">
+                                <div class="fw-semibold fs-5">
+                                    {asset.name}
+                                </div>
                             </div>
+                            {symbolDisplayWrapped}
                         </div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="market-asset-side">
                             {priceDisplay}
                             {when (isTradable) buySellButtons}
                         </div>
@@ -195,10 +260,29 @@ instance View ShowView where
                         MarketStatusRefunded -> 0.0
                         _ -> assetPrice asset.id (snd lmsrState) (fst lmsrState)
 
+                    symbolDisplayInline :: Html
+                    symbolDisplayInline = when showAssetSymbols [hsx|
+                        <div class="market-asset-symbol-inline text-secondary text-center text-nowrap" style="width: 56px;">
+                            {asset.symbol}
+                        </div>
+                    |]
+
+                    symbolDisplayWrapped :: Html
+                    symbolDisplayWrapped = when showAssetSymbols [hsx|
+                        <div class="market-asset-symbol-wrapped text-secondary text-nowrap">
+                            {asset.symbol}
+                        </div>
+                    |]
+
                     priceDisplay = [hsx|
-                        <div class="d-flex justify-content-end align-items-center gap-2 fw-medium" style="width: 100px;">
-                            <div class="text-secondary me-3">{formatPriceRounded assetPriceVal}</div>
-                            <div class="me-2">{printf "%.4f" assetPriceVal :: String}</div>
+                        <div class="d-flex align-items-center justify-content-end gap-2 fw-medium flex-shrink-0 me-3">
+                            {symbolDisplayInline}
+                            <div class="text-secondary text-center text-nowrap" style="width: 44px;">
+                                {formatPriceRounded assetPriceVal}
+                            </div>
+                            <div class="text-end text-nowrap" style="width: 56px;">
+                                {printf "%.4f" assetPriceVal :: String}
+                            </div>
                         </div>
                     |]
 
