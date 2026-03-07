@@ -65,37 +65,6 @@ function initAutoSubmitSearchForms() {
     });
 }
 
-window.toggleAssetForm = function (assetId, type) {
-    const buyForm = document.getElementById(`buy-form-${assetId}`);
-    const sellForm = document.getElementById(`sell-form-${assetId}`);
-
-    if (type === 'buy') {
-        sellForm.classList.add('d-none');
-        const wasHidden = buyForm.classList.contains('d-none');
-        buyForm.classList.toggle('d-none');
-
-        // Trigger info update if form was just opened and has a value
-        if (wasHidden && !buyForm.classList.contains('d-none')) {
-            const input = buyForm.querySelector('input[type="number"]');
-            if (input && input.value) {
-                updateBuyInfo(input);
-            }
-        }
-    } else {
-        buyForm.classList.add('d-none');
-        const wasHidden = sellForm.classList.contains('d-none');
-        sellForm.classList.toggle('d-none');
-
-        // Trigger info update if form was just opened and has a value
-        if (wasHidden && !sellForm.classList.contains('d-none')) {
-            const input = sellForm.querySelector('input[type="number"]');
-            if (input && input.value) {
-                updateSellInfo(input);
-            }
-        }
-    }
-}
-
 window.lmsrCore = function (a, z, sign) {
     const la = Math.log(a)
     const lb = Math.log(1 - a)
@@ -128,7 +97,20 @@ window.lmsrPreview = function ({ x, a, beta, sign }) {
     }
 }
 
-window.updateBuyInfo = function (input) {
+function formatTradeNumber(value, digits) {
+    return Number.isFinite(value) ? value.toFixed(digits) : '--'
+}
+
+function formatTradePercent(value, digits) {
+    return Number.isFinite(value) ? `${value.toFixed(digits)}%` : '--'
+}
+
+function setTradeInfoValue(container, fieldName, value) {
+    const field = container.querySelector(`[data-trade-field="${fieldName}"]`)
+    if (field) field.textContent = value
+}
+
+function updateTradeInfo(input, { sign, returnPercent }) {
     const x = Number(input.value || 0)
     const containerId = input.dataset.infoId
     const container = document.getElementById(containerId)
@@ -138,82 +120,34 @@ window.updateBuyInfo = function (input) {
         container.classList.add('d-none')
         return
     }
+
     container.classList.remove('d-none')
 
     const { money, pNew, net } = lmsrPreview({
         x,
         a: Number(input.dataset.a),
         beta: Number(input.dataset.beta),
-        sign: -1
+        sign
     })
 
-    container.innerHTML = `
-        <div class="trade-info-grid">
-            <div class="info-item">
-                <span class="info-label">Invest</span>
-                <span class="info-value">${money.toFixed(2)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Return</span>
-                <span class="info-value">${(net / money * 100).toFixed(1)}%</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Gain</span>
-                <span class="info-value text-success">${net.toFixed(2)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Probability</span>
-                <span class="info-value">
-                    <span class="info-transition">↑</span>
-                    ${(pNew * 100).toFixed(2)}%
-                </span>
-            </div>
-        </div>
-    `
+    setTradeInfoValue(container, 'money', formatTradeNumber(money, 2))
+    setTradeInfoValue(container, 'return', formatTradePercent(returnPercent({ money, net }), 1))
+    setTradeInfoValue(container, 'net', formatTradeNumber(net, 2))
+    setTradeInfoValue(container, 'probability', formatTradePercent(pNew * 100, 2))
+}
+
+window.updateBuyInfo = function (input) {
+    updateTradeInfo(input, {
+        sign: -1,
+        returnPercent: ({ money, net }) => net / money * 100
+    })
 }
 
 window.updateSellInfo = function (input) {
-    const x = Number(input.value || 0)
-    const containerId = input.dataset.infoId
-    const container = document.getElementById(containerId)
-    if (!container) return
-
-    if (x <= 0) {
-        container.classList.add('d-none')
-        return
-    }
-    container.classList.remove('d-none')
-
-    const { money, pNew, net } = lmsrPreview({
-        x,
-        a: Number(input.dataset.a),
-        beta: Number(input.dataset.beta),
-        sign: +1
+    updateTradeInfo(input, {
+        sign: +1,
+        returnPercent: ({ money, net }) => money / net * 100
     })
-
-    container.innerHTML = `
-        <div class="trade-info-grid">
-            <div class="info-item">
-                <span class="info-label">Receive</span>
-                <span class="info-value">${money.toFixed(2)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Return</span>
-                <span class="info-value">${(money / net * 100).toFixed(1)}%</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Risk</span>
-                <span class="info-value text-danger">${net.toFixed(2)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Probability</span>
-                <span class="info-value">
-                    <span class="info-transition">↓</span>
-                    ${(pNew * 100).toFixed(2)}%
-                </span>
-            </div>
-        </div>
-    `
 }
 
 function formatLocalISO(date) {

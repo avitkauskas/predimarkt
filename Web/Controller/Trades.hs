@@ -7,6 +7,7 @@ import Application.Domain.Types
 import Application.Helper.View (formatMoney)
 import qualified Data.Aeson as Aeson
 import qualified Data.Map.Strict as M
+import qualified Data.Text as Text
 import Web.Controller.Prelude
 
 instance Controller TradesController where
@@ -16,6 +17,10 @@ instance Controller TradesController where
 
         let paramQty = fromIntegral (param @Int "quantity") :: Integer
         let tradeType = param @Text "type"
+        let chartVisible = fromMaybe True (readQueryFlag "showChart")
+        let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
+        let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
+        let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
 
         let isBuy = tradeType == "buy"
 
@@ -100,7 +105,7 @@ instance Controller TradesController where
         let action = if isBuy then "bought" else "sold"
         setSuccessMessage $ "Successfully " <> action <> " " <> show paramQty <> " shares for " <> formatMoney tradeAmountCents
 
-        redirectTo (ShowMarketAction asset.marketId Nothing Nothing)
+        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) backToPath)
 
     action ClosePositionAction { assetId } = do
         dbPosition <- query @Position
@@ -268,7 +273,7 @@ instance Controller TradesController where
                     |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing
+        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing
 
     action RefundMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -329,10 +334,24 @@ instance Controller TradesController where
                     |> updateRecord
 
         setSuccessMessage "Market refunded successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing
+        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing
 
 buildMarketState :: M.Map (Id Asset) Quantity -> [(Text, Int)]
 buildMarketState qtyMap =
     [ (cs (show assetId), fromIntegral qty)
     | (assetId, Quantity qty) <- M.toList qtyMap
     ]
+
+readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
+readQueryFlag name =
+    case Text.toLower <$> paramOrNothing @Text (cs name) of
+        Just "true"  -> Just True
+        Just "1"     -> Just True
+        Just "false" -> Just False
+        Just "0"     -> Just False
+        _            -> Nothing
+
+sanitizeBackTo :: Maybe Text -> Maybe Text
+sanitizeBackTo = \case
+    Just path | "/Markets" `Text.isPrefixOf` path -> Just path
+    _ -> Nothing

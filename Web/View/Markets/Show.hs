@@ -13,12 +13,16 @@ import Web.Types (AssetChartData (..), PricePoint (..))
 import Web.View.Prelude
 
 data ShowView = ShowView
-    { market         :: Market
-    , category       :: Category
-    , assets         :: [Asset]
-    , tradingAssetId :: Maybe (Id Asset)
-    , tradingAction  :: Maybe Text
-    , chartData      :: [AssetChartData]
+    { market          :: Market
+    , category        :: Category
+    , assets          :: [Asset]
+    , tradingAssetId  :: Maybe (Id Asset)
+    , tradingAction   :: Maybe Text
+    , showChart       :: Bool
+    , showDescription :: Bool
+    , showAllAssets   :: Bool
+    , backTo          :: Maybe Text
+    , chartData       :: [AssetChartData]
     }
 
 instance View ShowView where
@@ -37,12 +41,11 @@ instance View ShowView where
                         <div class="card-body p-4">
                             <header class="mb-4">
                                 <div class="d-flex align-items-center gap-2">
-                                    <button class="btn btn-outline-secondary back-button flex-shrink-0"
-                                            onclick="history.back()"
-                                            type="button"
-                                            title="Go back">
-                                        ←
-                                    </button>
+                                    <a href={backLink}
+                                       class="btn btn-outline-secondary back-button flex-shrink-0"
+                                       title="Back to markets">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
                                     <div class="flex-grow-1 overflow-x-auto scroll-no-bar ms-1"
                                          style="white-space: nowrap;">
                                         <span class="h4 fw-bold">
@@ -59,25 +62,20 @@ instance View ShowView where
                             {toggleAssetsButton}
 
                             <div class="mt-3">
-                                <h6 class="info-label" style="cursor: pointer;"
-                                    onclick="document.getElementById('price-chart').classList.toggle('d-none'); initPriceChart();">
-                                    Price Chart
-                                </h6>
-                                <div id="price-chart" style="height: 300px; margin-bottom: 1.5rem;">
+                                {renderSectionToggle "Price Chart" showChart chartToggleAction}
+                                <div id="price-chart"
+                                     class={classes [("d-none", not showChart)]}
+                                     style="height: 300px; margin-bottom: 1.5rem;">
                                 </div>
                                 {chartDataScript}
 
-                                <h6 class="info-label mb-3" style="cursor: pointer;"
-                                    onclick="document.getElementById('market-description').classList.toggle('d-none')">
-                                    Rules & Description
-                                </h6>
-                                <div id="market-description" class="d-none">
+                                {renderSectionToggle "Rules & Description" showDescription descriptionToggleAction}
+                                <div id="market-description" class={classes [("d-none", not showDescription)]}>
                                     {renderMarkdown market.description}
                                 </div>
                             </div>
                             {chartScript}
                             {assetLayoutScript}
-                            {toggleAssetsScript}
                         </div>
                     </div>
                 </div>
@@ -131,12 +129,55 @@ instance View ShowView where
             showAssetSymbols :: Bool
             showAssetSymbols = any (\asset -> asset.symbol /= asset.name) assets
 
+            marketShowAction :: Maybe (Id Asset) -> Maybe Text -> Bool -> Bool -> Bool -> MarketsController
+            marketShowAction tradingAssetId' tradingAction' showChart' showDescription' showAllAssets' =
+                ShowMarketAction
+                    { marketId = market.id
+                    , tradingAssetId = tradingAssetId'
+                    , tradingAction = tradingAction'
+                    , showChart = Just showChart'
+                    , showDescription = Just showDescription'
+                    , showAllAssets = Just showAllAssets'
+                    , backTo = backTo
+                    }
+
+            backLink :: Text
+            backLink = fromMaybe (pathTo MarketsAction) backTo
+
+            renderSectionToggle :: Text -> Bool -> MarketsController -> Html
+            renderSectionToggle label isOpen action = [hsx|
+                <h6 class="mb-2 mt-3">
+                    <a href={action}
+                       class="info-label text-reset text-decoration-none d-inline-flex align-items-center gap-2"
+                       aria-expanded={boolText isOpen}>
+                        <span>{label}</span>
+                        {renderChevronIcon isOpen}
+                    </a>
+                </h6>
+            |]
+
+            renderChevronIcon :: Bool -> Html
+            renderChevronIcon True = [hsx|<i class="bi bi-chevron-down"></i>|]
+            renderChevronIcon False = [hsx|<i class="bi bi-chevron-right"></i>|]
+
+            chartToggleAction :: MarketsController
+            chartToggleAction =
+                marketShowAction tradingAssetId tradingAction (not showChart) showDescription showAllAssets
+
+            descriptionToggleAction :: MarketsController
+            descriptionToggleAction =
+                marketShowAction tradingAssetId tradingAction showChart (not showDescription) showAllAssets
+
+            assetsToggleAction :: MarketsController
+            assetsToggleAction =
+                marketShowAction tradingAssetId tradingAction showChart showDescription (not showAllAssets)
+
             toggleAssetsButton :: Html
             toggleAssetsButton = if hasLeadingAssets
                 then [hsx|
                     <div class="text-end mt-3">
-                        <a href="javascript:void(0)" id="toggle-assets-btn" class="text-decoration-none me-2">
-                            Show All Assets
+                        <a href={assetsToggleAction} class="text-decoration-none me-2">
+                            {if showAllAssets then "Show Only Leading Assets" else "Show All Assets" :: Text}
                         </a>
                     </div>
                 |]
@@ -199,33 +240,61 @@ instance View ShowView where
                 </script>
             |]
 
-            toggleAssetsScript :: Html
-            toggleAssetsScript = [hsx|
-                <script>
-                    document.addEventListener('turbolinks:load', function() {
-                        var btn = document.getElementById('toggle-assets-btn');
-                        if (!btn) return;
-                        var hidden = true;
-                        btn.addEventListener('click', function() {
-                            hidden = !hidden;
-                            var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
-                            cards.forEach(function(card) { card.classList.toggle('d-none', hidden); });
-                            btn.textContent = hidden ? 'Show All Assets' : 'Show Only Leading Assets';
-                            if (window.updateMarketAssetRows) requestAnimationFrame(window.updateMarketAssetRows);
-                        });
-                        var cards = document.querySelectorAll('.asset-card[data-leading="false"]');
-                        cards.forEach(function(card) { card.classList.add('d-none'); });
-                        if (window.updateMarketAssetRows) requestAnimationFrame(window.updateMarketAssetRows);
-                    });
-                </script>
-            |]
-
             isLeading :: Asset -> Text
             isLeading a = if a.id `S.member` leadingAssetIds then "true" else "false"
+
+            shouldHideAsset :: Asset -> Bool
+            shouldHideAsset asset =
+                hasLeadingAssets && not showAllAssets && asset.id `S.notMember` leadingAssetIds
+
+            tradeToggleAction :: Id Asset -> Text -> MarketsController
+            tradeToggleAction assetId action =
+                let isOpen = tradingAssetId == Just assetId && tradingAction == Just action
+                    nextAssetId = if isOpen then Nothing else Just assetId
+                    nextAction = if isOpen then Nothing else Just action
+                in marketShowAction nextAssetId nextAction showChart showDescription showAllAssets
+
+            boolText :: Bool -> Text
+            boolText value = if value then "true" else "false"
+
+            renderBackToInput :: Html
+            renderBackToInput = case backTo of
+                Just backToPath -> [hsx|<input type="hidden" name="backTo" value={backToPath} />|]
+                Nothing -> [hsx||]
+
+            renderTradeInfoContainer :: Text -> Text -> Text -> Text -> Html
+            renderTradeInfoContainer containerId moneyLabel netLabel netClass = [hsx|
+                <div id={containerId}
+                     class="trade-info-container text-end w-100 d-none"
+                     style="max-width: 320px;">
+                    <div class="trade-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">{moneyLabel}</span>
+                            <span class="info-value" data-trade-field="money"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Return</span>
+                            <span class="info-value" data-trade-field="return"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">{netLabel}</span>
+                            <span class={"info-value " <> netClass} data-trade-field="net"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Probability</span>
+                            <span class="info-value">
+                                <span class="info-transition">{if netClass == "text-success" then "↑" else "↓" :: Text}</span>
+                                <span data-trade-field="probability"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            |]
 
             renderAsset :: Asset -> Html
             renderAsset asset = [hsx|
                 <div class={classes ["py-3 border-bottom asset-card",
+                                     ("d-none", shouldHideAsset asset),
                                      ("market-status-resolved-asset", isResolvedWinner)]}
                      id={"asset-" <> show asset.id}
                      data-leading={isLeading asset}>
@@ -288,18 +357,20 @@ instance View ShowView where
 
                     buySellButtons = [hsx|
                         <div class="d-flex gap-1" style="width: 140px">
-                            <button class="btn btn-outline-success btn-sm fw-medium"
-                                    type="button"
-                                    style="width: calc(50% - 2px);"
-                                    onclick={toggleForm (show asset.id) "buy"}>
+                            <a class={classes ["btn btn-sm fw-medium",
+                                               ("btn-success", isBuyFormOpen),
+                                               ("btn-outline-success", not isBuyFormOpen)]}
+                               style="width: calc(50% - 2px);"
+                               href={tradeToggleAction asset.id "buy"}>
                                 BUY
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm fw-medium"
-                                    type="button"
-                                    style="width: calc(50% - 2px);"
-                                    onclick={toggleForm (show asset.id) "sell"}>
+                            </a>
+                            <a class={classes ["btn btn-sm fw-medium",
+                                               ("btn-danger", isSellFormOpen),
+                                               ("btn-outline-danger", not isSellFormOpen)]}
+                               style="width: calc(50% - 2px);"
+                               href={tradeToggleAction asset.id "sell"}>
                                 SELL
-                            </button>
+                            </a>
                         </div>
                     |]
 
@@ -308,6 +379,10 @@ instance View ShowView where
                              class={classes ["mt-3", ("d-none", not isBuyFormOpen)]}>
                             <form action={ExecuteTradeAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="buy" />
+                                <input type="hidden" name="showChart" value={boolText showChart} />
+                                <input type="hidden" name="showDescription" value={boolText showDescription} />
+                                <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                                {renderBackToInput}
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="input-group" style="width: 160px">
@@ -324,10 +399,7 @@ instance View ShowView where
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">BUY</button>
                                     </div>
-                                    <div id={"buy-info-" <> show asset.id}
-                                         class="trade-info-container text-end w-100 d-none"
-                                         style="max-width: 320px;">
-                                    </div>
+                                    {renderTradeInfoContainer ("buy-info-" <> show asset.id) "Invest" "Gain" "text-success"}
                                 </div>
                             </form>
                         </div>
@@ -336,6 +408,10 @@ instance View ShowView where
                              class={classes ["mt-3", ("d-none", not isSellFormOpen)]}>
                             <form action={ExecuteTradeAction asset.id} method="POST">
                                 <input type="hidden" name="type" value="sell" />
+                                <input type="hidden" name="showChart" value={boolText showChart} />
+                                <input type="hidden" name="showDescription" value={boolText showDescription} />
+                                <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                                {renderBackToInput}
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="input-group" style="width: 160px">
@@ -352,17 +428,11 @@ instance View ShowView where
                                         <button type="submit" class="btn btn-primary fw-bold"
                                                 style="width: 140px">SELL</button>
                                     </div>
-                                    <div id={"sell-info-" <> show asset.id}
-                                         class="trade-info-container text-end w-100 d-none"
-                                         style="max-width: 320px;">
-                                    </div>
+                                    {renderTradeInfoContainer ("sell-info-" <> show asset.id) "Receive" "Risk" "text-danger"}
                                 </div>
                             </form>
                         </div>
                     |]
-
-                    toggleForm :: Text -> Text -> Text
-                    toggleForm id type' = "window.toggleAssetForm('" <> id <> "', '" <> type' <> "')"
 
             -- | Encode chart data as JSON for JavaScript
             encodeChartData :: [AssetChartData] -> Text
@@ -393,6 +463,7 @@ instance View ShowView where
                         var chartContainer = document.getElementById('price-chart');
                         var chartDataScript = document.getElementById('chart-data');
                         if (!chartContainer || !chartDataScript) return;
+                        if (chartContainer.classList.contains('d-none')) return;
 
                         if (chartContainer._chart) {
                             chartContainer._chart.remove();

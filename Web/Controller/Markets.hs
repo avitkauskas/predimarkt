@@ -8,6 +8,7 @@ import Application.Domain.ChartData
 import Application.Domain.Types
 import Data.List (zipWith4)
 import Data.Text (strip)
+import qualified Data.Text as Text
 import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
 import IHP.ModelSupport (trackTableRead)
@@ -102,11 +103,15 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render NewView { .. }
 
-    action ShowMarketAction { marketId, tradingAssetId, tradingAction } = autoRefresh do
+    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, backTo } = autoRefresh do
         ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
         let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
+        let chartVisible = fromMaybe True (showChart <|> readQueryFlag "showChart")
+        let descriptionVisible = fromMaybe False (showDescription <|> readQueryFlag "showDescription")
+        let allAssetsVisible = fromMaybe False (showAllAssets <|> readQueryFlag "showAllAssets")
+        let backToPath = sanitizeBackTo (backTo <|> paramOrNothing @Text "backTo")
 
         market :: Market <- fetch mId
         category <- fetch (market.categoryId)
@@ -118,7 +123,18 @@ instance Controller MarketsController where
 
         chartData <- fetchChartData market assets market.beta
 
-        render ShowView { market, category, assets = sortedAssets, tradingAssetId = tAssetId, tradingAction = tAction, chartData }
+        render ShowView
+            { market
+            , category
+            , assets = sortedAssets
+            , tradingAssetId = tAssetId
+            , tradingAction = tAction
+            , showChart = chartVisible
+            , showDescription = descriptionVisible
+            , showAllAssets = allAssetsVisible
+            , backTo = backToPath
+            , chartData
+            }
 
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -334,3 +350,17 @@ normalizeSearchQuery :: Maybe Text -> Maybe Text
 normalizeSearchQuery (Just query)
     | strip query /= "" = Just (strip query)
 normalizeSearchQuery _ = Nothing
+
+readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
+readQueryFlag name =
+    case Text.toLower <$> paramOrNothing @Text (cs name) of
+        Just "true"  -> Just True
+        Just "1"     -> Just True
+        Just "false" -> Just False
+        Just "0"     -> Just False
+        _            -> Nothing
+
+sanitizeBackTo :: Maybe Text -> Maybe Text
+sanitizeBackTo = \case
+    Just path | "/Markets" `Text.isPrefixOf` path -> Just path
+    _ -> Nothing
