@@ -1,10 +1,15 @@
 module Web.Routes where
 
+import qualified Data.ByteString as ByteString
+import qualified Data.Char as Char
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import Data.Word (Word8)
 import IHP.ModelSupport
 import IHP.Prelude
 import IHP.RouterPrelude
+import Numeric (showHex)
 import Web.Types
 
 -- Generator Marker
@@ -60,12 +65,35 @@ buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescript
             , fmap (showMarketFlagParam "showAllAssets") showAllAssets
             , fmap (showMarketFlagParam "showTradeHistory") showTradeHistory
             , fmap (\page -> "activityPage=" <> inputValue page) activityPage
-            , fmap (\path -> "backTo=" <> inputValue path) backTo
+            , fmap (\path -> "backTo=" <> encodeQueryValue path) backTo
             ]
     in "/ShowMarket?" <> Text.intercalate "&" queryParams
 
 showMarketFlagParam :: Text -> Bool -> Text
 showMarketFlagParam name value = name <> "=" <> if value then "true" else "false"
+
+encodeQueryValue :: Text -> Text
+encodeQueryValue value = cs $ ByteString.foldr encodeByte "" (Text.encodeUtf8 value)
+    where
+        encodeByte :: Word8 -> String -> String
+        encodeByte byte rest
+            | isUnreserved char = char : rest
+            | otherwise = '%' : renderHex byte <> rest
+            where
+                char = Char.chr (fromIntegral byte)
+
+        isUnreserved :: Char -> Bool
+        isUnreserved char =
+            Char.isAsciiLower char
+                || Char.isAsciiUpper char
+                || Char.isDigit char
+                || char `IHP.Prelude.elem` ['-', '.', '_', '~']
+
+        renderHex :: Word8 -> String
+        renderHex byte =
+            case IHP.Prelude.map Char.toUpper (showHex byte "") of
+                [singleDigit] -> ['0', singleDigit]
+                digits        -> digits
 
 instance HasPath DashboardController where
     pathTo DashboardPositionsAction { page, searchFilter } =

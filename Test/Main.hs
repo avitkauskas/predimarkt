@@ -4,11 +4,13 @@ module Test.Main where
 import Application.Domain.LMSR
 import qualified Application.Domain.Types as NewDomain
 import qualified Data.Map.Strict as M
+import qualified Data.Text as Text
 import Generated.Types
 import IHP.Prelude
 import Test.Hspec
 import Test.QuickCheck
 import Unsafe.Coerce
+import Web.Routes (buildShowMarketPath)
 
 testBeta :: Integer
 testBeta = 300
@@ -82,3 +84,20 @@ main = hspec do
             it "returns correct price for asset three" do
                 let p = assetPrice assetThree beta finalState
                 price4digits p `shouldBe` 3213
+
+        describe "Market show path building" do
+            it "URL-encodes backTo so nested market filters survive round-trips" do
+                let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
+                    backToPath = "/Markets?category=test-category&search=one"
+                    path = buildShowMarketPath
+                        marketId
+                        (Nothing :: Maybe (Id Asset))
+                        (Nothing :: Maybe Text)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Int)
+                        (Just backToPath)
+                path `shouldSatisfy` Text.isInfixOf "backTo=%2FMarkets%3Fcategory%3Dtest-category%26search%3Done"
+                path `shouldSatisfy` not . Text.isInfixOf "&search=one"

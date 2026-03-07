@@ -18,9 +18,6 @@ data IndexView = IndexView
 instance View IndexView where
     html IndexView { .. } = [hsx|
         <div id="markets-content">
-            <div class="mb-3">
-                {renderSearchForm categoryFilter searchFilter}
-            </div>
             {renderFlashMessages}
             {renderMarketsResults markets categories categoryFilter searchFilter currentPage totalMarkets hasMoreMarkets}
         </div>
@@ -77,6 +74,9 @@ renderMarketsResults markets categories categoryFilter searchFilter currentPage 
                 {forEach categories (renderCategoryTab categoryFilter searchFilter)}
             </ul>
             <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
+        </div>
+        <div class="mb-3">
+            {renderSearchForm categoryFilter searchFilter}
         </div>
         {renderMarketsList markets currentMarketsPath}
         {renderLoadMoreButton categoryFilter searchFilter currentPage (length markets) totalMarkets hasMoreMarkets}
