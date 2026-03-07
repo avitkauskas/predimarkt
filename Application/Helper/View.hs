@@ -156,7 +156,8 @@ renderSmartPagination currentPage totalPages ariaLabel pageUrlFn =
     then [hsx||]
     else [hsx|
         <nav aria-label={ariaLabel} class="mt-3">
-            <ul class="pagination pagination-sm justify-content-center mb-0">
+            <ul class="pagination pagination-sm justify-content-center mb-0"
+                style="--bs-pagination-bg: transparent; --bs-pagination-focus-box-shadow: none;">
                 {renderPrev}
                 {renderPages}
                 {renderNext}

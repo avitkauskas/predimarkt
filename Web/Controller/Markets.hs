@@ -103,7 +103,7 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render NewView { .. }
 
-    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, backTo } = autoRefresh do
+    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, backTo } = autoRefresh do
         ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
@@ -111,6 +111,8 @@ instance Controller MarketsController where
         let chartVisible = fromMaybe True (showChart <|> readQueryFlag "showChart")
         let descriptionVisible = fromMaybe False (showDescription <|> readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (showAllAssets <|> readQueryFlag "showAllAssets")
+        let tradeHistoryVisible = fromMaybe False (showTradeHistory <|> readQueryFlag "showTradeHistory")
+        let requestedActivityPage = max 1 (fromMaybe 1 (activityPage <|> paramOrNothing @Int "activityPage"))
         let backToPath = sanitizeBackTo (backTo <|> paramOrNothing @Text "backTo")
 
         market :: Market <- fetch mId
@@ -123,6 +125,24 @@ instance Controller MarketsController where
 
         chartData <- fetchChartData market assets market.beta
 
+        let activityItemsPerPage = 10
+        activityTransactionsCount <- query @Transaction
+            |> filterWhere (#marketId, mId)
+            |> fetchCount
+
+        let activityTotalPages = max 1 ((activityTransactionsCount + activityItemsPerPage - 1) `div` activityItemsPerPage)
+        let currentActivityPage = min requestedActivityPage activityTotalPages
+        let activityOffset = (currentActivityPage - 1) * activityItemsPerPage
+
+        activityTransactions <- query @Transaction
+            |> filterWhere (#marketId, mId)
+            |> orderByDesc #createdAt
+            |> limit activityItemsPerPage
+            |> offset activityOffset
+            |> fetch
+            >>= collectionFetchRelated #assetId
+            >>= collectionFetchRelated #userId
+
         render ShowView
             { market
             , category
@@ -132,6 +152,10 @@ instance Controller MarketsController where
             , showChart = chartVisible
             , showDescription = descriptionVisible
             , showAllAssets = allAssetsVisible
+            , showTradeHistory = tradeHistoryVisible
+            , activityTransactions
+            , activityCurrentPage = currentActivityPage
+            , activityTotalPages
             , backTo = backToPath
             , chartData
             }

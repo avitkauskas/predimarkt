@@ -118,7 +118,8 @@
 }
 
 [data-bs-theme="dark"] .card {
-    background-color: #2a2d31;
+    --bs-card-bg: #2a2d31;
+    background-color: var(--bs-card-bg);
     border-color: rgba(255, 255, 255, 0.08);
 }
 

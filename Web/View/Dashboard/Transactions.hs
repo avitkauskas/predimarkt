@@ -99,7 +99,7 @@ renderTransactionCard twd =
         priceImpact = formatPricePercent priceBefore <> " → " <> formatPricePercent priceAfter
 
         nextAction = if isBuy then Just "buy" else Just "sell"
-        marketUrl = ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing
+        marketUrl = ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing Nothing Nothing
 
         typeText = if isBuy then "bought" else "sold" :: Text
         typeColor = if isBuy then "text-success" else "text-danger" :: Text

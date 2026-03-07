@@ -114,8 +114,8 @@ renderPositionCard ep =
 
         nextAction = if isLong then Just "buy" else Just "sell"
         marketUrl = if isOpen
-            then ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing
-            else ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing
+            then ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing Nothing Nothing
+            else ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
         positionDisplay = renderPositionDisplay isOpen isLong absQty
         pnlDisplay = renderPnLDisplay currentPnL
@@ -220,7 +220,7 @@ renderActionButton True isProfitable _ assetId _ =
     |]
 -- For open markets with closed positions, show Make Trade
 renderActionButton False _ marketId _ _ =
-    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing
+    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
     in [hsx|
         <a href={link}
            class="btn btn-primary btn-sm text-nowrap"
@@ -229,7 +229,7 @@ renderActionButton False _ marketId _ _ =
 
 renderStatusButton :: Id Market -> Text -> Text -> Html
 renderStatusButton marketId cls txt =
-    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing
+    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
     in [hsx|
         <a href={link}
            class={"btn btn-sm text-nowrap " <> cls}

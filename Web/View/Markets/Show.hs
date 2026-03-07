@@ -12,17 +12,23 @@ import Text.Printf (printf)
 import Web.Types (AssetChartData (..), PricePoint (..))
 import Web.View.Prelude
 
+type MarketActivityTransaction = Include' ["assetId", "userId"] Transaction
+
 data ShowView = ShowView
-    { market          :: Market
-    , category        :: Category
-    , assets          :: [Asset]
-    , tradingAssetId  :: Maybe (Id Asset)
-    , tradingAction   :: Maybe Text
-    , showChart       :: Bool
-    , showDescription :: Bool
-    , showAllAssets   :: Bool
-    , backTo          :: Maybe Text
-    , chartData       :: [AssetChartData]
+    { market               :: Market
+    , category             :: Category
+    , assets               :: [Asset]
+    , tradingAssetId       :: Maybe (Id Asset)
+    , tradingAction        :: Maybe Text
+    , showChart            :: Bool
+    , showDescription      :: Bool
+    , showAllAssets        :: Bool
+    , showTradeHistory     :: Bool
+    , activityTransactions :: [MarketActivityTransaction]
+    , activityCurrentPage  :: Int
+    , activityTotalPages   :: Int
+    , backTo               :: Maybe Text
+    , chartData            :: [AssetChartData]
     }
 
 instance View ShowView where
@@ -73,6 +79,8 @@ instance View ShowView where
                                 <div id="market-description" class={classes [("d-none", not showDescription)]}>
                                     {renderMarkdown market.description}
                                 </div>
+
+                                {renderTradeHistorySection}
                             </div>
                             {chartScript}
                             {assetLayoutScript}
@@ -129,8 +137,8 @@ instance View ShowView where
             showAssetSymbols :: Bool
             showAssetSymbols = any (\asset -> asset.symbol /= asset.name) assets
 
-            marketShowAction :: Maybe (Id Asset) -> Maybe Text -> Bool -> Bool -> Bool -> MarketsController
-            marketShowAction tradingAssetId' tradingAction' showChart' showDescription' showAllAssets' =
+            marketShowAction :: Maybe (Id Asset) -> Maybe Text -> Bool -> Bool -> Bool -> Bool -> Int -> MarketsController
+            marketShowAction tradingAssetId' tradingAction' showChart' showDescription' showAllAssets' showTradeHistory' activityPage' =
                 ShowMarketAction
                     { marketId = market.id
                     , tradingAssetId = tradingAssetId'
@@ -138,6 +146,8 @@ instance View ShowView where
                     , showChart = Just showChart'
                     , showDescription = Just showDescription'
                     , showAllAssets = Just showAllAssets'
+                    , showTradeHistory = Just showTradeHistory'
+                    , activityPage = normalizePageParam activityPage'
                     , backTo = backTo
                     }
 
@@ -157,20 +167,28 @@ instance View ShowView where
             |]
 
             renderChevronIcon :: Bool -> Html
-            renderChevronIcon True = [hsx|<i class="bi bi-chevron-down"></i>|]
+            renderChevronIcon True  = [hsx|<i class="bi bi-chevron-down"></i>|]
             renderChevronIcon False = [hsx|<i class="bi bi-chevron-right"></i>|]
 
             chartToggleAction :: MarketsController
             chartToggleAction =
-                marketShowAction tradingAssetId tradingAction (not showChart) showDescription showAllAssets
+                marketShowAction tradingAssetId tradingAction (not showChart) showDescription showAllAssets showTradeHistory activityCurrentPage
 
             descriptionToggleAction :: MarketsController
             descriptionToggleAction =
-                marketShowAction tradingAssetId tradingAction showChart (not showDescription) showAllAssets
+                marketShowAction tradingAssetId tradingAction showChart (not showDescription) showAllAssets showTradeHistory activityCurrentPage
 
             assetsToggleAction :: MarketsController
             assetsToggleAction =
-                marketShowAction tradingAssetId tradingAction showChart showDescription (not showAllAssets)
+                marketShowAction tradingAssetId tradingAction showChart showDescription (not showAllAssets) showTradeHistory activityCurrentPage
+
+            tradeHistoryToggleAction :: MarketsController
+            tradeHistoryToggleAction =
+                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets (not showTradeHistory) activityCurrentPage
+
+            activityPageAction :: Int -> MarketsController
+            activityPageAction pageNum =
+                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory pageNum
 
             toggleAssetsButton :: Html
             toggleAssetsButton = if hasLeadingAssets
@@ -252,15 +270,101 @@ instance View ShowView where
                 let isOpen = tradingAssetId == Just assetId && tradingAction == Just action
                     nextAssetId = if isOpen then Nothing else Just assetId
                     nextAction = if isOpen then Nothing else Just action
-                in marketShowAction nextAssetId nextAction showChart showDescription showAllAssets
+                in marketShowAction nextAssetId nextAction showChart showDescription showAllAssets showTradeHistory activityCurrentPage
 
             boolText :: Bool -> Text
             boolText value = if value then "true" else "false"
+
+            normalizePageParam :: Int -> Maybe Int
+            normalizePageParam pageNum
+                | pageNum > 1 = Just pageNum
+                | otherwise = Nothing
 
             renderBackToInput :: Html
             renderBackToInput = case backTo of
                 Just backToPath -> [hsx|<input type="hidden" name="backTo" value={backToPath} />|]
                 Nothing -> [hsx||]
+
+            renderActivityPageInput :: Html
+            renderActivityPageInput = [hsx|<input type="hidden" name="activityPage" value={inputValue activityCurrentPage} />|]
+
+            renderTradeHistoryToggleInput :: Html
+            renderTradeHistoryToggleInput = [hsx|<input type="hidden" name="showTradeHistory" value={boolText showTradeHistory} />|]
+
+            renderTradeHistorySection :: Html
+            renderTradeHistorySection = [hsx|
+                <div class="mt-4">
+                    {renderSectionToggle "Trade History" showTradeHistory tradeHistoryToggleAction}
+                    <div class={classes [("d-none", not showTradeHistory)]}>
+                        {renderActivityContent}
+                        {renderActivityPagination}
+                    </div>
+                </div>
+            |]
+
+            renderActivityContent :: Html
+            renderActivityContent = case activityTransactions of
+                [] -> [hsx|
+                    <div class="text-muted small py-2">
+                        No trades yet for this market.
+                    </div>
+                |]
+                txns -> [hsx|
+                    <div class="overflow-x-auto scroll-no-bar">
+                        <table class="table table-sm table-borderless table-hover align-middle mb-0 small text-nowrap"
+                               style="--bs-table-bg: transparent; --bs-table-color: var(--bs-body-color); --bs-table-hover-bg: rgba(var(--bs-body-color-rgb), 0.04); --bs-table-hover-color: var(--bs-body-color);">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="info-label">User</th>
+                                    <th scope="col" class="info-label">Action</th>
+                                    <th scope="col" class="info-label text-end">Shares</th>
+                                    <th scope="col" class="info-label">Asset</th>
+                                    <th scope="col" class="info-label text-end">Amount</th>
+                                    <th scope="col" class="info-label text-center">Probability</th>
+                                    <th scope="col" class="info-label text-end" style="min-width: 110px;">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {forEach txns renderActivityTransaction}
+                            </tbody>
+                        </table>
+                    </div>
+                |]
+
+            renderActivityTransaction :: MarketActivityTransaction -> Html
+            renderActivityTransaction transaction = [hsx|
+                <tr>
+                    <td>{user.nickname}</td>
+                    <td>
+                        <span class={classes [("text-success", isBuy), ("text-danger", not isBuy)]}>
+                            {actionText}
+                        </span>
+                    </td>
+                    <td class="text-end">{tshow absQty}</td>
+                    <td>{asset.name}</td>
+                    <td class="text-end">{formatMoney (abs cashFlow)}</td>
+                    <td class="text-muted text-center">
+                        {formatPriceRounded transaction.priceBefore}{" → " :: Text}{formatPriceRounded transaction.priceAfter}
+                    </td>
+                    <td class="text-end text-muted">{timeAgo transaction.createdAt}</td>
+                </tr>
+            |]
+                where
+                    asset = get #assetId transaction
+                    user = get #userId transaction
+                    cashFlow = transaction.cashFlow
+                    absQty = abs transaction.quantity
+                    isBuy = transaction.quantity > 0
+                    actionText = if transaction.quantity > 0 then "Bought" else "Sold" :: Text
+
+            renderActivityPagination :: Html
+            renderActivityPagination =
+                when (activityTotalPages > 1) [hsx|
+                    <div id="trade-history-pagination" class="mt-3">
+                        {renderSmartPagination activityCurrentPage activityTotalPages "Market activity pagination"
+                            (\pageNum -> pathTo (activityPageAction pageNum) <> "#trade-history-pagination")}
+                    </div>
+                |]
 
             renderTradeInfoContainer :: Text -> Text -> Text -> Text -> Html
             renderTradeInfoContainer containerId moneyLabel netLabel netClass = [hsx|
@@ -382,6 +486,8 @@ instance View ShowView where
                                 <input type="hidden" name="showChart" value={boolText showChart} />
                                 <input type="hidden" name="showDescription" value={boolText showDescription} />
                                 <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                                {renderTradeHistoryToggleInput}
+                                {renderActivityPageInput}
                                 {renderBackToInput}
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
@@ -411,6 +517,8 @@ instance View ShowView where
                                 <input type="hidden" name="showChart" value={boolText showChart} />
                                 <input type="hidden" name="showDescription" value={boolText showDescription} />
                                 <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                                {renderTradeHistoryToggleInput}
+                                {renderActivityPageInput}
                                 {renderBackToInput}
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">

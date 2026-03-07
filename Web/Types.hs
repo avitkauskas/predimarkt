@@ -53,13 +53,15 @@ data MarketsController
     = MarketsAction
     | NewMarketAction
     | ShowMarketAction
-        { marketId        :: !(Id Market)
-        , tradingAssetId  :: !(Maybe (Id Asset))
-        , tradingAction   :: !(Maybe Text)
-        , showChart       :: !(Maybe Bool)
-        , showDescription :: !(Maybe Bool)
-        , showAllAssets   :: !(Maybe Bool)
-        , backTo          :: !(Maybe Text)
+        { marketId         :: !(Id Market)
+        , tradingAssetId   :: !(Maybe (Id Asset))
+        , tradingAction    :: !(Maybe Text)
+        , showChart        :: !(Maybe Bool)
+        , showDescription  :: !(Maybe Bool)
+        , showAllAssets    :: !(Maybe Bool)
+        , showTradeHistory :: !(Maybe Bool)
+        , activityPage     :: !(Maybe Int)
+        , backTo           :: !(Maybe Text)
         }
     | CreateMarketAction
     | EditMarketAction { marketId :: !(Id Market) }
