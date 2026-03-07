@@ -58,7 +58,7 @@ instance View ShowView where
 
                             {toggleAssetsButton}
 
-                            <div class="mt-4">
+                            <div class="mt-3">
                                 <h6 class="info-label" style="cursor: pointer;"
                                     onclick="document.getElementById('price-chart').classList.toggle('d-none'); initPriceChart();">
                                     Price Chart

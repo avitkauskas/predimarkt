@@ -109,7 +109,7 @@ renderLoadMoreButton categoryFilter searchFilter currentPage shownMarkets totalM
         <div class="d-flex justify-content-center mb-5">
             <a href={buildMarketsPath categoryFilter searchFilter (Just (currentPage + 1))}
                class="btn btn-sm btn-outline-secondary text-nowrap">
-                Showing {shownMarkets} of {totalMarkets} markets · Load 12 more
+                Showing {shownMarkets} of {totalMarkets} markets · Load more
             </a>
         </div>
     |]
