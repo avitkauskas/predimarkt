@@ -61,8 +61,11 @@ data MarketsController
         , showAllAssets    :: !(Maybe Bool)
         , showTradeHistory :: !(Maybe Bool)
         , activityPage     :: !(Maybe Int)
+        , chatPage         :: !(Maybe Int)
+        , chatComposerRev  :: !(Maybe Text)
         , backTo           :: !(Maybe Text)
         }
+    | CreateMarketChatMessageAction { marketId :: !(Id Market) }
     | CreateMarketAction
     | EditMarketAction { marketId :: !(Id Market) }
     | UpdateMarketAction { marketId :: !(Id Market) }

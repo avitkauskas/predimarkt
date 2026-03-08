@@ -35,8 +35,9 @@ instance HasPath MarketsController where
     pathTo MarketsAction            = "/Markets"
     pathTo NewMarketAction          = "/NewMarket"
     pathTo CreateMarketAction       = "/CreateMarket"
-    pathTo ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, backTo } =
-        buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage backTo
+    pathTo ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, backTo } =
+        buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev backTo
+    pathTo CreateMarketChatMessageAction { marketId } = "/CreateMarketChatMessage?marketId=" <> inputValue marketId
     pathTo EditMarketAction { marketId }   = "/EditMarket?marketId=" <> inputValue marketId
     pathTo UpdateMarketAction { marketId } = "/UpdateMarket?marketId=" <> inputValue marketId
     pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
@@ -48,14 +49,15 @@ instance CanRoute MarketsController where
         (string "/Markets" >> pure MarketsAction)
         <|> (string "/NewMarket" >> pure NewMarketAction)
         <|> (string "/CreateMarket" >> pure CreateMarketAction)
-        <|> (string "/ShowMarket" >> pure (ShowMarketAction def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
+        <|> (string "/ShowMarket" >> pure (ShowMarketAction def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
+        <|> (string "/CreateMarketChatMessage" >> onlyAllowMethods [POST] >> pure (CreateMarketChatMessageAction def))
         <|> (string "/EditMarket" >> pure (EditMarketAction def))
         <|> (string "/UpdateMarket" >> pure (UpdateMarketAction def))
         <|> (string "/DeleteMarket" >> pure (DeleteMarketAction def))
         <|> (string "/SetResolveAsset" >> pure (SetResolveAssetAction def))
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
-buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage backTo =
+buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev backTo =
     let queryParams = Maybe.catMaybes
             [ Just ("marketId=" <> inputValue marketId)
             , fmap (\aid -> "tradingAssetId=" <> inputValue aid) tradingAssetId
@@ -65,6 +67,8 @@ buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescript
             , fmap (showMarketFlagParam "showAllAssets") showAllAssets
             , fmap (showMarketFlagParam "showTradeHistory") showTradeHistory
             , fmap (\page -> "activityPage=" <> inputValue page) activityPage
+            , fmap (\page -> "chatPage=" <> inputValue page) chatPage
+            , fmap (\rev -> "chatComposerRev=" <> encodeQueryValue rev) chatComposerRev
             , fmap (\path -> "backTo=" <> encodeQueryValue path) backTo
             ]
     in "/ShowMarket?" <> Text.intercalate "&" queryParams

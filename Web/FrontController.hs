@@ -25,6 +25,7 @@ instance FrontController WebApplication where
         , parseRoute @AssetsController
         , parseRoute @DashboardController
         , parseRoute @LeaderboardController
+        , post "/CreateMarketChatMessage" (CreateMarketChatMessageAction def)
         , parseRoute @MarketsController
         , parseRoute @TradesController
         , parseRoute @UsersController

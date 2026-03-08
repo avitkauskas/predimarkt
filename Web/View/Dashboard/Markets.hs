@@ -31,7 +31,7 @@ renderMarket market = [hsx|
     <tr>
         <td class="align-middle">
             <a class="text-decoration-none"
-               href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing}>
+               href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing}>
                 {market.title}
             </a>
         </td>

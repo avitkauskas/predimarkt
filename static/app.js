@@ -10,6 +10,9 @@ $(document).on('ready turbolinks:load', function () {
     // Initialize asset percentage calculations for market forms
     initAssetPercentageCalculations()
 
+    initMarketChat()
+    initMarketPageScroll()
+
     // Initialize info blocks for any pre-opened trade forms (only on market show pages)
     const buyForms = document.querySelectorAll('[id^="buy-form-"]:not(.d-none)');
     const sellForms = document.querySelectorAll('[id^="sell-form-"]:not(.d-none)');
@@ -63,6 +66,135 @@ function initAutoSubmitSearchForms() {
         searchInput.addEventListener('search', scheduleSubmit);
         form.addEventListener('submit', clearScheduledSubmit);
     });
+}
+
+function initMarketChat() {
+    const messages = document.getElementById('market-chat-messages')
+    if (!messages) return
+
+    const resetToLatest = maybeResetMarketChatScroll(messages)
+    if (!resetToLatest) {
+        restoreMarketChatScroll(messages)
+    }
+    syncMarketChatMetrics(messages)
+
+    const loadMoreLink = document.getElementById('market-chat-load-more')
+    if (loadMoreLink && !loadMoreLink.marketChatInitialized) {
+        loadMoreLink.marketChatInitialized = true
+        loadMoreLink.addEventListener('click', function (event) {
+            event.preventDefault()
+            navigateMarketChat(messages, loadMoreLink.dataset.chatLoadMoreUrl || loadMoreLink.href)
+        })
+    }
+
+    if (messages.marketChatInitialized) return
+
+    messages.marketChatInitialized = true
+
+    messages.addEventListener('scroll', () => {
+        messages.marketChatScrollTouched = true
+        syncMarketChatMetrics(messages)
+        maybeLoadOlderMarketChat(messages)
+    })
+
+    if (messages.marketChatObserver) {
+        messages.marketChatObserver.disconnect()
+    }
+
+    messages.marketChatObserver = new MutationObserver(() => {
+        const previousScrollHeight = messages.marketChatLastScrollHeight || messages.scrollHeight
+        const previousScrollTop = messages.marketChatLastScrollTop || 0
+        const wasNearTop = previousScrollTop <= 32
+        const nextScrollHeight = messages.scrollHeight
+
+        if (!wasNearTop && nextScrollHeight > previousScrollHeight) {
+            messages.scrollTop = previousScrollTop + (nextScrollHeight - previousScrollHeight)
+        }
+
+        syncMarketChatMetrics(messages)
+    })
+
+    messages.marketChatObserver.observe(messages, { childList: true, subtree: true })
+}
+
+function initMarketPageScroll() {
+    const chatCard = document.getElementById('market-chat-card')
+    if (!chatCard) return
+
+    const url = new URL(window.location.href)
+    if (url.pathname !== '/ShowMarket') return
+
+    const shouldStartAtTop = Array.from(url.searchParams.keys()).every(key => {
+        return key === 'marketId' || key === 'backTo'
+    })
+
+    if (!shouldStartAtTop) return
+
+    requestAnimationFrame(() => {
+        window.scrollTo(0, 0)
+    })
+}
+
+function syncMarketChatMetrics(messages) {
+    messages.marketChatLastScrollTop = messages.scrollTop
+    messages.marketChatLastScrollHeight = messages.scrollHeight
+}
+
+function maybeLoadOlderMarketChat(messages) {
+    const nextUrl = messages.dataset.nextUrl
+    if (!nextUrl || messages.dataset.loading === 'true' || !messages.marketChatScrollTouched) return
+
+    const nearBottom = messages.scrollTop + messages.clientHeight >= messages.scrollHeight - 32
+    if (!nearBottom) return
+
+    navigateMarketChat(messages, nextUrl)
+}
+
+function navigateMarketChat(messages, nextUrl) {
+    if (!nextUrl) return
+
+    messages.dataset.loading = 'true'
+    rememberMarketChatScroll(messages)
+
+    if (window.Turbolinks && typeof window.Turbolinks.visit === 'function') {
+        window.Turbolinks.visit(nextUrl)
+        return
+    }
+
+    window.location.assign(nextUrl)
+}
+
+function rememberMarketChatScroll(messages) {
+    const scrollKey = messages.dataset.scrollKey
+    if (!scrollKey) return
+    sessionStorage.setItem(scrollKey, String(messages.scrollTop))
+}
+
+function maybeResetMarketChatScroll(messages) {
+    const scrollKey = messages.dataset.scrollKey
+    const composerRevision = messages.dataset.composerRev
+    if (!scrollKey || !composerRevision) return false
+
+    const revisionKey = `${scrollKey}-composer-rev`
+    const lastComposerRevision = sessionStorage.getItem(revisionKey)
+
+    if (lastComposerRevision === composerRevision) return false
+
+    sessionStorage.setItem(revisionKey, composerRevision)
+    sessionStorage.removeItem(scrollKey)
+    messages.scrollTop = 0
+    return true
+}
+
+function restoreMarketChatScroll(messages) {
+    const scrollKey = messages.dataset.scrollKey
+    if (!scrollKey) return
+
+    const savedScrollTop = sessionStorage.getItem(scrollKey)
+    if (savedScrollTop === null) return
+
+    messages.scrollTop = Number(savedScrollTop)
+    sessionStorage.removeItem(scrollKey)
 }
 
 window.lmsrCore = function (a, z, sign) {

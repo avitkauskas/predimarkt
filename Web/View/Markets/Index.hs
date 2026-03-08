@@ -152,7 +152,7 @@ renderMarket backToPath market = [hsx|
 
             <!-- Clickable header -->
             <div class="position-relative overflow-hidden rounded-top">
-                <a href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
+                <a href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
                     class="stretched-link" aria-hidden="true">
                 </a>
                 <div class={classes [
@@ -170,7 +170,7 @@ renderMarket backToPath market = [hsx|
 
                 <!-- Scrollable, clickable title -->
                 <div class="position-relative scroll-no-bar mb-2">
-                    <a href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
+                    <a href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
                        class="stretched-link" aria-hidden="true">
                     </a>
                     <h6 class="card-title fs-6 mb-0 d-inline-block">
@@ -245,12 +245,12 @@ renderMarket backToPath market = [hsx|
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
                         <div class="d-flex gap-1 ms-1" style="width: 80px;">
-                            <a href={ShowMarketAction market.id (Just asset.id) (Just "buy") Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
+                            <a href={ShowMarketAction market.id (Just asset.id) (Just "buy") Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
                                     class="btn btn-outline-success p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
                                 BUY
                             </a>
-                            <a href={ShowMarketAction market.id (Just asset.id) (Just "sell") Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
+                            <a href={ShowMarketAction market.id (Just asset.id) (Just "sell") Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
                                     class="btn btn-outline-danger p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
                                 SELL

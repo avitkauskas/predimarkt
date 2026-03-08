@@ -98,6 +98,25 @@ main = hspec do
                         (Nothing :: Maybe Bool)
                         (Nothing :: Maybe Bool)
                         (Nothing :: Maybe Int)
+                        (Nothing :: Maybe Int)
+                        (Nothing :: Maybe Text)
                         (Just backToPath)
                 path `shouldSatisfy` Text.isInfixOf "backTo=%2FMarkets%3Fcategory%3Dtest-category%26search%3Done"
                 path `shouldSatisfy` not . Text.isInfixOf "&search=one"
+
+            it "includes chat state parameters when present" do
+                let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
+                    path = buildShowMarketPath
+                        marketId
+                        (Nothing :: Maybe (Id Asset))
+                        (Nothing :: Maybe Text)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Int)
+                        (Just (3 :: Int))
+                        (Just ("rev-123" :: Text))
+                        (Nothing :: Maybe Text)
+                path `shouldSatisfy` Text.isInfixOf "chatPage=3"
+                path `shouldSatisfy` Text.isInfixOf "chatComposerRev=rev-123"

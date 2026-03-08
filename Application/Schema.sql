@@ -120,8 +120,18 @@ CREATE TABLE close_market_jobs (
     market_id UUID NOT NULL UNIQUE
 );
 CREATE INDEX close_market_jobs_market_id_index ON close_market_jobs (market_id);
+CREATE TABLE market_chat_messages (
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
+    market_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    body TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+CREATE INDEX market_chat_messages_market_id_created_at_index ON market_chat_messages (market_id, created_at);
 ALTER TABLE assets ADD CONSTRAINT assets_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
 ALTER TABLE close_market_jobs ADD CONSTRAINT close_market_jobs_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
+ALTER TABLE market_chat_messages ADD CONSTRAINT market_chat_messages_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE CASCADE;
+ALTER TABLE market_chat_messages ADD CONSTRAINT market_chat_messages_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_outcome_asset_id FOREIGN KEY (outcome_asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;

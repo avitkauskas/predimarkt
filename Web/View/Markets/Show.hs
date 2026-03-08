@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 module Web.View.Markets.Show where
 
 import Application.Domain.LMSR
@@ -14,6 +16,11 @@ import Web.View.Prelude
 
 type MarketActivityTransaction = Include' ["assetId", "userId"] Transaction
 
+data MarketChatEntry = MarketChatEntry
+    { message :: MarketChatMessage' (Id' "markets") User
+    , author  :: User
+    }
+
 data ShowView = ShowView
     { market               :: Market
     , category             :: Category
@@ -27,6 +34,10 @@ data ShowView = ShowView
     , activityTransactions :: [MarketActivityTransaction]
     , activityCurrentPage  :: Int
     , activityTotalPages   :: Int
+    , chatMessages         :: [MarketChatEntry]
+    , chatCurrentPage      :: Int
+    , hasOlderChatMessages :: Bool
+    , chatComposerRev      :: Maybe Text
     , backTo               :: Maybe Text
     , chartData            :: [AssetChartData]
     }
@@ -89,20 +100,7 @@ instance View ShowView where
                 </div>
 
                 <div class="col-12 col-lg-4 order-2 order-lg-2">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header py-2">
-                            <span class="fw-semibold">Users Chat</span>
-                        </div>
-                        <div class="card-body p-3 d-flex flex-column" style="min-height: 300px;">
-                            <div class="input-group mt-2">
-                                <input type="text" class="form-control" placeholder="Type a message..." />
-                                <button class="btn btn-primary" type="button">Send</button>
-                            </div>
-                            <div class="flex-grow-1 rounded p-3 mb-3" style="overflow-y: auto;">
-                                <p class="text-muted">Chat is not implemented yet.</p>
-                            </div>
-                        </div>
-                    </div>
+                    {renderChatCard}
                 </div>
             </div>
         </div>
@@ -137,8 +135,8 @@ instance View ShowView where
             showAssetSymbols :: Bool
             showAssetSymbols = any (\asset -> asset.symbol /= asset.name) assets
 
-            marketShowAction :: Maybe (Id Asset) -> Maybe Text -> Bool -> Bool -> Bool -> Bool -> Int -> MarketsController
-            marketShowAction tradingAssetId' tradingAction' showChart' showDescription' showAllAssets' showTradeHistory' activityPage' =
+            marketShowAction :: Maybe (Id Asset) -> Maybe Text -> Bool -> Bool -> Bool -> Bool -> Int -> Int -> MarketsController
+            marketShowAction tradingAssetId' tradingAction' showChart' showDescription' showAllAssets' showTradeHistory' activityPage' chatPage' =
                 ShowMarketAction
                     { marketId = market.id
                     , tradingAssetId = tradingAssetId'
@@ -148,6 +146,8 @@ instance View ShowView where
                     , showAllAssets = Just showAllAssets'
                     , showTradeHistory = Just showTradeHistory'
                     , activityPage = normalizePageParam activityPage'
+                    , chatPage = normalizePageParam chatPage'
+                    , chatComposerRev = chatComposerRev
                     , backTo = backTo
                     }
 
@@ -172,23 +172,27 @@ instance View ShowView where
 
             chartToggleAction :: MarketsController
             chartToggleAction =
-                marketShowAction tradingAssetId tradingAction (not showChart) showDescription showAllAssets showTradeHistory activityCurrentPage
+                marketShowAction tradingAssetId tradingAction (not showChart) showDescription showAllAssets showTradeHistory activityCurrentPage chatCurrentPage
 
             descriptionToggleAction :: MarketsController
             descriptionToggleAction =
-                marketShowAction tradingAssetId tradingAction showChart (not showDescription) showAllAssets showTradeHistory activityCurrentPage
+                marketShowAction tradingAssetId tradingAction showChart (not showDescription) showAllAssets showTradeHistory activityCurrentPage chatCurrentPage
 
             assetsToggleAction :: MarketsController
             assetsToggleAction =
-                marketShowAction tradingAssetId tradingAction showChart showDescription (not showAllAssets) showTradeHistory activityCurrentPage
+                marketShowAction tradingAssetId tradingAction showChart showDescription (not showAllAssets) showTradeHistory activityCurrentPage chatCurrentPage
 
             tradeHistoryToggleAction :: MarketsController
             tradeHistoryToggleAction =
-                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets (not showTradeHistory) activityCurrentPage
+                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets (not showTradeHistory) activityCurrentPage chatCurrentPage
 
             activityPageAction :: Int -> MarketsController
             activityPageAction pageNum =
-                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory pageNum
+                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory pageNum chatCurrentPage
+
+            chatPageAction :: Int -> MarketsController
+            chatPageAction pageNum =
+                marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityCurrentPage pageNum
 
             toggleAssetsButton :: Html
             toggleAssetsButton = if hasLeadingAssets
@@ -270,7 +274,7 @@ instance View ShowView where
                 let isOpen = tradingAssetId == Just assetId && tradingAction == Just action
                     nextAssetId = if isOpen then Nothing else Just assetId
                     nextAction = if isOpen then Nothing else Just action
-                in marketShowAction nextAssetId nextAction showChart showDescription showAllAssets showTradeHistory activityCurrentPage
+                in marketShowAction nextAssetId nextAction showChart showDescription showAllAssets showTradeHistory activityCurrentPage chatCurrentPage
 
             boolText :: Bool -> Text
             boolText value = if value then "true" else "false"
@@ -288,8 +292,129 @@ instance View ShowView where
             renderActivityPageInput :: Html
             renderActivityPageInput = [hsx|<input type="hidden" name="activityPage" value={inputValue activityCurrentPage} />|]
 
+            renderChatPageInput :: Html
+            renderChatPageInput = [hsx|<input type="hidden" name="chatPage" value={inputValue chatCurrentPage} />|]
+
+            renderChatComposerRevInput :: Html
+            renderChatComposerRevInput = case chatComposerRev of
+                Just revision -> [hsx|<input type="hidden" name="chatComposerRev" value={revision} />|]
+                Nothing -> [hsx||]
+
+            renderTradingAssetIdInput :: Html
+            renderTradingAssetIdInput = case tradingAssetId of
+                Just assetId -> [hsx|<input type="hidden" name="tradingAssetId" value={inputValue assetId} />|]
+                Nothing -> [hsx||]
+
+            renderTradingActionInput :: Html
+            renderTradingActionInput = case tradingAction of
+                Just action -> [hsx|<input type="hidden" name="tradingAction" value={action} />|]
+                Nothing -> [hsx||]
+
             renderTradeHistoryToggleInput :: Html
             renderTradeHistoryToggleInput = [hsx|<input type="hidden" name="showTradeHistory" value={boolText showTradeHistory} />|]
+
+            renderChatCard :: Html
+            renderChatCard = [hsx|
+                <div id="market-chat-card" class="card shadow-sm h-100 d-flex flex-column">
+                    <div class="card-header py-2">
+                        <span class="fw-semibold">Users Chat</span>
+                    </div>
+                    <div class="card-body p-3 d-flex flex-column flex-grow-1" style="min-height: 420px;">
+                        <div id={"market-chat-composer-" <> fromMaybe "stable" chatComposerRev} class="mb-3">
+                            <form id="market-chat-form" action={CreateMarketChatMessageAction market.id} method="POST">
+                                {renderTradingAssetIdInput}
+                                {renderTradingActionInput}
+                                <input type="hidden" name="showChart" value={boolText showChart} />
+                                <input type="hidden" name="showDescription" value={boolText showDescription} />
+                                <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                                {renderTradeHistoryToggleInput}
+                                {renderActivityPageInput}
+                                {renderChatPageInput}
+                                {renderChatComposerRevInput}
+                                {renderBackToInput}
+                                <div class="input-group mt-2">
+                                    <input id={"market-chat-input-" <> fromMaybe "stable" chatComposerRev}
+                                           type="text"
+                                           name="body"
+                                           form="market-chat-form"
+                                           class="form-control"
+                                           maxlength="280"
+                                           placeholder="Type a message..."
+                                           autocomplete="off" />
+                                    <button id="market-chat-submit"
+                                            class="btn btn-primary"
+                                            type="submit"
+                                            form="market-chat-form"
+                                            formmethod="post"
+                                            formaction={CreateMarketChatMessageAction market.id}>
+                                        Send
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div id="market-chat-messages"
+                             class="flex-grow-1 rounded border p-3"
+                             style="overflow-y: auto; min-height: 0; flex-basis: 0;"
+                             data-next-url={nextChatPageUrl}
+                             data-scroll-key={chatScrollStorageKey}
+                             data-composer-rev={fromMaybe "" chatComposerRev}>
+                            {renderChatMessages}
+                            {renderChatLoadMore}
+                        </div>
+                    </div>
+                </div>
+            |]
+                where
+                    nextChatPageUrl = if hasOlderChatMessages
+                        then pathTo (chatPageAction (chatCurrentPage + 1))
+                        else ""
+
+                    chatScrollStorageKey = "market-chat-scroll-" <> inputValue market.id
+
+            renderChatMessages :: Html
+            renderChatMessages = case chatMessages of
+                [] -> [hsx|
+                    <div class="text-muted small">
+                        No messages yet. Be the first to write something.
+                    </div>
+                |]
+                messages -> [hsx|
+                    <div class="d-flex flex-column gap-3">
+                        {forEach messages renderChatMessage}
+                    </div>
+                |]
+
+            renderChatMessage :: MarketChatEntry -> Html
+            renderChatMessage chatEntry = [hsx|
+                <div>
+                    <div class="d-flex justify-content-between align-items-baseline gap-3 mb-1">
+                        <span>{author.nickname}</span>
+                        <span class="small text-muted text-nowrap" style="font-size: 0.8em;">
+                            {timeAgo message.createdAt}
+                        </span>
+                    </div>
+                    <div class="text-secondary" style="overflow-wrap: anywhere;">
+                        {message.body}
+                    </div>
+                </div>
+            |]
+                where
+                    message = chatEntry.message
+                    author = chatEntry.author
+
+            renderChatLoadMore :: Html
+            renderChatLoadMore =
+                when hasOlderChatMessages [hsx|
+                    <div class="text-center mt-3">
+                        <a id="market-chat-load-more"
+                           href={pathTo (chatPageAction (chatCurrentPage + 1))}
+                           data-chat-load-more-url={pathTo (chatPageAction (chatCurrentPage + 1))}
+                           class="btn btn-sm btn-outline-secondary">
+                            Load older messages
+                        </a>
+                    </div>
+                |]
 
             renderTradeHistorySection :: Html
             renderTradeHistorySection = [hsx|
@@ -488,6 +613,8 @@ instance View ShowView where
                                 <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
                                 {renderTradeHistoryToggleInput}
                                 {renderActivityPageInput}
+                                {renderChatPageInput}
+                                {renderChatComposerRevInput}
                                 {renderBackToInput}
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
@@ -519,6 +646,8 @@ instance View ShowView where
                                 <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
                                 {renderTradeHistoryToggleInput}
                                 {renderActivityPageInput}
+                                {renderChatPageInput}
+                                {renderChatComposerRevInput}
                                 {renderBackToInput}
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">

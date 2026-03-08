@@ -22,6 +22,8 @@ instance Controller TradesController where
         let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
         let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
+        let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
+        let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
         let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
 
         let isBuy = tradeType == "buy"
@@ -107,7 +109,7 @@ instance Controller TradesController where
         let action = if isBuy then "bought" else "sold"
         setSuccessMessage $ "Successfully " <> action <> " " <> show paramQty <> " shares for " <> formatMoney tradeAmountCents
 
-        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (normalizePageParam currentActivityPage) backToPath)
+        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (normalizePageParam currentActivityPage) (normalizePageParam currentChatPage) currentChatComposerRev backToPath)
 
     action ClosePositionAction { assetId } = do
         dbPosition <- query @Position
@@ -275,7 +277,7 @@ instance Controller TradesController where
                     |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
     action RefundMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -336,7 +338,7 @@ instance Controller TradesController where
                     |> updateRecord
 
         setSuccessMessage "Market refunded successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 buildMarketState :: M.Map (Id Asset) Quantity -> [(Text, Int)]
 buildMarketState qtyMap =
@@ -362,3 +364,8 @@ normalizePageParam :: Int -> Maybe Int
 normalizePageParam pageNum
     | pageNum > 1 = Just pageNum
     | otherwise = Nothing
+
+normalizeOptionalTextParam :: Maybe Text -> Maybe Text
+normalizeOptionalTextParam = \case
+    Just value | Text.strip value /= "" -> Just (Text.strip value)
+    _ -> Nothing

@@ -103,16 +103,18 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render NewView { .. }
 
-    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, backTo } = autoRefresh do
+    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, backTo } = autoRefresh do
         ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
-        let tAction = tradingAction <|> paramOrNothing @Text "tradingAction"
+        let tAction = sanitizeTradingAction (tradingAction <|> paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (showChart <|> readQueryFlag "showChart")
         let descriptionVisible = fromMaybe False (showDescription <|> readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (showAllAssets <|> readQueryFlag "showAllAssets")
         let tradeHistoryVisible = fromMaybe False (showTradeHistory <|> readQueryFlag "showTradeHistory")
         let requestedActivityPage = max 1 (fromMaybe 1 (activityPage <|> paramOrNothing @Int "activityPage"))
+        let requestedChatPage = max 1 (fromMaybe 1 (chatPage <|> paramOrNothing @Int "chatPage"))
+        let currentChatComposerRev = normalizeOptionalTextParam (chatComposerRev <|> paramOrNothing @Text "chatComposerRev")
         let backToPath = sanitizeBackTo (backTo <|> paramOrNothing @Text "backTo")
 
         market :: Market <- fetch mId
@@ -143,6 +145,26 @@ instance Controller MarketsController where
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #userId
 
+        let chatItemsPerPage = 20
+        chatMessagesCount <- query @MarketChatMessage
+            |> filterWhere (#marketId, mId)
+            |> fetchCount
+
+        let chatTotalPages = max 1 ((chatMessagesCount + chatItemsPerPage - 1) `div` chatItemsPerPage)
+        let currentChatPage = min requestedChatPage chatTotalPages
+        let visibleChatMessages = currentChatPage * chatItemsPerPage
+
+        chatMessages <- query @MarketChatMessage
+            |> filterWhere (#marketId, mId)
+            |> orderByDesc #createdAt
+            |> limit visibleChatMessages
+            |> fetch
+            >>= collectionFetchRelated #userId
+
+        let chatEntries = map (\message -> MarketChatEntry { message = message, author = get #userId message }) chatMessages
+
+        let hasOlderChatMessages = length chatMessages < chatMessagesCount
+
         render ShowView
             { market
             , category
@@ -156,9 +178,56 @@ instance Controller MarketsController where
             , activityTransactions
             , activityCurrentPage = currentActivityPage
             , activityTotalPages
+            , chatMessages = chatEntries
+            , chatCurrentPage = currentChatPage
+            , hasOlderChatMessages
+            , chatComposerRev = currentChatComposerRev
             , backTo = backToPath
             , chartData
             }
+
+    action CreateMarketChatMessageAction { marketId } = do
+        ensureIsUser
+        let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        _market :: Market <- fetch mId
+
+        let tAssetId = paramOrNothing @(Id Asset) "tradingAssetId"
+        let tAction = sanitizeTradingAction (paramOrNothing @Text "tradingAction")
+        let chartVisible = fromMaybe True (readQueryFlag "showChart")
+        let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
+        let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
+        let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
+        let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
+        let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
+        let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
+        let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
+        let messageBody = normalizeChatMessageBody (param @Text "body")
+        let redirectToShowMarket chatComposerRevision = redirectTo ShowMarketAction
+                { marketId = mId
+                , tradingAssetId = tAssetId
+                , tradingAction = tAction
+                , showChart = Just chartVisible
+                , showDescription = Just descriptionVisible
+                , showAllAssets = Just allAssetsVisible
+                , showTradeHistory = Just tradeHistoryVisible
+                , activityPage = normalizePageParam currentActivityPage
+                , chatPage = normalizePageParam currentChatPage
+                , chatComposerRev = chatComposerRevision
+                , backTo = backToPath
+                }
+
+        case validateChatMessageBody messageBody of
+            Just errorMessage -> do
+                setErrorMessage errorMessage
+                redirectToShowMarket currentChatComposerRev
+            Nothing -> do
+                message <- newRecord @MarketChatMessage
+                    |> set #marketId mId
+                    |> set #userId currentUserId
+                    |> set #body messageBody
+                    |> createRecord
+
+                redirectToShowMarket (Just (cs (show message.id)))
 
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -374,6 +443,32 @@ normalizeSearchQuery :: Maybe Text -> Maybe Text
 normalizeSearchQuery (Just query)
     | strip query /= "" = Just (strip query)
 normalizeSearchQuery _ = Nothing
+
+normalizePageParam :: Int -> Maybe Int
+normalizePageParam pageNum
+    | pageNum > 1 = Just pageNum
+    | otherwise = Nothing
+
+normalizeOptionalTextParam :: Maybe Text -> Maybe Text
+normalizeOptionalTextParam = \case
+    Just value | strip value /= "" -> Just (strip value)
+    _ -> Nothing
+
+sanitizeTradingAction :: Maybe Text -> Maybe Text
+sanitizeTradingAction = \case
+    Just "buy" -> Just "buy"
+    Just "sell" -> Just "sell"
+    _ -> Nothing
+
+normalizeChatMessageBody :: Text -> Text
+normalizeChatMessageBody = strip
+
+validateChatMessageBody :: Text -> Maybe Text
+validateChatMessageBody body
+    | body == "" = Just "Please enter a message"
+    | Text.any (\char -> char == '\n' || char == '\r') body = Just "Message must be a single line"
+    | Text.length body > 280 = Just "Message must be at most 280 characters"
+    | otherwise = Nothing
 
 readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
 readQueryFlag name =
