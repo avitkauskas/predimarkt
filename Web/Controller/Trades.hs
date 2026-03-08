@@ -109,7 +109,7 @@ instance Controller TradesController where
         let action = if isBuy then "bought" else "sold"
         setSuccessMessage $ "Successfully " <> action <> " " <> show paramQty <> " shares for " <> formatMoney tradeAmountCents
 
-        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (normalizePageParam currentActivityPage) (normalizePageParam currentChatPage) currentChatComposerRev backToPath)
+        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (normalizePageParam currentActivityPage) (normalizePageParam currentChatPage) currentChatComposerRev Nothing backToPath)
 
     action ClosePositionAction { assetId } = do
         dbPosition <- query @Position
@@ -277,7 +277,7 @@ instance Controller TradesController where
                     |> updateRecord
 
         setSuccessMessage "Market resolved successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
     action RefundMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -338,7 +338,7 @@ instance Controller TradesController where
                     |> updateRecord
 
         setSuccessMessage "Market refunded successfully"
-        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+        redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 buildMarketState :: M.Map (Id Asset) Quantity -> [(Text, Int)]
 buildMarketState qtyMap =
@@ -354,11 +354,6 @@ readQueryFlag name =
         Just "false" -> Just False
         Just "0"     -> Just False
         _            -> Nothing
-
-sanitizeBackTo :: Maybe Text -> Maybe Text
-sanitizeBackTo = \case
-    Just path | "/Markets" `Text.isPrefixOf` path -> Just path
-    _ -> Nothing
 
 normalizePageParam :: Int -> Maybe Int
 normalizePageParam pageNum

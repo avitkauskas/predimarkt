@@ -3,6 +3,7 @@ module Test.Main where
 
 import Application.Domain.LMSR
 import qualified Application.Domain.Types as NewDomain
+import Application.Helper.Controller (sanitizeBackTo)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as Text
 import Generated.Types
@@ -10,6 +11,8 @@ import IHP.Prelude
 import Test.Hspec
 import Test.QuickCheck
 import Unsafe.Coerce
+import Web.Controller.Markets ()
+import Web.Controller.Trades ()
 import Web.Routes (buildShowMarketPath)
 
 testBeta :: Integer
@@ -100,6 +103,7 @@ main = hspec do
                         (Nothing :: Maybe Int)
                         (Nothing :: Maybe Int)
                         (Nothing :: Maybe Text)
+                        (Nothing :: Maybe Int)
                         (Just backToPath)
                 path `shouldSatisfy` Text.isInfixOf "backTo=%2FMarkets%3Fcategory%3Dtest-category%26search%3Done"
                 path `shouldSatisfy` not . Text.isInfixOf "&search=one"
@@ -117,6 +121,59 @@ main = hspec do
                         (Nothing :: Maybe Int)
                         (Just (3 :: Int))
                         (Just ("rev-123" :: Text))
+                        (Nothing :: Maybe Int)
                         (Nothing :: Maybe Text)
                 path `shouldSatisfy` Text.isInfixOf "chatPage=3"
                 path `shouldSatisfy` Text.isInfixOf "chatComposerRev=rev-123"
+
+            it "includes trade quantity when present" do
+                let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
+                    path = buildShowMarketPath
+                        marketId
+                        (Nothing :: Maybe (Id Asset))
+                        (Nothing :: Maybe Text)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Int)
+                        (Nothing :: Maybe Int)
+                        (Nothing :: Maybe Text)
+                        (Just (37 :: Int))
+                        (Nothing :: Maybe Text)
+                path `shouldSatisfy` Text.isInfixOf "tradeQuantity=37"
+
+            it "URL-encodes dashboard backTo paths with page and search state" do
+                let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
+                    backToPath = "/DashboardPositions?page=3&search=gold"
+                    path = buildShowMarketPath
+                        marketId
+                        (Nothing :: Maybe (Id Asset))
+                        (Nothing :: Maybe Text)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Bool)
+                        (Nothing :: Maybe Int)
+                        (Nothing :: Maybe Int)
+                        (Nothing :: Maybe Text)
+                        (Nothing :: Maybe Int)
+                        (Just backToPath)
+                path `shouldSatisfy` Text.isInfixOf "backTo=%2FDashboardPositions%3Fpage%3D3%26search%3Dgold"
+
+        describe "sanitizeBackTo" do
+            it "accepts any local path" do
+                sanitizeBackTo (Just "/DashboardPositions?page=3&search=gold")
+                    `shouldBe` Just "/DashboardPositions?page=3&search=gold"
+                sanitizeBackTo (Just "/DashboardTransactions?page=2")
+                    `shouldBe` Just "/DashboardTransactions?page=2"
+                sanitizeBackTo (Just "/DashboardMarkets?statusFilter=Open")
+                    `shouldBe` Just "/DashboardMarkets?statusFilter=Open"
+                sanitizeBackTo (Just "/Users") `shouldBe` Just "/Users"
+                sanitizeBackTo (Just " /Leaderboard ") `shouldBe` Just "/Leaderboard"
+
+            it "rejects external or non-local paths" do
+                sanitizeBackTo (Just "https://evil.example") `shouldBe` Nothing
+                sanitizeBackTo (Just "http://evil.example") `shouldBe` Nothing
+                sanitizeBackTo (Just "//evil.example") `shouldBe` Nothing
+                sanitizeBackTo (Just "Markets") `shouldBe` Nothing

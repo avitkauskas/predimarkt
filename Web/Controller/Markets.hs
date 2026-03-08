@@ -103,7 +103,7 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render NewView { .. }
 
-    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, backTo } = autoRefresh do
+    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } = autoRefresh do
         ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
@@ -115,6 +115,7 @@ instance Controller MarketsController where
         let requestedActivityPage = max 1 (fromMaybe 1 (activityPage <|> paramOrNothing @Int "activityPage"))
         let requestedChatPage = max 1 (fromMaybe 1 (chatPage <|> paramOrNothing @Int "chatPage"))
         let currentChatComposerRev = normalizeOptionalTextParam (chatComposerRev <|> paramOrNothing @Text "chatComposerRev")
+        let currentTradeQuantity = sanitizeTradeQuantity (tradeQuantity <|> paramOrNothing @Int "tradeQuantity")
         let backToPath = sanitizeBackTo (backTo <|> paramOrNothing @Text "backTo")
 
         market :: Market <- fetch mId
@@ -182,6 +183,7 @@ instance Controller MarketsController where
             , chatCurrentPage = currentChatPage
             , hasOlderChatMessages
             , chatComposerRev = currentChatComposerRev
+            , tradeQuantity = currentTradeQuantity
             , backTo = backToPath
             , chartData
             }
@@ -200,6 +202,7 @@ instance Controller MarketsController where
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
         let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
         let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
+        let currentTradeQuantity = sanitizeTradeQuantity (paramOrNothing @Int "tradeQuantity")
         let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
         let messageBody = normalizeChatMessageBody (param @Text "body")
         let redirectToShowMarket chatComposerRevision = redirectTo ShowMarketAction
@@ -213,6 +216,7 @@ instance Controller MarketsController where
                 , activityPage = normalizePageParam currentActivityPage
                 , chatPage = normalizePageParam currentChatPage
                 , chatComposerRev = chatComposerRevision
+                , tradeQuantity = currentTradeQuantity
                 , backTo = backToPath
                 }
 
@@ -454,6 +458,11 @@ normalizeOptionalTextParam = \case
     Just value | strip value /= "" -> Just (strip value)
     _ -> Nothing
 
+sanitizeTradeQuantity :: Maybe Int -> Maybe Int
+sanitizeTradeQuantity = \case
+    Just quantity | quantity >= 0 -> Just quantity
+    _ -> Nothing
+
 sanitizeTradingAction :: Maybe Text -> Maybe Text
 sanitizeTradingAction = \case
     Just "buy" -> Just "buy"
@@ -478,8 +487,3 @@ readQueryFlag name =
         Just "false" -> Just False
         Just "0"     -> Just False
         _            -> Nothing
-
-sanitizeBackTo :: Maybe Text -> Maybe Text
-sanitizeBackTo = \case
-    Just path | "/Markets" `Text.isPrefixOf` path -> Just path
-    _ -> Nothing

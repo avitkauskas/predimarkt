@@ -66,15 +66,17 @@ renderPositionsContent [] _ _ (Just _) = [hsx|
 |]
 renderPositionsContent positions currentPage totalPages searchFilter = [hsx|
     <div class="row g-3">
-        {forEach positions renderPositionCard}
+        {forEach positions (renderPositionCard currentBackToPath)}
     </div>
     <div>
         {renderPositionsPagination currentPage totalPages searchFilter}
     </div>
 |]
+    where
+        currentBackToPath = pathTo (DashboardPositionsAction (normalizePageParam currentPage) searchFilter)
 
-renderPositionCard :: (?context :: ControllerContext) => EnrichedPosition -> Html
-renderPositionCard ep =
+renderPositionCard :: (?context :: ControllerContext) => Text -> EnrichedPosition -> Html
+renderPositionCard backToPath ep =
     let position = get #epPosition ep
         asset = get #assetId position
         market = get #marketId position
@@ -114,8 +116,8 @@ renderPositionCard ep =
 
         nextAction = if isLong then Just "buy" else Just "sell"
         marketUrl = if isOpen
-            then ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
-            else ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+            then ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
+            else ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
 
         positionDisplay = renderPositionDisplay isOpen isLong absQty
         pnlDisplay = renderPnLDisplay currentPnL
@@ -123,7 +125,7 @@ renderPositionCard ep =
             n | n > 0 -> "text-success fw-bold"
               | n < 0 -> "text-danger fw-bold"
               | otherwise -> "fw-medium"
-        actionBtn = renderActionButton isOpen isProfitable market.id asset.id market.status
+        actionBtn = renderActionButton isOpen isProfitable market.id asset.id market.status backToPath
     in [hsx|
         <div class="col-12">
             <div class="card shadow-sm">
@@ -198,17 +200,17 @@ renderPositionDisplay isOpen isLong qty =
 renderPnLDisplay :: Integer -> Html
 renderPnLDisplay pnl = [hsx|<span>{formatMoneySigned pnl}</span>|]
 
-renderActionButton :: Bool -> Bool -> Id Market -> Id Asset -> MarketStatus -> Html
+renderActionButton :: Bool -> Bool -> Id Market -> Id Asset -> MarketStatus -> Text -> Html
 -- For markets that are closed/resolved/refunded, always show status button
-renderActionButton _ _ marketId _ marketStatus
+renderActionButton _ _ marketId _ marketStatus backToPath
     | marketStatus == MarketStatusClosed =
-        renderStatusButton marketId "btn-outline-primary" "Closed"
+        renderStatusButton marketId backToPath "btn-outline-primary" "Closed"
     | marketStatus == MarketStatusResolved =
-        renderStatusButton marketId "btn-outline-success" "Resolved"
+        renderStatusButton marketId backToPath "btn-outline-success" "Resolved"
     | marketStatus == MarketStatusRefunded =
-        renderStatusButton marketId "btn-outline-danger" "Refunded"
+        renderStatusButton marketId backToPath "btn-outline-danger" "Refunded"
 -- For open markets with open positions, show profit/loss buttons
-renderActionButton True isProfitable _ assetId _ =
+renderActionButton True isProfitable _ assetId _ _ =
     let (cls, txt) = if isProfitable
             then ("btn-success" :: Text, "Take Profit" :: Text)
             else ("btn-danger" :: Text, "Close Loss" :: Text)
@@ -219,17 +221,17 @@ renderActionButton True isProfitable _ assetId _ =
         </form>
     |]
 -- For open markets with closed positions, show Make Trade
-renderActionButton False _ marketId _ _ =
-    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+renderActionButton False _ marketId _ _ backToPath =
+    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
     in [hsx|
         <a href={link}
            class="btn btn-primary btn-sm text-nowrap"
            style="width: 94px;">Make Trade</a>
     |]
 
-renderStatusButton :: Id Market -> Text -> Text -> Html
-renderStatusButton marketId cls txt =
-    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+renderStatusButton :: Id Market -> Text -> Text -> Text -> Html
+renderStatusButton marketId backToPath cls txt =
+    let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
     in [hsx|
         <a href={link}
            class={"btn btn-sm text-nowrap " <> cls}
@@ -240,6 +242,11 @@ renderPositionsPagination :: Int -> Int -> Maybe Text -> Html
 renderPositionsPagination currentPage totalPages searchFilter =
     renderSmartPagination currentPage totalPages "Positions pagination"
         (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilter))
+
+normalizePageParam :: Int -> Maybe Int
+normalizePageParam pageNum
+    | pageNum > 1 = Just pageNum
+    | otherwise = Nothing
 
 renderClosedPnL :: Integer -> Html
 renderClosedPnL pnl

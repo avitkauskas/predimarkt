@@ -20,18 +20,20 @@ instance View MarketsView where
             {renderTabs activeStatus}
             <table class="table table-hover ms-0">
                 <tbody>
-                    {forEach markets renderMarket}
+                    {forEach markets (renderMarket currentBackToPath)}
                 </tbody>
             </table>
         </div>
     |]
+        where
+            currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus))
 
-renderMarket :: (?context :: ControllerContext) => Market -> Html
-renderMarket market = [hsx|
+renderMarket :: (?context :: ControllerContext) => Text -> Market -> Html
+renderMarket backToPath market = [hsx|
     <tr>
         <td class="align-middle">
             <a class="text-decoration-none"
-               href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing}>
+               href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}>
                 {market.title}
             </a>
         </td>

@@ -63,6 +63,7 @@ data MarketsController
         , activityPage     :: !(Maybe Int)
         , chatPage         :: !(Maybe Int)
         , chatComposerRev  :: !(Maybe Text)
+        , tradeQuantity    :: !(Maybe Int)
         , backTo           :: !(Maybe Text)
         }
     | CreateMarketChatMessageAction { marketId :: !(Id Market) }

@@ -1,6 +1,7 @@
 module Application.Helper.Controller where
 
 import Data.List (sortBy)
+import qualified Data.Text as Text
 import Generated.Types
 import IHP.ControllerPrelude
 
@@ -33,3 +34,13 @@ constructUniqueSlug categoryId baseSlug maybeExcludeId = loop 0
             if exists
                 then loop (i + 1)
                 else pure slug
+
+sanitizeBackTo :: Maybe Text -> Maybe Text
+sanitizeBackTo = (>>= sanitizeLocalPath)
+    where
+        sanitizeLocalPath path
+            | Text.null trimmedPath = Nothing
+            | "/" `Text.isPrefixOf` trimmedPath && not ("//" `Text.isPrefixOf` trimmedPath) = Just trimmedPath
+            | otherwise = Nothing
+            where
+                trimmedPath = Text.strip path

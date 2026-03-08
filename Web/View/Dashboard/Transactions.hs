@@ -74,15 +74,17 @@ renderTransactionsContent [] _ _ (Just _) = [hsx|
 |]
 renderTransactionsContent txns currentPage totalPages searchFilter = [hsx|
     <div class="row g-3">
-        {forEach txns renderTransactionCard}
+        {forEach txns (renderTransactionCard currentBackToPath)}
     </div>
     <div>
         {renderTxnPagination currentPage totalPages searchFilter}
     </div>
 |]
+    where
+        currentBackToPath = pathTo (DashboardTransactionsAction (normalizePageParam currentPage) searchFilter)
 
-renderTransactionCard :: (?context :: ControllerContext) => TransactionWithDetails -> Html
-renderTransactionCard twd =
+renderTransactionCard :: (?context :: ControllerContext) => Text -> TransactionWithDetails -> Html
+renderTransactionCard backToPath twd =
     let txn = get #transaction twd
         asset = get #assetId txn
         market = get #marketId txn
@@ -99,7 +101,7 @@ renderTransactionCard twd =
         priceImpact = formatPricePercent priceBefore <> " → " <> formatPricePercent priceAfter
 
         nextAction = if isBuy then Just "buy" else Just "sell"
-        marketUrl = ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+        marketUrl = ShowMarketAction market.id (Just asset.id) nextAction Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
 
         typeText = if isBuy then "bought" else "sold" :: Text
         typeColor = if isBuy then "text-success" else "text-danger" :: Text
@@ -156,3 +158,8 @@ renderTxnPagination :: Int -> Int -> Maybe Text -> Html
 renderTxnPagination currentPage totalPages searchFilter =
     renderSmartPagination currentPage totalPages "Transaction pagination"
         (\pageNum -> pathTo (DashboardTransactionsAction (Just pageNum) searchFilter))
+
+normalizePageParam :: Int -> Maybe Int
+normalizePageParam pageNum
+    | pageNum > 1 = Just pageNum
+    | otherwise = Nothing

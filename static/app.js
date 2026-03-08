@@ -11,6 +11,9 @@ $(document).on('ready turbolinks:load', function () {
     initAssetPercentageCalculations()
 
     initMarketChat()
+    initMarketChatTradeQuantity()
+    initMarketShowTradeQuantityLinks()
+    initMarketsPageOpenMarketLinks()
     initMarketPageScroll()
 
     // Initialize info blocks for any pre-opened trade forms (only on market show pages)
@@ -32,7 +35,7 @@ $(document).on('ready turbolinks:load', function () {
             }
         });
     }
-});
+})
 
 function initAutoSubmitSearchForms() {
     const forms = document.querySelectorAll('form[data-auto-submit-delay]');
@@ -121,18 +124,84 @@ function initMarketPageScroll() {
     const chatCard = document.getElementById('market-chat-card')
     if (!chatCard) return
 
-    const url = new URL(window.location.href)
-    if (url.pathname !== '/ShowMarket') return
+    if (window.location.pathname !== '/ShowMarket') {
+        window.marketPageShouldStartAtTop = false
+        return
+    }
 
-    const shouldStartAtTop = Array.from(url.searchParams.keys()).every(key => {
-        return key === 'marketId' || key === 'backTo'
-    })
+    if (!window.marketPageShouldStartAtTop) return
 
-    if (!shouldStartAtTop) return
+    window.marketPageShouldStartAtTop = false
 
     requestAnimationFrame(() => {
         window.scrollTo(0, 0)
     })
+}
+
+function initMarketsPageOpenMarketLinks() {
+    document.querySelectorAll('a[data-start-market-page-at-top="true"]').forEach(link => {
+        if (link.marketPageStartTopInitialized) return
+        link.marketPageStartTopInitialized = true
+
+        link.addEventListener('click', function () {
+            window.marketPageShouldStartAtTop = true
+        })
+    })
+}
+
+function initMarketChatTradeQuantity() {
+    const chatForm = document.getElementById('market-chat-form')
+    const chatTradeQuantityInput = document.getElementById('market-chat-trade-quantity')
+    if (!chatForm || !chatTradeQuantityInput || chatForm.marketTradeQuantityInitialized) return
+
+    chatForm.marketTradeQuantityInitialized = true
+    chatForm.addEventListener('submit', function () {
+        const activeTradeQuantityInput = document.querySelector(
+            '[id^="buy-form-"]:not(.d-none) input[name="quantity"], [id^="sell-form-"]:not(.d-none) input[name="quantity"]'
+        )
+
+        chatTradeQuantityInput.value = activeTradeQuantityInput ? activeTradeQuantityInput.value : ''
+    })
+}
+
+function initMarketShowTradeQuantityLinks() {
+    if (window.location.pathname !== '/ShowMarket') return
+
+    const syncLinks = () => {
+        const tradeQuantity = currentMarketTradeQuantity()
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            const url = new URL(link.href, window.location.origin)
+            if (url.origin !== window.location.origin || url.pathname !== '/ShowMarket') return
+
+            if (tradeQuantity === '') {
+                url.searchParams.delete('tradeQuantity')
+            } else {
+                url.searchParams.set('tradeQuantity', tradeQuantity)
+            }
+
+            link.href = url.toString()
+        })
+    }
+
+    syncLinks()
+
+    document.querySelectorAll('[id^="buy-form-"] input[name="quantity"], [id^="sell-form-"] input[name="quantity"]').forEach(input => {
+        if (input.marketTradeQuantityLinksInitialized) return
+        input.marketTradeQuantityLinksInitialized = true
+        input.addEventListener('input', syncLinks)
+        input.addEventListener('change', syncLinks)
+    })
+}
+
+function currentMarketTradeQuantity() {
+    const activeTradeQuantityInput = document.querySelector(
+        '[id^="buy-form-"]:not(.d-none) input[name="quantity"], [id^="sell-form-"]:not(.d-none) input[name="quantity"]'
+    )
+    if (activeTradeQuantityInput) return activeTradeQuantityInput.value.trim()
+
+    const currentUrl = new URL(window.location.href)
+    return (currentUrl.searchParams.get('tradeQuantity') || '').trim()
 }
 
 function syncMarketChatMetrics(messages) {

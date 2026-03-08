@@ -38,6 +38,7 @@ data ShowView = ShowView
     , chatCurrentPage      :: Int
     , hasOlderChatMessages :: Bool
     , chatComposerRev      :: Maybe Text
+    , tradeQuantity        :: Maybe Int
     , backTo               :: Maybe Text
     , chartData            :: [AssetChartData]
     }
@@ -148,6 +149,7 @@ instance View ShowView where
                     , activityPage = normalizePageParam activityPage'
                     , chatPage = normalizePageParam chatPage'
                     , chatComposerRev = chatComposerRev
+                    , tradeQuantity = tradeQuantity
                     , backTo = backTo
                     }
 
@@ -284,6 +286,9 @@ instance View ShowView where
                 | pageNum > 1 = Just pageNum
                 | otherwise = Nothing
 
+            chatTradeQuantityValue :: Text
+            chatTradeQuantityValue = inputValue (fromMaybe 10 tradeQuantity)
+
             renderBackToInput :: Html
             renderBackToInput = case backTo of
                 Just backToPath -> [hsx|<input type="hidden" name="backTo" value={backToPath} />|]
@@ -299,6 +304,11 @@ instance View ShowView where
             renderChatComposerRevInput = case chatComposerRev of
                 Just revision -> [hsx|<input type="hidden" name="chatComposerRev" value={revision} />|]
                 Nothing -> [hsx||]
+
+            renderTradeQuantityInput :: Html
+            renderTradeQuantityInput = [hsx|
+                <input id="market-chat-trade-quantity" type="hidden" name="tradeQuantity" value={chatTradeQuantityValue} />
+            |]
 
             renderTradingAssetIdInput :: Html
             renderTradingAssetIdInput = case tradingAssetId of
@@ -331,6 +341,7 @@ instance View ShowView where
                                 {renderActivityPageInput}
                                 {renderChatPageInput}
                                 {renderChatComposerRevInput}
+                                {renderTradeQuantityInput}
                                 {renderBackToInput}
                                 <div class="input-group mt-2">
                                     <input id={"market-chat-input-" <> fromMaybe "stable" chatComposerRev}
@@ -552,6 +563,14 @@ instance View ShowView where
                     isBuyFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "buy"
                     isSellFormOpen = tradingAssetId == Just asset.id && tradingAction == Just "sell"
 
+                    tradeQuantityValue :: Bool -> Text
+                    tradeQuantityValue isFormOpen = inputValue quantity
+                        where
+                            quantity :: Int
+                            quantity = if isFormOpen
+                                then fromMaybe 10 tradeQuantity
+                                else 10
+
                     assetPriceVal :: Double
                     assetPriceVal = case market.status of
                         MarketStatusResolved -> if isResolvedWinner then 1.0 else 0.0
@@ -621,7 +640,8 @@ instance View ShowView where
                                         <div class="input-group" style="width: 160px">
                                             <span class="input-group-text info-label">shares</span>
                                             <input type="number" name="quantity"
-                                                   value="10" step="1" min="0"
+                                                   id={"trade-quantity-buy-" <> inputValue asset.id}
+                                                   value={tradeQuantityValue isBuyFormOpen} step="1" min="0"
                                                    class="form-control"
                                                    autofocus={isBuyFormOpen}
                                                    oninput="updateBuyInfo(this)"
@@ -654,7 +674,8 @@ instance View ShowView where
                                         <div class="input-group" style="width: 160px">
                                             <span class="input-group-text info-label">shares</span>
                                             <input type="number" name="quantity"
-                                                   value="10" step="1" min="0"
+                                                   id={"trade-quantity-sell-" <> inputValue asset.id}
+                                                   value={tradeQuantityValue isSellFormOpen} step="1" min="0"
                                                    class="form-control"
                                                    autofocus={isSellFormOpen}
                                                    oninput="updateSellInfo(this)"
