@@ -349,8 +349,8 @@ instance View ShowView where
                                            name="body"
                                            form="market-chat-form"
                                            class="form-control"
-                                           maxlength="280"
-                                           placeholder="Type a message..."
+                                           maxlength="500"
+                                           placeholder="Type a message... (500 chars max)"
                                            autocomplete="off" />
                                     <button id="market-chat-submit"
                                             class="btn btn-primary"
@@ -391,7 +391,7 @@ instance View ShowView where
                     </div>
                 |]
                 messages -> [hsx|
-                    <div class="d-flex flex-column gap-3">
+                    <div class="d-flex flex-column gap-2">
                         {forEach messages renderChatMessage}
                     </div>
                 |]
@@ -399,13 +399,13 @@ instance View ShowView where
             renderChatMessage :: MarketChatEntry -> Html
             renderChatMessage chatEntry = [hsx|
                 <div>
-                    <div class="d-flex justify-content-between align-items-baseline gap-3 mb-1">
+                    <div class="d-flex justify-content-between align-items-baseline gap-2 mb-0 text-secondary small">
                         <span>{author.nickname}</span>
-                        <span class="small text-muted text-nowrap" style="font-size: 0.8em;">
+                        <span class="text-nowrap" style="font-size: 0.8em;">
                             {timeAgo message.createdAt}
                         </span>
                     </div>
-                    <div class="text-secondary" style="overflow-wrap: anywhere;">
+                    <div style="overflow-wrap: anywhere;">
                         {message.body}
                     </div>
                 </div>

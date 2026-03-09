@@ -476,7 +476,7 @@ validateChatMessageBody :: Text -> Maybe Text
 validateChatMessageBody body
     | body == "" = Just "Please enter a message"
     | Text.any (\char -> char == '\n' || char == '\r') body = Just "Message must be a single line"
-    | Text.length body > 280 = Just "Message must be at most 280 characters"
+    | Text.length body > 500 = Just "Message must be at most 500 characters"
     | otherwise = Nothing
 
 readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
