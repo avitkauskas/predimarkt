@@ -26,6 +26,7 @@ import Web.View.Markets.Show
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do
         let categoryFilter = paramOrNothing "category"
+        let statusFilter = parseMarketIndexStatusFilter (paramOrNothing @Text "status")
         let searchFilter = normalizeSearchQuery (paramOrNothing "search")
         let currentPage = max 1 $ fromMaybe 1 (paramOrNothing @Int "page")
         let marketsPerPage = 12
@@ -58,24 +59,28 @@ instance Controller MarketsController where
                     Nothing -> queryBuilder
 
         let applyStatusFilter queryBuilder =
-                queryBuilder
-                    |> filterWhereNot (#status, MarketStatusDraft)
-
-        let applyRecentActivityFilter queryBuilder =
-                queryBuilder
-                    |> queryOr
-                        (filterWhere (#status, MarketStatusOpen))
-                        (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
+                case statusFilter of
+                    MarketIndexStatusOpenAndRecentOther ->
+                        queryBuilder
+                            |> filterWhereNot (#status, MarketStatusDraft)
+                            |> queryOr
+                                (filterWhere (#status, MarketStatusOpen))
+                                (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
+                    MarketIndexStatusAllClosed ->
+                        queryBuilder |> filterWhere (#status, MarketStatusClosed)
+                    MarketIndexStatusAllResolved ->
+                        queryBuilder |> filterWhere (#status, MarketStatusResolved)
+                    MarketIndexStatusAllRefunded ->
+                        queryBuilder |> filterWhere (#status, MarketStatusRefunded)
 
         (totalMarkets, markets') <- case matchingMarketIds of
             Just [] -> pure (0, [])
             _ -> do
                 let filteredMarketsQuery =
                         query @Market
-                            |> applyRecentActivityFilter
+                            |> applyStatusFilter
                             |> applyCategoryFilter
                             |> applySearchFilter
-                            |> applyStatusFilter
 
                 totalMarkets <- filteredMarketsQuery |> fetchCount
                 markets' <- filteredMarketsQuery

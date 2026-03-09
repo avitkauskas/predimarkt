@@ -14,6 +14,8 @@ import Unsafe.Coerce
 import Web.Controller.Markets ()
 import Web.Controller.Trades ()
 import Web.Routes (buildShowMarketPath)
+import Web.View.Markets.Index (MarketIndexStatusFilter (..), buildMarketsPath,
+                               parseMarketIndexStatusFilter)
 
 testBeta :: Integer
 testBeta = 300
@@ -91,7 +93,7 @@ main = hspec do
         describe "Market show path building" do
             it "URL-encodes backTo so nested market filters survive round-trips" do
                 let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
-                    backToPath = "/Markets?category=test-category&search=one"
+                    backToPath = "/Markets?category=test-category&status=refunded&search=one"
                     path = buildShowMarketPath
                         marketId
                         (Nothing :: Maybe (Id Asset))
@@ -105,7 +107,7 @@ main = hspec do
                         (Nothing :: Maybe Text)
                         (Nothing :: Maybe Int)
                         (Just backToPath)
-                path `shouldSatisfy` Text.isInfixOf "backTo=%2FMarkets%3Fcategory%3Dtest-category%26search%3Done"
+                path `shouldSatisfy` Text.isInfixOf "backTo=%2FMarkets%3Fcategory%3Dtest-category%26status%3Drefunded%26search%3Done"
                 path `shouldSatisfy` not . Text.isInfixOf "&search=one"
 
             it "includes chat state parameters when present" do
@@ -177,3 +179,37 @@ main = hspec do
                 sanitizeBackTo (Just "http://evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "//evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "Markets") `shouldBe` Nothing
+
+        describe "Market index status filters" do
+            it "defaults to open and recent other for missing or unknown params" do
+                parseMarketIndexStatusFilter Nothing
+                    `shouldBe` MarketIndexStatusOpenAndRecentOther
+                parseMarketIndexStatusFilter (Just "unexpected")
+                    `shouldBe` MarketIndexStatusOpenAndRecentOther
+
+            it "parses all explicit status filter options" do
+                parseMarketIndexStatusFilter (Just "closed")
+                    `shouldBe` MarketIndexStatusAllClosed
+                parseMarketIndexStatusFilter (Just "resolved")
+                    `shouldBe` MarketIndexStatusAllResolved
+                parseMarketIndexStatusFilter (Just "refunded")
+                    `shouldBe` MarketIndexStatusAllRefunded
+
+            it "builds market index paths with status, category, search, and page" do
+                let categoryId = unsafeCoerce ("test-category" :: Text) :: Id Category
+                    path = buildMarketsPath
+                        (Just categoryId)
+                        MarketIndexStatusAllResolved
+                        (Just "inflation")
+                        (Just 3)
+                path `shouldSatisfy` Text.isPrefixOf "/Markets?category="
+                path `shouldSatisfy`
+                    Text.isInfixOf "&status=resolved&search=inflation&page=3"
+
+            it "omits the status param for the default filter" do
+                buildMarketsPath
+                    Nothing
+                    MarketIndexStatusOpenAndRecentOther
+                    Nothing
+                    Nothing
+                    `shouldBe` "/Markets"

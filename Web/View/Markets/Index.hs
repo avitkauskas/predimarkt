@@ -9,28 +9,69 @@ data IndexView = IndexView
     { markets        :: [Include' ["categoryId", "assets"] Market]
     , categories     :: [Category]
     , categoryFilter :: Maybe (Id Category)
+    , statusFilter   :: MarketIndexStatusFilter
     , searchFilter   :: Maybe Text
     , currentPage    :: Int
     , totalMarkets   :: Int
     , hasMoreMarkets :: Bool
     }
 
+data MarketIndexStatusFilter
+    = MarketIndexStatusOpenAndRecentOther
+    | MarketIndexStatusAllClosed
+    | MarketIndexStatusAllResolved
+    | MarketIndexStatusAllRefunded
+    deriving (Eq, Show)
+
+parseMarketIndexStatusFilter :: Maybe Text -> MarketIndexStatusFilter
+parseMarketIndexStatusFilter = \case
+    Just "closed" -> MarketIndexStatusAllClosed
+    Just "resolved" -> MarketIndexStatusAllResolved
+    Just "refunded" -> MarketIndexStatusAllRefunded
+    _ -> MarketIndexStatusOpenAndRecentOther
+
+marketIndexStatusFilterParamValue :: MarketIndexStatusFilter -> Maybe Text
+marketIndexStatusFilterParamValue = \case
+    MarketIndexStatusOpenAndRecentOther -> Nothing
+    MarketIndexStatusAllClosed -> Just "closed"
+    MarketIndexStatusAllResolved -> Just "resolved"
+    MarketIndexStatusAllRefunded -> Just "refunded"
+
+marketIndexStatusFilterFormValue :: MarketIndexStatusFilter -> Text
+marketIndexStatusFilterFormValue = fromMaybe "" . marketIndexStatusFilterParamValue
+
+marketIndexStatusFilterLabel :: MarketIndexStatusFilter -> Text
+marketIndexStatusFilterLabel = \case
+    MarketIndexStatusOpenAndRecentOther -> "Recent"
+    MarketIndexStatusAllClosed -> "Closed"
+    MarketIndexStatusAllResolved -> "Resolved"
+    MarketIndexStatusAllRefunded -> "Refunded"
+
+marketIndexStatusFilterOptions :: [MarketIndexStatusFilter]
+marketIndexStatusFilterOptions =
+    [ MarketIndexStatusOpenAndRecentOther
+    , MarketIndexStatusAllClosed
+    , MarketIndexStatusAllResolved
+    , MarketIndexStatusAllRefunded
+    ]
+
 instance View IndexView where
     html IndexView { .. } = [hsx|
         <div id="markets-content">
             {renderFlashMessages}
-            {renderMarketsResults markets categories categoryFilter searchFilter currentPage totalMarkets hasMoreMarkets}
+            {renderMarketsResults markets categories categoryFilter statusFilter searchFilter currentPage totalMarkets hasMoreMarkets}
         </div>
     |]
 
-renderSearchForm :: Maybe (Id Category) -> Maybe Text -> Html
-renderSearchForm categoryFilter searchFilter = [hsx|
+renderSearchForm :: Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Html
+renderSearchForm categoryFilter statusFilter searchFilter = [hsx|
     <div class="d-flex" id="markets-search-form-container">
         <form class="w-100 position-relative"
               action={pathTo MarketsAction}
               method="GET"
               data-auto-submit-delay="300">
             {forEach (maybeToList categoryFilter) renderCategoryInput}
+            {renderStatusInput statusFilter}
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
@@ -51,39 +92,86 @@ renderCategoryInput categoryId = [hsx|
     <input type="hidden" name="category" value={inputValue categoryId} />
 |]
 
+renderSearchInput :: Text -> Html
+renderSearchInput searchQuery = [hsx|
+    <input type="hidden" name="search" value={searchQuery} />
+|]
+
+renderStatusInput :: MarketIndexStatusFilter -> Html
+renderStatusInput statusFilter = case marketIndexStatusFilterParamValue statusFilter of
+    Just statusValue -> [hsx|
+        <input type="hidden" name="status" value={statusValue} />
+    |]
+    Nothing -> mempty
+
+renderStatusForm :: Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Html
+renderStatusForm categoryFilter statusFilter searchFilter = [hsx|
+    <form class="d-flex align-items-center gap-2 flex-shrink-0"
+          action={pathTo MarketsAction}
+          method="GET">
+        {forEach (maybeToList categoryFilter) renderCategoryInput}
+        {forEach (maybeToList searchFilter) renderSearchInput}
+        <div class="d-inline-flex align-items-center gap-2 rounded border border-secondary-subtle ps-2 pe-0 text-body-secondary bg-transparent"
+             style="min-width: 133px; padding-top: 0.36rem; padding-bottom: 0.36rem;">
+            <i class="bi bi-filter-right"></i>
+            <select id="markets-status-filter"
+                    name="status"
+                    class="form-select form-select-sm flex-grow-1 border-0 bg-transparent text-body-secondary shadow-none py-0 ps-0 pe-4"
+                    aria-label="Filter markets by status"
+                    onchange="window.visitGetFormWithTurbolinks(this.form)">
+                {forEach marketIndexStatusFilterOptions (renderStatusOption statusFilter)}
+            </select>
+        </div>
+    </form>
+|]
+
+renderStatusOption :: MarketIndexStatusFilter -> MarketIndexStatusFilter -> Html
+renderStatusOption activeStatus optionStatus = [hsx|
+    <option value={marketIndexStatusFilterFormValue optionStatus}
+            selected={activeStatus == optionStatus}>
+        {marketIndexStatusFilterLabel optionStatus}
+    </option>
+|]
+
 renderMarketsResults
     :: (?context :: ControllerContext)
     => [Include' ["categoryId", "assets"] Market]
     -> [Category]
     -> Maybe (Id Category)
+    -> MarketIndexStatusFilter
     -> Maybe Text
     -> Int
     -> Int
     -> Bool
     -> Html
-renderMarketsResults markets categories categoryFilter searchFilter currentPage totalMarkets hasMoreMarkets = [hsx|
+renderMarketsResults markets categories categoryFilter statusFilter searchFilter currentPage totalMarkets hasMoreMarkets = [hsx|
     <div id="markets-results">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <ul class="nav nav-underline scroll-no-bar flex-nowrap mb-0 ms-2">
-                <li class="nav-item">
-                    <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
-                       href={buildMarketsPath Nothing searchFilter Nothing}>
-                        All
-                    </a>
-                </li>
-                {forEach categories (renderCategoryTab categoryFilter searchFilter)}
-            </ul>
-            <a href={NewMarketAction} class="btn btn-primary ms-3 text-nowrap"><i class="bi bi-plus-lg"></i> New Market</a>
+        <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+            <div class="d-flex align-items-center flex-nowrap flex-grow-1 scroll-no-bar">
+                <ul class="nav nav-underline flex-nowrap mb-0 ms-2">
+                    <li class="nav-item">
+                        <a class={classes ["nav-link text-reset", ("active", isNothing categoryFilter)]}
+                           href={buildMarketsPath Nothing statusFilter searchFilter Nothing}>
+                            All
+                        </a>
+                    </li>
+                    {forEach categories (renderCategoryTab categoryFilter statusFilter searchFilter)}
+                </ul>
+            </div>
+            <a href={NewMarketAction} class="btn btn-primary text-nowrap flex-shrink-0"><i class="bi bi-plus-lg"></i> New Market</a>
         </div>
-        <div class="mb-3">
-            {renderSearchForm categoryFilter searchFilter}
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="flex-grow-1" style="min-width: 0;">
+                {renderSearchForm categoryFilter statusFilter searchFilter}
+            </div>
+            {renderStatusForm categoryFilter statusFilter searchFilter}
         </div>
         {renderMarketsList markets currentMarketsPath}
-        {renderLoadMoreButton categoryFilter searchFilter currentPage (length markets) totalMarkets hasMoreMarkets}
+        {renderLoadMoreButton categoryFilter statusFilter searchFilter currentPage (length markets) totalMarkets hasMoreMarkets}
     </div>
 |]
     where
-        currentMarketsPath = buildCurrentMarketsPath categoryFilter searchFilter currentPage
+        currentMarketsPath = buildCurrentMarketsPath categoryFilter statusFilter searchFilter currentPage
 
 renderMarketsList :: (?context :: ControllerContext) => [Include' ["categoryId", "assets"] Market] -> Text -> Html
 renderMarketsList [] _ = [hsx|
@@ -100,24 +188,25 @@ renderMarketsList markets backToPath = [hsx|
 renderLoadMoreButton
     :: (?context :: ControllerContext)
     => Maybe (Id Category)
+    -> MarketIndexStatusFilter
     -> Maybe Text
     -> Int
     -> Int
     -> Int
     -> Bool
     -> Html
-renderLoadMoreButton categoryFilter searchFilter currentPage shownMarkets totalMarkets hasMoreMarkets =
+renderLoadMoreButton categoryFilter statusFilter searchFilter currentPage shownMarkets totalMarkets hasMoreMarkets =
     when hasMoreMarkets [hsx|
         <div class="d-flex justify-content-center mb-5">
-            <a href={buildMarketsPath categoryFilter searchFilter (Just (currentPage + 1))}
+            <a href={buildMarketsPath categoryFilter statusFilter searchFilter (Just (currentPage + 1))}
                class="btn btn-sm btn-outline-secondary text-nowrap">
                 Showing {shownMarkets} of {totalMarkets} markets · Load more
             </a>
         </div>
     |]
 
-renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> Maybe Text -> Category -> Html
-renderCategoryTab categoryFilter searchFilter category = [hsx|
+renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Category -> Html
+renderCategoryTab categoryFilter statusFilter searchFilter category = [hsx|
     <li class="nav-item">
         <a class={classes ["nav-link text-reset", ("active", categoryFilter == Just category.id)]}
            href={categoryLink}>
@@ -127,12 +216,13 @@ renderCategoryTab categoryFilter searchFilter category = [hsx|
 |]
     where
         categoryLink :: Text
-        categoryLink = buildMarketsPath (Just category.id) searchFilter Nothing
+        categoryLink = buildMarketsPath (Just category.id) statusFilter searchFilter Nothing
 
-buildMarketsPath :: Maybe (Id Category) -> Maybe Text -> Maybe Int -> Text
-buildMarketsPath categoryFilter searchFilter page =
+buildMarketsPath :: Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Maybe Int -> Text
+buildMarketsPath categoryFilter statusFilter searchFilter page =
     let queryParams = catMaybes
             [ fmap (\categoryId -> "category=" <> inputValue categoryId) categoryFilter
+            , fmap ("status=" <>) (marketIndexStatusFilterParamValue statusFilter)
             , fmap (\query -> "search=" <> inputValue query) searchFilter
             , fmap (\pageNumber -> "page=" <> inputValue pageNumber) page
             ]
@@ -141,9 +231,9 @@ buildMarketsPath categoryFilter searchFilter page =
             _  -> "?" <> intercalate "&" queryParams
     in pathTo MarketsAction <> queryString
 
-buildCurrentMarketsPath :: Maybe (Id Category) -> Maybe Text -> Int -> Text
-buildCurrentMarketsPath categoryFilter searchFilter currentPage =
-    buildMarketsPath categoryFilter searchFilter (if currentPage > 1 then Just currentPage else Nothing)
+buildCurrentMarketsPath :: Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Int -> Text
+buildCurrentMarketsPath categoryFilter statusFilter searchFilter currentPage =
+    buildMarketsPath categoryFilter statusFilter searchFilter (if currentPage > 1 then Just currentPage else Nothing)
 
 renderMarket :: (?context :: ControllerContext) => Text -> Include' ["categoryId", "assets"] Market -> Html
 renderMarket backToPath market = [hsx|

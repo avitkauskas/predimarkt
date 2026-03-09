@@ -149,6 +149,31 @@ function initMarketsPageOpenMarketLinks() {
     })
 }
 
+window.visitGetFormWithTurbolinks = function (form) {
+    const action = new URL(form.getAttribute('action') || window.location.pathname, window.location.origin)
+    const params = new URLSearchParams()
+
+    for (const [key, rawValue] of new FormData(form).entries()) {
+        if (typeof rawValue !== 'string') continue
+
+        const value = rawValue.trim()
+        if (value === '') continue
+
+        params.append(key, value)
+    }
+
+    const nextUrl = params.toString()
+        ? `${action.pathname}?${params.toString()}`
+        : action.pathname
+
+    if (window.Turbolinks && typeof window.Turbolinks.visit === 'function') {
+        window.Turbolinks.visit(nextUrl)
+        return
+    }
+
+    window.location.assign(nextUrl)
+}
+
 function initMarketChatTradeQuantity() {
     const chatForm = document.getElementById('market-chat-form')
     const chatTradeQuantityInput = document.getElementById('market-chat-trade-quantity')
