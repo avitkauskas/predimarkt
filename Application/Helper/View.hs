@@ -56,7 +56,7 @@ renderFlashToasts =
         [] -> [hsx||]
         flashMessages -> [hsx|
             <div id="flash-toast-container"
-                 class="toast-container position-fixed top-0 end-0 p-3 me-1"
+                 class="toast-container position-fixed top-0 start-50 translate-middle-x mt-5 p-3"
                  aria-atomic="true">
                 {forEach flashMessages renderFlashToast}
             </div>
