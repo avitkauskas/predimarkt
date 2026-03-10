@@ -17,6 +17,14 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX users_email_index ON users (LOWER(email));
 CREATE UNIQUE INDEX users_nickname_index ON users (LOWER(nickname));
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+CREATE TABLE passkeys (
+    id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
+    user_id UUID NOT NULL,
+    credential_id BYTEA NOT NULL UNIQUE,
+    public_key BYTEA NOT NULL,
+    sign_count BIGINT NOT NULL
+);
+CREATE INDEX passkeys_user_id_index ON passkeys (user_id);
 CREATE TABLE admins (
     id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     email TEXT NOT NULL,
@@ -135,6 +143,7 @@ ALTER TABLE market_chat_messages ADD CONSTRAINT market_chat_messages_ref_user_id
 ALTER TABLE markets ADD CONSTRAINT markets_ref_category_id FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_outcome_asset_id FOREIGN KEY (outcome_asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE markets ADD CONSTRAINT markets_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
+ALTER TABLE passkeys ADD CONSTRAINT passkeys_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
 ALTER TABLE positions ADD CONSTRAINT positions_ref_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id) ON DELETE NO ACTION;
 ALTER TABLE positions ADD CONSTRAINT positions_ref_market_id FOREIGN KEY (market_id) REFERENCES markets (id) ON DELETE NO ACTION;
 ALTER TABLE positions ADD CONSTRAINT positions_ref_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;

@@ -25,22 +25,30 @@
                     packages = with pkgs; [
                         # Native dependencies, e.g. imagemagick
                     ];
-                    haskellPackages = p: with p; [
-                        # Haskell dependencies go here
-                        p.ihp
-                        cabal-install
-                        stylish-haskell
-                        base
-                        wai
-                        text
-                        http-conduit
-                        jwt
-                        base64
-                        raw-strings-qq
+                    haskellPackages = p:
+                        let
+                            webauthn = pkgs.haskell.lib.doJailbreak (p.callHackageDirect {
+                                pkg = "webauthn";
+                                ver = "0.11.0.0";
+                                sha256 = "sha256-iJygaLPu0NyOHxUKwpd7vMkUnIXNRtAnnCumqKqces8=";
+                            } {});
+                        in with p; [
+                            # Haskell dependencies go here
+                            p.ihp
+                            cabal-install
+                            stylish-haskell
+                            base
+                            wai
+                            text
+                            http-conduit
+                            jwt
+                            base64
+                            webauthn
+                            raw-strings-qq
 
-                        # Uncomment on local development for testing
-                        hspec
-                    ];
+                            # Uncomment on local development for testing
+                            hspec
+                        ];
                 };
 
                 # Custom configuration that will start with `devenv up`
