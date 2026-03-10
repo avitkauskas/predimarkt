@@ -4,11 +4,63 @@ import Application.Domain.LMSR as LMSR
 import Application.Domain.Position
 import Application.Domain.Types
 import qualified Data.Map as M
+import Data.Ord (Down (..))
+import Data.Time.Clock (NominalDiffTime, diffUTCTime, nominalDay)
 import Web.Controller.Prelude
 import Web.View.Leaderboard.Index
 
+initialPortfolioValue :: Double
+initialPortfolioValue = 1000
+
+minimumPortfolioValue :: Double
+minimumPortfolioValue = 0.0001
+
+minimumArrDuration :: NominalDiffTime
+minimumArrDuration = nominalDay
+
+annualDisplayThreshold :: NominalDiffTime
+annualDisplayThreshold = 30 * nominalDay
+
+secondsPerYear :: Double
+secondsPerYear = 365.25 * 24 * 60 * 60
+
+stabilizationYears :: Double
+stabilizationYears = 0.5
+
+yearsSinceRegistration :: UTCTime -> UTCTime -> Double
+yearsSinceRegistration now registeredAt =
+    let elapsed = max minimumArrDuration (diffUTCTime now registeredAt)
+    in realToFrac elapsed / secondsPerYear
+
+portfolioValue :: Integer -> Double
+portfolioValue totalValue =
+    max minimumPortfolioValue (fromIntegral totalValue / 100)
+
+valueRatio :: Integer -> Double
+valueRatio totalValue =
+    portfolioValue totalValue / initialPortfolioValue
+
+portfolioReturn :: Integer -> Double
+portfolioReturn totalValue =
+    valueRatio totalValue - 1
+
+leaderboardScore :: UTCTime -> UTCTime -> Integer -> Double
+leaderboardScore now registeredAt totalValue =
+    let yearsRegistered = yearsSinceRegistration now registeredAt
+    in log (valueRatio totalValue) / (yearsRegistered + stabilizationYears)
+
+shouldDisplayAnnualReturn :: UTCTime -> UTCTime -> Bool
+shouldDisplayAnnualReturn now registeredAt =
+    diffUTCTime now registeredAt >= annualDisplayThreshold
+
+annualRateOfReturn :: UTCTime -> UTCTime -> Integer -> Double
+annualRateOfReturn now registeredAt totalValue =
+    let yearsRegistered = yearsSinceRegistration now registeredAt
+    in valueRatio totalValue ** (1 / yearsRegistered) - 1
+
 instance Controller LeaderboardController where
     action LeaderboardAction = do
+        now <- getCurrentTime
         users <- query @User |> fetch
 
         walletAmounts <- query @Wallet |> fetch
@@ -78,14 +130,24 @@ instance Controller LeaderboardController where
                                             )
                                             userPos
                                 totalValue = cashAmount + positionsValue
+                                yearsActive = yearsSinceRegistration now user.createdAt
+                                returnValue = portfolioReturn totalValue
+                                annualReturnValue = annualRateOfReturn now user.createdAt totalValue
+                                showAnnualReturn = shouldDisplayAnnualReturn now user.createdAt
+                                score = leaderboardScore now user.createdAt totalValue
                              in UserSummary
                                 { nickname = user.nickname
                                 , cash = cashAmount
                                 , positionsValue = positionsValue
                                 , totalValue = totalValue
+                                , yearsActive = yearsActive
+                                , totalReturn = returnValue
+                                , annualReturn = annualReturnValue
+                                , showAnnualReturn = showAnnualReturn
+                                , score = score
                                 , rank = 0
                                 }
-                    sorted = reverse $ sortOn (\s -> get #totalValue s) summaries
+                    sorted = sortOn (\s -> (Down (get #score s), Down (get #totalValue s), get #nickname s)) summaries
                  in zipWith (\s r -> s { rank = r }) sorted [1 ..]
 
         let topCount = 20

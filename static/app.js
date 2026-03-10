@@ -11,6 +11,7 @@ $(document).on('ready turbolinks:load', function () {
 
     // Initialize asset percentage calculations for market forms
     initAssetPercentageCalculations()
+    initBootstrapTooltips()
 
     initMarketChat()
     initMarketChatTradeQuantity()
@@ -54,6 +55,17 @@ function initFlashToasts() {
 
         toastElement.dataset.toastInitialized = 'true'
         window.bootstrap.Toast.getOrCreateInstance(toastElement).show()
+    })
+}
+
+function initBootstrapTooltips(root = document) {
+    if (!window.bootstrap || typeof window.bootstrap.Tooltip !== 'function') return
+
+    root.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(tooltipElement => {
+        if (tooltipElement.dataset.tooltipInitialized === 'true') return
+
+        tooltipElement.dataset.tooltipInitialized = 'true'
+        window.bootstrap.Tooltip.getOrCreateInstance(tooltipElement)
     })
 }
 
@@ -515,6 +527,7 @@ function handleAssetQuantityInput(e) {
 document.addEventListener('htmx:after:swap', function (e) {
     // Localize times in the swapped content
     localizeTimes(e.target)
+    initBootstrapTooltips(e.target)
 
     // Check if this swap is targeting the assets-list (where new assets are added via beforeend)
     // e.target is the element that received the swapped content

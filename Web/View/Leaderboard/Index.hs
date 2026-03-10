@@ -2,15 +2,21 @@
 
 module Web.View.Leaderboard.Index where
 
-import Distribution.PackageDescription.Utils (userBug)
+import Data.Text (pack)
+import Text.Printf (printf)
 import Web.View.Prelude
 
 data UserSummary = UserSummary
-    { nickname       :: Text
-    , cash           :: Integer
-    , positionsValue :: Integer
-    , totalValue     :: Integer
-    , rank           :: Int
+    { nickname         :: Text
+    , cash             :: Integer
+    , positionsValue   :: Integer
+    , totalValue       :: Integer
+    , yearsActive      :: Double
+    , totalReturn      :: Double
+    , annualReturn     :: Double
+    , showAnnualReturn :: Bool
+    , score            :: Double
+    , rank             :: Int
     }
 
 data IndexView = IndexView
@@ -22,17 +28,20 @@ data IndexView = IndexView
 instance View IndexView where
     html IndexView { .. } = [hsx|
         <div class="row">
-            <div class="col-md-9 col-lg-7 col-xl-6">
+            <div class="col-12">
                 <h5 class="mb-3 ps-2">Leaderboard</h5>
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover">
+                <div class="overflow-auto">
+                    <table class="table table-sm table-borderless table-hover w-auto mb-0">
                         <thead>
                             <tr class="align-middle">
                                 <th scope="col" class="py-1 info-label text-center">Rank</th>
                                 <th scope="col" class="py-1 info-label">User</th>
-                                <th scope="col" class="py-1 info-label text-end">Cash</th>
-                                <th scope="col" class="py-1 info-label text-end">Positions</th>
-                                <th scope="col" class="py-1 info-label text-end text-nowrap">Total Value</th>
+                                {renderHeaderWithTooltip "Cash" "Available funds" "text-end"}
+                                {renderHeaderWithTooltip "Positions" "Current value of open positions" "text-end"}
+                                {renderHeaderWithTooltip "Total Value" "Cash plus positions" "text-end text-nowrap"}
+                                {renderHeaderWithTooltip "Return" "Total return since signup" "text-end text-nowrap"}
+                                {renderHeaderWithTooltip "Annual" "Annualized return (displayed after 30 days)" "text-end text-nowrap"}
+                                {renderHeaderWithTooltip "Years" "Time since signup" "text-end text-nowrap"}
                             </tr>
                         </thead>
                         <tbody>
@@ -60,48 +69,68 @@ renderRows users currentUserNickname showOverflow =
 renderUserRow :: (?context :: ControllerContext) => UserSummary -> Maybe Text -> Html
 renderUserRow summary currentUserNickname =
     let isCurrentUser = maybe False (\nick -> get #nickname summary == nick) currentUserNickname
-        rank = get #rank summary
-        cellBg = rankBackgroundStyle (get #rank summary)
-        userBg :: Text = if (isCurrentUser && rank `notElem` [1..3]) then "bg-info-subtle" else ""
+        rowClass :: Text = if isCurrentUser then "table-primary" else ""
     in [hsx|
-            <tr class="align-middle">
-                <td class={"py-1 text-center fw-medium " <> userBg}
-                    style={cellBg <> " width: 60px;"}>
+            <tr class={"align-middle " <> rowClass}>
+                <td class="px-3 py-1 text-center fw-medium">
                     {get #rank summary}
                 </td>
-                <td class={"py-1 fw-medium " <> userBg}
-                    style={cellBg}>
+                <td class="px-3 py-1 fw-medium">
                     {get #nickname summary}
                 </td>
-                <td class={"py-1 text-end fw-medium " <> userBg}
-                    style={cellBg}>
+                <td class="px-3 py-1 text-end fw-medium">
                     {formatMoney (get #cash summary)}
                 </td>
-                <td class={"py-1 text-end fw-medium " <> userBg}
-                    style={cellBg}>
+                <td class="px-3 py-1 text-end fw-medium">
                     {formatMoney (get #positionsValue summary)}
                 </td>
-                <td class={"py-1 text-end fw-medium " <> userBg}
-                    style={cellBg}>
+                <td class="px-3 py-1 text-end fw-medium">
                     {formatMoney (get #totalValue summary)}
+                </td>
+                <td class="px-3 py-1 text-end fw-medium text-nowrap">
+                    {formatPercent (get #totalReturn summary)}
+                </td>
+                <td class="px-3 py-1 text-end fw-medium text-nowrap">
+                    {if get #showAnnualReturn summary
+                        then formatPercent (get #annualReturn summary)
+                        else "--"}
+                </td>
+                <td class="px-3 py-1 text-end fw-medium text-nowrap">
+                    {formatYears (get #yearsActive summary)}
                 </td>
             </tr>
         |]
 
-rankBackgroundStyle :: Int -> Text
-rankBackgroundStyle 1 = "background-color: rgba(255, 215, 0, 0.35);"
-rankBackgroundStyle 2 = "background-color: rgba(192, 192, 192, 0.25);"
-rankBackgroundStyle 3 = "background-color: rgba(205, 127, 50, 0.15);"
-rankBackgroundStyle _ = ""
+renderHeaderWithTooltip :: Text -> Text -> Text -> Html
+renderHeaderWithTooltip label tooltip extraClasses = [hsx|
+    <th scope="col"
+        class={"px-3 py-1 info-label " <> extraClasses}
+        data-bs-toggle="tooltip"
+        data-bs-placement="top"
+        title={tooltip}>
+        {label}
+    </th>
+|]
+
+formatPercent :: Double -> Text
+formatPercent value =
+    pack (printf "%.2f%%" (value * 100))
+
+formatYears :: Double -> Text
+formatYears value =
+    pack (printf "%.3f" value)
 
 renderOverflowRow :: Html
 renderOverflowRow = [hsx|
     <tr>
-        <td class="py-0 text-center text-muted">...</td>
-        <td class="py-0 text-muted">...</td>
-        <td class="py-0 text-end text-muted">...</td>
-        <td class="py-0 text-end text-muted">...</td>
-        <td class="py-0 text-end text-muted">...</td>
+        <td class="px-3 py-0 text-center text-muted">...</td>
+        <td class="px-3 py-0 text-muted">...</td>
+        <td class="px-3 py-0 text-end text-muted">...</td>
+        <td class="px-3 py-0 text-end text-muted">...</td>
+        <td class="px-3 py-0 text-end text-muted">...</td>
+        <td class="px-3 py-0 text-end text-muted">...</td>
+        <td class="px-3 py-0 text-end text-muted">...</td>
+        <td class="px-3 py-0 text-end text-muted">...</td>
     </tr>
 |]
 

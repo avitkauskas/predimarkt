@@ -16,6 +16,9 @@ import IHP.ValidationSupport (getValidationFailure)
 import Test.Hspec
 import Test.QuickCheck
 import Unsafe.Coerce
+import Web.Controller.Leaderboard (annualRateOfReturn, leaderboardScore,
+                                   portfolioReturn, shouldDisplayAnnualReturn,
+                                   yearsSinceRegistration)
 import Web.Controller.Markets (buildMarket)
 import Web.Controller.Trades ()
 import Web.Routes (buildShowMarketPath)
@@ -249,3 +252,59 @@ main = hspec do
                     Nothing
                     Nothing
                     `shouldBe` "/Markets"
+
+        describe "leaderboardScore" do
+            it "uses the stabilized log return with C = 0.5" do
+                let registeredAt = UTCTime (fromGregorian 2025 1 1) (secondsToDiffTime 0)
+                    now = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    score = leaderboardScore now registeredAt 120000
+                abs (score - 0.1216) `shouldSatisfy` (< 0.001)
+
+        describe "portfolioReturn" do
+            it "returns the total portfolio return since signup" do
+                abs (portfolioReturn 120000 - 0.2) `shouldSatisfy` (< 0.000001)
+
+        describe "annualRateOfReturn" do
+            it "returns annualized return once time since registration is known" do
+                let registeredAt = UTCTime (fromGregorian 2025 1 1) (secondsToDiffTime 0)
+                    now = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    arr = annualRateOfReturn now registeredAt 120000
+                abs (arr - 0.2001) `shouldSatisfy` (< 0.001)
+
+            it "reduces the displayed annual return for longer participation periods" do
+                let registeredAt = UTCTime (fromGregorian 2024 1 1) (secondsToDiffTime 0)
+                    now = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    arr = annualRateOfReturn now registeredAt 120000
+                abs (arr - 0.0955) `shouldSatisfy` (< 0.001)
+
+            it "clamps non-positive portfolio values to a tiny positive floor" do
+                let registeredAt = UTCTime (fromGregorian 2025 1 1) (secondsToDiffTime 0)
+                    now = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    arr = annualRateOfReturn now registeredAt 0
+                arr `shouldSatisfy` (\x -> not (isNaN x) && not (isInfinite x) && x > (-1))
+
+        describe "shouldDisplayAnnualReturn" do
+            it "shows only total return for accounts younger than 30 days" do
+                let registeredAt = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    beforeThreshold = UTCTime (fromGregorian 2026 1 30) (secondsToDiffTime 0)
+                shouldDisplayAnnualReturn beforeThreshold registeredAt `shouldBe` False
+
+            it "shows annual return starting at 30 days" do
+                let registeredAt = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    atThreshold = UTCTime (fromGregorian 2026 1 31) (secondsToDiffTime 0)
+                shouldDisplayAnnualReturn atThreshold registeredAt `shouldBe` True
+
+        describe "yearsSinceRegistration" do
+            it "computes years since registration in years" do
+                let registeredAt = UTCTime (fromGregorian 2025 1 1) (secondsToDiffTime 0)
+                    now = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    yearsActive = yearsSinceRegistration now registeredAt
+                abs (yearsActive - 0.9993) `shouldSatisfy` (< 0.001)
+
+            it "clamps registration age to at least one day" do
+                let registeredAt = UTCTime (fromGregorian 2026 1 1) (secondsToDiffTime 0)
+                    oneDayLater = UTCTime (fromGregorian 2026 1 2) (secondsToDiffTime 0)
+                    sameMoment = registeredAt
+                    yearsAtSameMoment = yearsSinceRegistration sameMoment registeredAt
+                    yearsOneDayLater = yearsSinceRegistration oneDayLater registeredAt
+                abs (yearsAtSameMoment - yearsOneDayLater) `shouldSatisfy` (< 0.000001)
