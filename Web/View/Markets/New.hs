@@ -27,7 +27,10 @@ instance View NewView where
 renderForm :: Market -> [Asset] -> [Category] -> Html
 renderForm market assets categories = formFor market [hsx|
     {(textField #title)}
-    {(textareaField #description) { additionalAttributes = [("rows", "3")] }}
+    {(textareaField #description) {
+        fieldLabel = "Rules & Description",
+        additionalAttributes = [("rows", "3")]
+    }}
     <div class="row">
         <div class="col-12 col-md-6">
             {(selectField #categoryId categories)}
@@ -75,5 +78,11 @@ renderForm market assets categories = formFor market [hsx|
             </a>
         </div>
     </div>
-    {submitButton}
+    <div class="d-flex gap-2">
+        {submitButton}
+        <a href={DashboardMarketsAction (Just MarketStatusDraft)}
+           class="btn btn-outline-secondary">
+            Cancel
+        </a>
+    </div>
 |]

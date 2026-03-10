@@ -3,7 +3,9 @@ module Application.Helper.View
     ) where
 
 import Data.List (intercalate)
+import qualified Data.List as List
 import Data.Text (pack, unpack)
+import qualified Data.Text as Text
 import Generated.Enums
 import Generated.Types
 import IHP.ViewPrelude
@@ -46,6 +48,54 @@ renderTime time =
     [hsx|
         <span class="local-time" data-time={tshow time}></span>
     |]
+
+textParagraphs :: Text -> [Text]
+textParagraphs =
+    go [] []
+        . Text.lines
+        . Text.replace "\r" "\n"
+        . Text.replace "\r\n" "\n"
+  where
+    go :: [Text] -> [Text] -> [Text] -> [Text]
+    go paragraphs currentParagraph remainingLines =
+        case remainingLines of
+            [] -> reverse (finishParagraph paragraphs currentParagraph)
+            line : rest
+                | Text.strip line == "" ->
+                    go (finishParagraph paragraphs currentParagraph) [] rest
+                | otherwise ->
+                    go paragraphs (currentParagraph <> [line]) rest
+
+    finishParagraph :: [Text] -> [Text] -> [Text]
+    finishParagraph paragraphs [] = paragraphs
+    finishParagraph paragraphs currentParagraph =
+        Text.strip (Text.intercalate "\n" currentParagraph) : paragraphs
+
+renderTextParagraphs :: Text -> Html
+renderTextParagraphs text =
+    case textParagraphs text of
+        [] -> [hsx||]
+        paragraphs -> [hsx|
+            <div class="d-flex flex-column gap-3">
+                {mconcat (map renderParagraph paragraphs)}
+            </div>
+        |]
+  where
+    renderParagraph :: Text -> Html
+    renderParagraph paragraph = [hsx|
+        <p class="mb-0" style="overflow-wrap: anywhere;">
+            {renderParagraphLines (Text.lines paragraph)}
+        </p>
+    |]
+
+    renderParagraphLines :: [Text] -> Html
+    renderParagraphLines =
+        mconcat
+            . List.intersperse [hsx|<br />|]
+            . map renderParagraphLine
+
+    renderParagraphLine :: Text -> Html
+    renderParagraphLine line = [hsx|{line}|]
 
 -- Price Formatting Helpers
 

@@ -4,14 +4,19 @@ module Test.Main where
 import Application.Domain.LMSR
 import qualified Application.Domain.Types as NewDomain
 import Application.Helper.Controller (sanitizeBackTo)
+import Application.Helper.View (textParagraphs)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as Text
+import Data.Time.Calendar (fromGregorian)
+import Data.Time.Clock (UTCTime (..), secondsToDiffTime)
 import Generated.Types
+import IHP.ModelSupport (newRecord)
 import IHP.Prelude
+import IHP.ValidationSupport (getValidationFailure)
 import Test.Hspec
 import Test.QuickCheck
 import Unsafe.Coerce
-import Web.Controller.Markets ()
+import Web.Controller.Markets (buildMarket)
 import Web.Controller.Trades ()
 import Web.Routes (buildShowMarketPath)
 import Web.View.Markets.Index (MarketIndexStatusFilter (..), buildMarketsPath,
@@ -179,6 +184,37 @@ main = hspec do
                 sanitizeBackTo (Just "http://evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "//evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "Markets") `shouldBe` Nothing
+
+        describe "textParagraphs" do
+            it "keeps single newlines inside the same paragraph" do
+                textParagraphs "First paragraph\nSecond paragraph"
+                    `shouldBe` ["First paragraph\nSecond paragraph"]
+
+            it "splits paragraphs on double newlines" do
+                textParagraphs "First paragraph\n\nSecond paragraph"
+                    `shouldBe` ["First paragraph", "Second paragraph"]
+
+            it "condenses longer blank runs into a single paragraph break" do
+                textParagraphs "First paragraph\n\n\n\nSecond paragraph"
+                    `shouldBe` ["First paragraph", "Second paragraph"]
+
+            it "normalizes Windows newlines" do
+                textParagraphs "First paragraph\r\nSecond paragraph\r\n"
+                    `shouldBe` ["First paragraph\nSecond paragraph"]
+
+        describe "buildMarket" do
+            it "adds a field validation error when closing time is in the past" do
+                let now = UTCTime (fromGregorian 2026 3 10) (secondsToDiffTime 0)
+                    pastTime = UTCTime (fromGregorian 2026 3 9) (secondsToDiffTime 0)
+                    categoryId = unsafeCoerce ("test-category" :: Text) :: Id Category
+                    market =
+                        newRecord @Market
+                            |> set #title "Test market"
+                            |> set #description "Description"
+                            |> set #categoryId categoryId
+                            |> set #closedAt pastTime
+                            |> buildMarket now
+                getValidationFailure #closedAt market `shouldSatisfy` isJust
 
         describe "Market index status filters" do
             it "defaults to open and recent other for missing or unknown params" do

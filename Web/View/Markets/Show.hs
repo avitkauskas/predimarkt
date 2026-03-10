@@ -4,7 +4,6 @@ module Web.View.Markets.Show where
 
 import Application.Domain.LMSR
 import Application.Domain.Types
-import qualified CMark as CMark
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -89,7 +88,7 @@ instance View ShowView where
 
                                 {renderSectionToggle "Rules & Description" showDescription descriptionToggleAction}
                                 <div id="market-description" class={classes [("d-none", not showDescription)]}>
-                                    {renderMarkdown market.description}
+                                    {renderTextParagraphs market.description}
                                 </div>
 
                                 {renderTradeHistorySection}
@@ -107,9 +106,6 @@ instance View ShowView where
         </div>
     |]
         where
-            renderMarkdown :: Text -> Html
-            renderMarkdown = preEscapedToHtml . CMark.commonmarkToHtml []
-
             headerClass = marketStatusHeaderClasses market.status
             statusBadge =
                 when (market.status /= MarketStatusOpen)
@@ -349,8 +345,8 @@ instance View ShowView where
                                            name="body"
                                            form="market-chat-form"
                                            class="form-control"
-                                           maxlength="500"
-                                           placeholder="Type a message... (500 chars max)"
+                                           maxlength="280"
+                                           placeholder="Type a message... (280 chars max)"
                                            autocomplete="off" />
                                     <button id="market-chat-submit"
                                             class="btn btn-primary"

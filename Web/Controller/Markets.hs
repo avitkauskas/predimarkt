@@ -280,7 +280,7 @@ instance Controller MarketsController where
                         |> ifValid \case
                             Left market -> do
                                 categories <- fetchCategories
-                                render EditView { market = marketWithFormData, .. }
+                                render EditView { .. }
                             Right market -> do
                                 uniqueSlug <- constructUniqueSlug
                                     market.categoryId (toSlug market.title) (Just mId)
@@ -481,7 +481,7 @@ validateChatMessageBody :: Text -> Maybe Text
 validateChatMessageBody body
     | body == "" = Just "Please enter a message"
     | Text.any (\char -> char == '\n' || char == '\r') body = Just "Message must be a single line"
-    | Text.length body > 500 = Just "Message must be at most 500 characters"
+    | Text.length body > 280 = Just "Message must be at most 280 characters"
     | otherwise = Nothing
 
 readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
