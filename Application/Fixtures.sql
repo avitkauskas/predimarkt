@@ -37,13 +37,13 @@ ALTER TABLE public.categories ENABLE TRIGGER ALL;
 
 ALTER TABLE public.users DISABLE TRIGGER ALL;
 
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c7cc3-db42-7f9a-bd87-46e861fc7268', 'alvydas.vitkauskas@gmail.com', 'alvydas.vitkauskas', '2026-02-20 20:35:36.384512+00', '2026-02-20 20:35:36.384512+00', 'user_01KHVN11VX5TMDMT6EPAFHMTKY');
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c7cc4-02b5-7be1-985d-7b01a7b66157', 'alvydas.vitkauskas@inbox.eu', 'alvydas', '2026-02-20 20:35:46.484372+00', '2026-02-23 21:07:55.711427+00', 'user_01KHVP44CJV7E08MWQWRW69YCZ');
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c8c9a-f9e8-7f7d-a80f-f36c054ef6cd', 'alvydas.vitkauskas@me.com', 'alvis', '2026-02-23 22:24:52.707236+00', '2026-02-23 22:25:04.748429+00', 'user_01KJ69NXGNDPX38RYGG8WSP3KN');
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c8f7b-eb77-7437-b7b6-d2b2baa34d8c', 'alvydas.vitkauskas+102@gmail.com', 'alvydas.vitkauskas+102', '2026-02-24 11:49:49.04199+00', '2026-02-24 11:49:49.04199+00', 'user_01KJ7QQ212H82XMVMS1K828F9A');
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c8f7e-c034-72fc-9eb7-6c5103682a41', 'alvydas.vitkauskas+103@gmail.com', 'alvydas-103', '2026-02-24 11:52:54.577955+00', '2026-02-24 12:52:09.932564+00', 'user_01KJ7QX2GMBQ8XMFVNWVYYGW9E');
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c8f75-483d-759b-885c-9369afe53849', 'alvydas.vitkauskas+100@gmail.com', 'alvydas-100', '2026-02-24 11:42:34.041741+00', '2026-02-24 12:53:23.288366+00', 'user_01KJ7Q922T0J7WENBE3ASA5FA8');
-INSERT INTO public.users (id, email, nickname, created_at, updated_at, workos_user_id) VALUES ('019c8f78-47c3-78a2-b925-acb7bfc04d15', 'alvydas.vitkauskas+101@gmail.com', 'alvydas-101', '2026-02-24 11:45:50.52911+00', '2026-02-24 14:19:41.952996+00', 'user_01KJ7QFZ177THDZX179843D1BD');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c7cc3-db42-7f9a-bd87-46e861fc7268', 'alvydas.vitkauskas', '2026-02-20 20:35:36.384512+00', '2026-02-20 20:35:36.384512+00');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c7cc4-02b5-7be1-985d-7b01a7b66157', 'alvydas', '2026-02-20 20:35:46.484372+00', '2026-02-23 21:07:55.711427+00');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c8c9a-f9e8-7f7d-a80f-f36c054ef6cd', 'alvis', '2026-02-23 22:24:52.707236+00', '2026-02-23 22:25:04.748429+00');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c8f7b-eb77-7437-b7b6-d2b2baa34d8c', 'alvydas.vitkauskas+102', '2026-02-24 11:49:49.04199+00', '2026-02-24 11:49:49.04199+00');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c8f7e-c034-72fc-9eb7-6c5103682a41', 'alvydas-103', '2026-02-24 11:52:54.577955+00', '2026-02-24 12:52:09.932564+00');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c8f75-483d-759b-885c-9369afe53849', 'alvydas-100', '2026-02-24 11:42:34.041741+00', '2026-02-24 12:53:23.288366+00');
+INSERT INTO public.users (id, nickname, created_at, updated_at) VALUES ('019c8f78-47c3-78a2-b925-acb7bfc04d15', 'alvydas-101', '2026-02-24 11:45:50.52911+00', '2026-02-24 14:19:41.952996+00');
 
 
 ALTER TABLE public.users ENABLE TRIGGER ALL;

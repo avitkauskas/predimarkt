@@ -21,15 +21,19 @@ instance AutoRoute TradesController
 instance AutoRoute LeaderboardController
 
 instance HasPath AuthController where
-    pathTo LoginAction          = "/NewSession"
-    pathTo WorkOSLoginAction    = "/workos-login"
-    pathTo WorkOSCallbackAction = "/auth/callback"
+    pathTo LoginAction                       = "/NewSession"
+    pathTo BeginPasskeyRegistrationAction    = "/passkeys/registration/begin"
+    pathTo FinishPasskeyRegistrationAction   = "/passkeys/registration/finish"
+    pathTo BeginPasskeyAuthenticationAction  = "/passkeys/authentication/begin"
+    pathTo FinishPasskeyAuthenticationAction = "/passkeys/authentication/finish"
 
 instance CanRoute AuthController where
     parseRoute' =
         (string "/NewSession" >> pure LoginAction)
-        <|> (string "/workos-login" >> pure WorkOSLoginAction)
-        <|> (string "/auth/callback" >> pure WorkOSCallbackAction)
+        <|> (string "/passkeys/registration/begin" >> onlyAllowMethods [POST] >> pure BeginPasskeyRegistrationAction)
+        <|> (string "/passkeys/registration/finish" >> onlyAllowMethods [POST] >> pure FinishPasskeyRegistrationAction)
+        <|> (string "/passkeys/authentication/begin" >> onlyAllowMethods [POST] >> pure BeginPasskeyAuthenticationAction)
+        <|> (string "/passkeys/authentication/finish" >> onlyAllowMethods [POST] >> pure FinishPasskeyAuthenticationAction)
 
 instance HasPath MarketsController where
     pathTo MarketsAction            = "/Markets"

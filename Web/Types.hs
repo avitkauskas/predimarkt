@@ -24,8 +24,10 @@ data SessionsController
 
 data AuthController
     = LoginAction
-    | WorkOSLoginAction
-    | WorkOSCallbackAction
+    | BeginPasskeyRegistrationAction
+    | FinishPasskeyRegistrationAction
+    | BeginPasskeyAuthenticationAction
+    | FinishPasskeyAuthenticationAction
     deriving (Eq, Show, Data)
 
 instance HasNewSessionUrl User where

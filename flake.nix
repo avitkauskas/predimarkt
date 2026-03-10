@@ -46,7 +46,7 @@
                             webauthn
                             raw-strings-qq
 
-                            # Uncomment on local development for testing
+                            # for local development testing
                             hspec
                         ];
                 };

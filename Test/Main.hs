@@ -4,6 +4,7 @@ module Test.Main where
 import Application.Domain.LMSR
 import qualified Application.Domain.Types as NewDomain
 import Application.Helper.Controller (sanitizeBackTo)
+import Application.Helper.Passkeys (rpIdTextFromHost)
 import Application.Helper.View (textParagraphs)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as Text
@@ -187,6 +188,11 @@ main = hspec do
                 sanitizeBackTo (Just "http://evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "//evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "Markets") `shouldBe` Nothing
+
+        describe "passkey helpers" do
+            it "extracts the RP id from hosts with ports" do
+                rpIdTextFromHost "localhost:8000" `shouldBe` "localhost"
+                rpIdTextFromHost "predimarkt.example" `shouldBe` "predimarkt.example"
 
         describe "textParagraphs" do
             it "keeps single newlines inside the same paragraph" do
