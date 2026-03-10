@@ -16,14 +16,13 @@ data PositionsView = PositionsView
 
 instance View PositionsView where
     html PositionsView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid ps-2">
+        <div>
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <h5>Positions</h5>
                 <div class="text-end me-1">
                     Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
                 </div>
             </div>
-            {renderFlashMessages}
             <div class="mb-3">
                 {renderSearchForm searchFilter}
             </div>

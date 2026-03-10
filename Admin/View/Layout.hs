@@ -20,8 +20,8 @@ defaultLayout inner = [hsx|
             <body>
                 <div class="container mt-4">
                     {navbar}
+                    {renderFlashToasts}
                     <div class="container">
-                        {renderFlashMessages}
                         {inner}
                     </div>
                 </div>

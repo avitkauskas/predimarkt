@@ -9,14 +9,13 @@ data MarketsView = MarketsView
 
 instance View MarketsView where
     html MarketsView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid ps-2">
+        <div>
             <div class="d-flex justify-content-between align-items-center mb-2 ms-2">
                 <h5>My Markets</h5>
                 <a href={NewMarketAction} class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i> New Market
                 </a>
             </div>
-            {renderFlashMessages}
             {renderTabs activeStatus}
             <table class="table table-hover ms-0">
                 <tbody>

@@ -6,12 +6,11 @@ data EditView = EditView { user :: User }
 
 instance View EditView where
     html EditView { .. } = dashboardLayout [hsx|
-        <div class="container-fluid ps-2" id="users-edit">
+        <div id="users-edit">
             <div class="d-flex align-items-center">
                 <div class="w-100">
                     <div style="max-width: 500px" class="mb-5">
                         <h5>Profile</h5>
-                        {renderFlashMessages}
                         {renderForm user}
                         <hr class="my-4" />
                         <div class="card border-danger">

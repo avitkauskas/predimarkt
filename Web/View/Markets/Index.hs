@@ -58,7 +58,6 @@ marketIndexStatusFilterOptions =
 instance View IndexView where
     html IndexView { .. } = [hsx|
         <div id="markets-content">
-            {renderFlashMessages}
             {renderMarketsResults markets categories categoryFilter statusFilter searchFilter currentPage totalMarkets hasMoreMarkets}
         </div>
     |]
@@ -80,7 +79,7 @@ renderSearchForm categoryFilter statusFilter searchFilter = [hsx|
                        class="form-control"
                        name="search"
                        value={fromMaybe "" searchFilter}
-                       placeholder="Search markets..."
+                       placeholder="Search markets or assets..."
                        aria-label="Search markets"
                        style="padding-left: 36px;">
         </form>

@@ -21,8 +21,8 @@ defaultLayout inner = [hsx|
             <body>
                 <div class="container-xxl mt-1">
                     {navbar}
+                    {renderFlashToasts}
                     <div class="container-xxl mt-1">
-                        <!-- {renderFlashMessages} -->
                         {inner}
                         {modal}
                     </div>
@@ -113,12 +113,12 @@ navbar = [hsx|
 
 dashboardLayout :: Html -> Html
 dashboardLayout inner = [hsx|
-    <div class="container-fluid mt-2">
+    <div class="mt-2">
         <div class="d-flex">
             <div class="dashboard-sidebar d-none d-md-block">
                 <div class="position-sticky">
-                    <div class="mb-2 ps-3">
-                        <h5>Dashboard</h5>
+                    <div class="dashboard-sidebar-title ps-3">
+                        <h5 class="mb-0">Dashboard</h5>
                     </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">

@@ -2,6 +2,8 @@ $(document).on('ready turbolinks:load', function () {
     // This is called on the first page load *and* also when the page is changed by turbolinks
     htmx.process(document.body);
 
+    initFlashToasts()
+
     initAutoSubmitSearchForms();
 
     // Localize any times on the page
@@ -36,6 +38,24 @@ $(document).on('ready turbolinks:load', function () {
         });
     }
 })
+
+document.addEventListener('turbolinks:before-cache', function () {
+    const container = document.getElementById('flash-toast-container')
+    if (container) {
+        container.remove()
+    }
+})
+
+function initFlashToasts() {
+    if (!window.bootstrap || typeof window.bootstrap.Toast !== 'function') return
+
+    document.querySelectorAll('[data-auto-show-toast="true"]').forEach(toastElement => {
+        if (toastElement.dataset.toastInitialized === 'true') return
+
+        toastElement.dataset.toastInitialized = 'true'
+        window.bootstrap.Toast.getOrCreateInstance(toastElement).show()
+    })
+}
 
 function initAutoSubmitSearchForms() {
     const forms = document.querySelectorAll('form[data-auto-submit-delay]');

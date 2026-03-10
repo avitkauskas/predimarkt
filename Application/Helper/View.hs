@@ -9,6 +9,7 @@ import qualified Data.Text as Text
 import Generated.Enums
 import Generated.Types
 import IHP.ViewPrelude
+import Network.Wai.Middleware.FlashMessages (FlashMessage (ErrorFlashMessage, SuccessFlashMessage))
 import Text.Printf (printf)
 
 -- Market Status Helpers
@@ -48,6 +49,63 @@ renderTime time =
     [hsx|
         <span class="local-time" data-time={tshow time}></span>
     |]
+
+renderFlashToasts :: (?request :: Request) => Html
+renderFlashToasts =
+    case theFlashMessages of
+        [] -> [hsx||]
+        flashMessages -> [hsx|
+            <div id="flash-toast-container"
+                 class="toast-container position-fixed top-0 end-0 p-3 me-1"
+                 aria-live="polite"
+                 aria-atomic="true">
+                {forEach flashMessages renderFlashToast}
+            </div>
+        |]
+
+renderFlashToast :: FlashMessage -> Html
+renderFlashToast flashMessage = [hsx|
+    <div class={classes ["toast align-items-center", (flashToastClass flashMessage, True)]}
+         role={flashToastRole flashMessage}
+         aria-live={flashToastLive flashMessage}
+         aria-atomic="true"
+         data-auto-show-toast="true"
+         data-bs-autohide="true"
+         data-bs-delay="5000">
+        <div class="d-flex">
+            <div class="toast-body">
+                {flashToastMessage flashMessage}
+            </div>
+            <button type="button"
+                    class="btn-close me-2 m-auto"
+                    data-bs-dismiss="toast"
+                    aria-label="Close">
+            </button>
+        </div>
+    </div>
+|]
+
+flashToastClass :: FlashMessage -> Text
+flashToastClass = \case
+    SuccessFlashMessage _ ->
+        "bg-success-subtle border border-success-subtle text-success-emphasis"
+    ErrorFlashMessage _ ->
+        "bg-danger-subtle border border-danger-subtle text-danger-emphasis"
+
+flashToastMessage :: FlashMessage -> Text
+flashToastMessage = \case
+    SuccessFlashMessage message -> message
+    ErrorFlashMessage message -> message
+
+flashToastRole :: FlashMessage -> Text
+flashToastRole = \case
+    SuccessFlashMessage _ -> "status"
+    ErrorFlashMessage _ -> "alert"
+
+flashToastLive :: FlashMessage -> Text
+flashToastLive = \case
+    SuccessFlashMessage _ -> "polite"
+    ErrorFlashMessage _ -> "assertive"
 
 textParagraphs :: Text -> [Text]
 textParagraphs =

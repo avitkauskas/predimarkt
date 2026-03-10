@@ -44,8 +44,7 @@ data ShowView = ShowView
 
 instance View ShowView where
     html ShowView { .. } = [hsx|
-        <div class="container-fluid py-3">
-            {renderFlashMessages}
+        <div class="py-3">
             <div class="row g-4">
                 <div class="col-12 col-lg-8 order-1 order-lg-1">
                     <div class="card shadow-sm">
