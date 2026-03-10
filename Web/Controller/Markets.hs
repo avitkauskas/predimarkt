@@ -7,10 +7,12 @@ module Web.Controller.Markets where
 import Application.Domain.ChartData
 import Application.Domain.Types
 import Data.List (zipWith4)
+import qualified Data.Map.Strict as M
 import Data.Text (strip)
 import qualified Data.Text as Text
 import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
+import qualified Generated.ActualTypes.Market as GeneratedMarket
 import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
@@ -83,16 +85,34 @@ instance Controller MarketsController where
                             |> applySearchFilter
 
                 totalMarkets <- filteredMarketsQuery |> fetchCount
-                markets' <- filteredMarketsQuery
+                markets <- filteredMarketsQuery
                     |> orderByDesc #openedAt
                     |> limit visibleMarkets
                     |> fetch
                     >>= collectionFetchRelated #categoryId
-                    >>= collectionFetchRelated #assets
+
+                let marketIds = map (.id) markets
+
+                assets <- query @Asset
+                    |> filterWhereIn (#marketId, marketIds)
+                    |> fetch
+
+                let assetsByMarket =
+                        M.fromListWith (<>)
+                            (map (\asset -> (asset.marketId, [asset])) assets)
+
+                let markets' =
+                        map
+                            (\market ->
+                                attachAssetsToMarket market
+                                    (fromMaybe [] (M.lookup market.id assetsByMarket))
+                            )
+                            markets
+
                 pure (totalMarkets, markets')
 
         categories <- fetchCategories
-        let markets = map (\m -> m |> set #assets (sortAssetsForDisplay (get #assets m))) markets'
+        let markets = markets'
         let hasMoreMarkets = length markets < totalMarkets
         render IndexView { .. }
 
@@ -404,6 +424,13 @@ fetchAssetsFromParams =
         assetNames = paramList "asset_name"
         assetSymbols = paramList "asset_symbol"
         assetQuantities = paramList "asset_quantity"
+
+attachAssetsToMarket
+    :: Include "categoryId" Market
+    -> [Asset]
+    -> Include' '["categoryId", "assets"] Market
+attachAssetsToMarket market assets =
+    market { GeneratedMarket.assets = sortAssetsForDisplay assets }
 
 validateAssetSymbols :: [Asset] -> Maybe Text
 validateAssetSymbols assets =
