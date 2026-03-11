@@ -15,7 +15,13 @@ data WebApplication
     deriving (Eq, Show)
 
 data StaticController
-    = WelcomeAction
+    = AboutAction
+    | HowItWorksAction
+    | CommunityRulesAction
+    | TermsAction
+    | PrivacyPolicyAction
+    | CookiePolicyAction
+    | LegalNoticeAction
     deriving (Eq, Show, Data)
 
 data SessionsController

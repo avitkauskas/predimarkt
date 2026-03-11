@@ -1,4 +1,4 @@
-module Web.View.Layout (defaultLayout, dashboardLayout, Html) where
+module Web.View.Layout (defaultLayout, dashboardLayout, contentPageLayout, Html) where
 
 import Application.Helper.View
 
@@ -18,15 +18,18 @@ defaultLayout inner = [hsx|
                 {scripts}
                 <title>{pageTitleOrDefault "Predimarkt"}</title>
             </head>
-            <body>
-                <div class="container-xxl mt-1">
-                    {navbar}
-                    {renderFlashToasts}
+            <body class="d-flex flex-column min-vh-100">
+                <div class="flex-grow-1">
                     <div class="container-xxl mt-1">
-                        {inner}
-                        {modal}
+                        {navbar}
+                        {renderFlashToasts}
+                        <div class="container-xxl mt-0">
+                            {inner}
+                            {modal}
+                        </div>
                     </div>
                 </div>
+                {siteFooter}
             </body>
         </html>
     |]
@@ -39,7 +42,7 @@ navbar = [hsx|
                    href="/">Predimarkt
                 </a>
                 <span class="navbar-text d-none d-lg-block fs-4 gradient-subtitle">
-                    =| educational play money prediction markets
+                    =| educational play-money prediction markets
                 </span>
                 <div class="d-flex d-md-none ms-auto align-items-center gap-1">
                     <button
@@ -164,6 +167,73 @@ dashboardLayout inner = [hsx|
             </main>
         </div>
     </div>
+|]
+
+contentPageLayout :: Text -> Maybe Text -> Html -> Html
+contentPageLayout heading intro inner = [hsx|
+    <div class="content-page-shell py-3 py-lg-4">
+        <div class="card shadow-sm content-page-card">
+            <div class="card-body p-4 p-md-5">
+                <div class="content-page-text">
+                    <header class="mb-4">
+                        <h1 class="h2 mb-3">{heading}</h1>
+                        {renderIntro}
+                    </header>
+                    <div class="content-page-body">
+                        {inner}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+|]
+    where
+        renderIntro :: Html
+        renderIntro = case intro of
+            Just text -> [hsx|<p class="content-page-lead mb-0">{text}</p>|]
+            Nothing   -> mempty
+
+siteFooter :: Html
+siteFooter = [hsx|
+    <footer class="site-footer pt-3 pb-4">
+        <div class="container-xxl">
+            <div class="site-footer-inner">
+                <div class="row gx-4">
+                    <div class="col-12 col-sm-8 col-lg-4">
+                        <div class="site-footer-brand gradient-text">Predimarkt</div>
+                        <p class="site-footer-copy">
+                            Educational prediction markets.<br/>
+                            Play-money only. No real money transactions.
+                        </p>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2 pt-sm-4">
+                        <ul class="list-unstyled">
+                            <li><a class="site-footer-link" data-turbolinks="false" href={AboutAction}>About Predimarkt</a></li>
+                            <li><a class="site-footer-link" href="mailto:info@predimarkt.eu">info@predimarkt.eu</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2 pt-lg-4">
+                        <ul class="list-unstyled">
+                            <li><a class="site-footer-link" data-turbolinks="false" href={HowItWorksAction}>How It Works</a></li>
+                            <li><a class="site-footer-link" data-turbolinks="false" href={CommunityRulesAction}>Community Rules</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2 pt-lg-4">
+                        <ul class="list-unstyled">
+                            <li><a class="site-footer-link" data-turbolinks="false" href={TermsAction}>Terms of Service</a></li>
+                            <li><a class="site-footer-link" data-turbolinks="false" href={LegalNoticeAction}>Legal Notice</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2 pt-lg-4">
+                        <ul class="list-unstyled">
+                            <li><a class="site-footer-link" data-turbolinks="false" href={PrivacyPolicyAction}>Privacy Policy</a></li>
+                            <li><a class="site-footer-link" data-turbolinks="false" href={CookiePolicyAction}>Cookie Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
 |]
 
 renderThemeToggle :: Html

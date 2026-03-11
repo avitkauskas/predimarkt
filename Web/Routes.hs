@@ -20,6 +20,25 @@ instance AutoRoute AssetsController
 instance AutoRoute TradesController
 instance AutoRoute LeaderboardController
 
+instance HasPath StaticController where
+    pathTo AboutAction          = "/about"
+    pathTo HowItWorksAction     = "/how-it-works"
+    pathTo CommunityRulesAction = "/community-rules"
+    pathTo TermsAction          = "/terms-of-service"
+    pathTo PrivacyPolicyAction  = "/privacy-policy"
+    pathTo CookiePolicyAction   = "/cookie-policy"
+    pathTo LegalNoticeAction    = "/legal-notice"
+
+instance CanRoute StaticController where
+    parseRoute' =
+        (string "/about" >> pure AboutAction)
+        <|> (string "/how-it-works" >> pure HowItWorksAction)
+        <|> (string "/community-rules" >> pure CommunityRulesAction)
+        <|> (string "/terms-of-service" >> pure TermsAction)
+        <|> (string "/privacy-policy" >> pure PrivacyPolicyAction)
+        <|> (string "/cookie-policy" >> pure CookiePolicyAction)
+        <|> (string "/legal-notice" >> pure LegalNoticeAction)
+
 instance HasPath AuthController where
     pathTo LoginAction                       = "/NewSession"
     pathTo BeginPasskeyRegistrationAction    = "/passkeys/registration/begin"

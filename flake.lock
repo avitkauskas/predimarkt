@@ -660,11 +660,11 @@
         "systems": "systems_7"
       },
       "locked": {
-        "lastModified": 1773132178,
-        "narHash": "sha256-dxEK+cart2xbUYAMDqjU/MDvgF57Lig7qCwxbJdN7MA=",
+        "lastModified": 1773246617,
+        "narHash": "sha256-77kgn48UH7aZMbq4ALodJJjnb0ArxYnsLGwmN1e+Wy0=",
         "owner": "digitallyinduced",
         "repo": "ihp",
-        "rev": "38236e3d59c9b0751b76411baf6b139f134fbd6e",
+        "rev": "4bc67e1f9c3bc631ab7087f9d85337e00325978e",
         "type": "github"
       },
       "original": {

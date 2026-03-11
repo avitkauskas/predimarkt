@@ -13,6 +13,7 @@ import Data.Time.Clock (UTCTime (..), secondsToDiffTime)
 import Generated.Types
 import IHP.ModelSupport (newRecord)
 import IHP.Prelude
+import IHP.RouterPrelude (pathTo)
 import IHP.ValidationSupport (getValidationFailure)
 import Test.Hspec
 import Test.QuickCheck
@@ -23,6 +24,7 @@ import Web.Controller.Leaderboard (annualRateOfReturn, leaderboardScore,
 import Web.Controller.Markets (buildMarket)
 import Web.Controller.Trades ()
 import Web.Routes (buildShowMarketPath)
+import Web.Types (StaticController (..))
 import Web.View.Markets.Index (MarketIndexStatusFilter (..), buildMarketsPath,
                                parseMarketIndexStatusFilter)
 
@@ -188,6 +190,16 @@ main = hspec do
                 sanitizeBackTo (Just "http://evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "//evil.example") `shouldBe` Nothing
                 sanitizeBackTo (Just "Markets") `shouldBe` Nothing
+
+        describe "Static page routes" do
+            it "builds the public information and legal routes" do
+                pathTo AboutAction `shouldBe` "/about"
+                pathTo HowItWorksAction `shouldBe` "/how-it-works"
+                pathTo CommunityRulesAction `shouldBe` "/community-rules"
+                pathTo TermsAction `shouldBe` "/terms-of-service"
+                pathTo PrivacyPolicyAction `shouldBe` "/privacy-policy"
+                pathTo CookiePolicyAction `shouldBe` "/cookie-policy"
+                pathTo LegalNoticeAction `shouldBe` "/legal-notice"
 
         describe "passkey helpers" do
             it "extracts the RP id from hosts with ports" do

@@ -13,6 +13,7 @@ import Web.Controller.Auth
 import Web.Controller.Dashboard
 import Web.Controller.Leaderboard
 import Web.Controller.Markets
+import Web.Controller.Static
 import Web.Controller.Trades
 import Web.Controller.Users
 
@@ -21,6 +22,7 @@ instance FrontController WebApplication where
         [ startPage MarketsAction
         , parseRoute @SessionsController
         , parseRoute @AuthController
+        , parseRoute @StaticController
         -- Generator Marker
         , parseRoute @AssetsController
         , parseRoute @DashboardController

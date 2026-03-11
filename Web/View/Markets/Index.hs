@@ -196,7 +196,7 @@ renderLoadMoreButton
     -> Html
 renderLoadMoreButton categoryFilter statusFilter searchFilter currentPage shownMarkets totalMarkets hasMoreMarkets =
     when hasMoreMarkets [hsx|
-        <div class="d-flex justify-content-center mb-5">
+        <div class="d-flex justify-content-center mb-4">
             <a href={buildMarketsPath categoryFilter statusFilter searchFilter (Just (currentPage + 1))}
                class="btn btn-sm btn-outline-secondary text-nowrap">
                 Showing {shownMarkets} of {totalMarkets} markets · Load more
