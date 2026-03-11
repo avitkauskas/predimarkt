@@ -240,19 +240,16 @@ renderMarket backToPath market = [hsx|
         <div class="card h-100">
 
             <!-- Clickable header -->
-            <div class="position-relative overflow-hidden rounded-top">
-                <a href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
-                    data-start-market-page-at-top="true"
-                    class="stretched-link" aria-hidden="true">
-                </a>
-                <div class={classes [
-                        "card-header border-0 position-relative text-muted small d-flex",
-                        "justify-content-between align-items-center py-1",
-                        (headerClass, True)]}>
-                    <span>{category.name}</span>
-                    {statusBadge}
-                </div>
-            </div>
+            <a href={showMarketLink}
+               data-start-market-page-at-top="true"
+               class={classes [
+                    "card-header border-0 position-relative text-muted small d-flex",
+                    "justify-content-between align-items-center py-1",
+                    "text-reset text-decoration-none overflow-hidden rounded-top",
+                    (headerClass, True)]}>
+                <span>{category.name}</span>
+                {statusBadge}
+            </a>
 
             <!-- Card body -->
             <div class={classes ["card-body d-flex flex-column position-relative pb-2",
@@ -260,12 +257,12 @@ renderMarket backToPath market = [hsx|
 
                 <!-- Scrollable, clickable title -->
                 <div class="position-relative scroll-no-bar mb-2">
-                    <a href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
-                       data-start-market-page-at-top="true"
-                       class="stretched-link" aria-hidden="true">
-                    </a>
                     <h6 class="card-title fs-6 mb-0 d-inline-block">
-                        {market.title}
+                        <a href={showMarketLink}
+                           data-start-market-page-at-top="true"
+                           class="stretched-link text-reset text-decoration-none">
+                            {market.title}
+                        </a>
                     </h6>
                 </div>
 
@@ -306,6 +303,9 @@ renderMarket backToPath market = [hsx|
     </div>
 |]
     where
+        showMarketLink :: MarketsController
+        showMarketLink = ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
+
         category = market.categoryId
 
         statusBadge =
