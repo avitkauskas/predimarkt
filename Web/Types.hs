@@ -22,6 +22,7 @@ data StaticController
     | PrivacyPolicyAction
     | CookiePolicyAction
     | LegalNoticeAction
+    | ModerationPolicyAction
     deriving (Eq, Show, Data)
 
 data SessionsController

@@ -463,18 +463,14 @@
 
 .site-footer-brand {
     display: inline-block;
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 700;
-}
-
-.site-footer-copy {
-    color: var(--bs-secondary-color);
-    font-size: 0.85rem;
+    padding-top: 0.25rem;
 }
 
 .site-footer-link {
     color: var(--bs-secondary-color);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-decoration: none;
 }
 

@@ -21,13 +21,14 @@ instance AutoRoute TradesController
 instance AutoRoute LeaderboardController
 
 instance HasPath StaticController where
-    pathTo AboutAction          = "/about"
-    pathTo HowItWorksAction     = "/how-it-works"
-    pathTo CommunityRulesAction = "/community-rules"
-    pathTo TermsAction          = "/terms-of-service"
-    pathTo PrivacyPolicyAction  = "/privacy-policy"
-    pathTo CookiePolicyAction   = "/cookie-policy"
-    pathTo LegalNoticeAction    = "/legal-notice"
+    pathTo AboutAction            = "/about"
+    pathTo HowItWorksAction       = "/how-it-works"
+    pathTo CommunityRulesAction   = "/community-rules"
+    pathTo TermsAction            = "/terms-of-service"
+    pathTo PrivacyPolicyAction    = "/privacy-policy"
+    pathTo CookiePolicyAction     = "/cookie-policy"
+    pathTo ModerationPolicyAction = "/moderation-policy"
+    pathTo LegalNoticeAction      = "/legal-notice"
 
 instance CanRoute StaticController where
     parseRoute' =
@@ -37,6 +38,7 @@ instance CanRoute StaticController where
         <|> (string "/terms-of-service" >> pure TermsAction)
         <|> (string "/privacy-policy" >> pure PrivacyPolicyAction)
         <|> (string "/cookie-policy" >> pure CookiePolicyAction)
+        <|> (string "/moderation-policy" >> pure ModerationPolicyAction)
         <|> (string "/legal-notice" >> pure LegalNoticeAction)
 
 instance HasPath AuthController where

@@ -195,36 +195,38 @@ contentPageLayout heading intro inner = [hsx|
 
 siteFooter :: Html
 siteFooter = [hsx|
-    <footer class="site-footer pt-3 pb-4">
+    <footer class="site-footer pt-3 pb-2">
         <div class="container-xxl">
             <div class="site-footer-inner">
                 <div class="row gx-4">
-                    <div class="col-12 col-sm-8 col-lg-4">
+                    <div class="col-6 col-sm-4 col-lg-2">
                         <div class="site-footer-brand gradient-text">Predimarkt</div>
-                        <p class="site-footer-copy">
-                            Educational prediction markets.<br/>
-                            Play-money only. No real money transactions.
-                        </p>
                     </div>
-                    <div class="col-6 col-sm-4 col-lg-2 pt-sm-4">
+                    <div class="col-6 col-sm-4 col-lg-2">
                         <ul class="list-unstyled">
-                            <li><a class="site-footer-link" data-turbolinks="false" href={AboutAction}>About Predimarkt</a></li>
                             <li><a class="site-footer-link" href="mailto:info@predimarkt.eu">info@predimarkt.eu</a></li>
+                            <li style="font-size: 0.85rem; margin-top: 0.2rem;">Vilnius, Lithuania</li>
                         </ul>
                     </div>
-                    <div class="col-6 col-sm-4 col-lg-2 pt-lg-4">
+                    <div class="col-6 col-sm-4 col-lg-2">
                         <ul class="list-unstyled">
+                            <li><a class="site-footer-link" data-turbolinks="false" href={AboutAction}>About Us</a></li>
                             <li><a class="site-footer-link" data-turbolinks="false" href={HowItWorksAction}>How It Works</a></li>
-                            <li><a class="site-footer-link" data-turbolinks="false" href={CommunityRulesAction}>Community Rules</a></li>
                         </ul>
                     </div>
-                    <div class="col-6 col-sm-4 col-lg-2 pt-lg-4">
+                    <div class="col-6 col-sm-4 col-lg-2">
                         <ul class="list-unstyled">
-                            <li><a class="site-footer-link" data-turbolinks="false" href={TermsAction}>Terms of Service</a></li>
-                            <li><a class="site-footer-link" data-turbolinks="false" href={LegalNoticeAction}>Legal Notice</a></li>
+                            <li><a class="site-footer-link" data-turbolinks="false" href={CommunityRulesAction}>Community Rules</a></li>
+                            <li><a class="site-footer-link" data-turbolinks="false" href={ModerationPolicyAction}>Moderation Policy</a></li>
                         </ul>
                     </div>
-                    <div class="col-6 col-sm-4 col-lg-2 pt-lg-4">
+                    <div class="col-6 col-sm-4 col-lg-2">
+                        <ul class="list-unstyled">
+                            <li><a class="site-footer-link" data-turbolinks="false" href={LegalNoticeAction}>Legal Notice</a></li>
+                            <li><a class="site-footer-link" data-turbolinks="false" href={TermsAction}>Terms of Service</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2">
                         <ul class="list-unstyled">
                             <li><a class="site-footer-link" data-turbolinks="false" href={PrivacyPolicyAction}>Privacy Policy</a></li>
                             <li><a class="site-footer-link" data-turbolinks="false" href={CookiePolicyAction}>Cookie Policy</a></li>
