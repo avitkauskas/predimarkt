@@ -113,6 +113,13 @@ Main.hs               # Application entry
 flake.nix             # Nix development environment
 ```
 
+## Hoogle
+When you need to find functions, look up type signatures, discover data structures, or read documentation for any Haskell package used in this project, use Hoogle. It indexes all packages from `flake.nix`, so it's the primary way to explore available APIs and read Hackage-style documentation without leaving the dev environment.
+```bash
+hoogle search "Text -> ByteString"   # Search by type signature, function name, or data type
+# Hoogle web UI at http://localhost:8002 - browse and read full Hackage docs for all project packages
+```
+
 ## Common Tasks
 
 **Add a new controller**: Create in `Web/Controller/`, add route in `Web/Routes.hs`, create views in `Web/View/`
@@ -120,9 +127,3 @@ flake.nix             # Nix development environment
 **Modify schema**: Edit `Application/Schema.sql`, run `make build/Generated/Types.hs`
 
 **Add a helper**: Create in `Application/Helper/`, export from `Application/Helper/Controller.hs` or `View.hs`
-
-## CI/CD
-
-GitHub Actions runs tests on push/PR to main. Deploys to NixOS after successful tests.
-
-Secrets required: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`

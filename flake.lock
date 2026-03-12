@@ -90,16 +90,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1772722245,
-        "narHash": "sha256-38crLoAfEOdnEDDZD2NyAEDVlBSFn+MlZyLwztAsC8Q=",
-        "owner": "cachix",
+        "lastModified": 1773308164,
+        "narHash": "sha256-SuRvH0gg3UwdV2+QWSY7TK1Memusb6IAGbf24tprwcY=",
+        "owner": "digitallyinduced",
         "repo": "devenv",
-        "rev": "6ec181f01a8b69400fd787c44fbc6b37c95f5bac",
+        "rev": "2fdc7583c6a7aaaf32e2666c6b1e8532698d597a",
         "type": "github"
       },
       "original": {
-        "owner": "cachix",
-        "ref": "v2.0.2",
+        "owner": "digitallyinduced",
+        "ref": "flake-native-process-manager",
         "repo": "devenv",
         "type": "github"
       }
@@ -660,11 +660,11 @@
         "systems": "systems_7"
       },
       "locked": {
-        "lastModified": 1773246617,
-        "narHash": "sha256-77kgn48UH7aZMbq4ALodJJjnb0ArxYnsLGwmN1e+Wy0=",
+        "lastModified": 1773417890,
+        "narHash": "sha256-JpSoxJjSh/35xYytbeklkwHPefGnKmJK/bwclQRhq8w=",
         "owner": "digitallyinduced",
         "repo": "ihp",
-        "rev": "4bc67e1f9c3bc631ab7087f9d85337e00325978e",
+        "rev": "ce62bbff55d72ee3fd0d7e7b25164917903d560e",
         "type": "github"
       },
       "original": {
@@ -1425,11 +1425,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1768621446,
-        "narHash": "sha256-6YwHV1cjv6arXdF/PQc365h1j+Qje3Pydk501Rm4Q+4=",
+        "lastModified": 1773222311,
+        "narHash": "sha256-BHoB/XpbqoZkVYZCfXJXfkR+GXFqwb/4zbWnOr2cRcU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "72ac591e737060deab2b86d6952babd1f896d7c5",
+        "rev": "0590cd39f728e129122770c029970378a79d076a",
         "type": "github"
       },
       "original": {
