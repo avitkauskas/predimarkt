@@ -5,7 +5,7 @@ import Web.View.Prelude
 
 lastUpdated :: Html
 lastUpdated = [hsx|
-    <p class="content-page-muted small mt-3 mb-0">Last updated: 11 March 2026</p>
+    <p class="small text-muted mt-4 mb-0">Last updated: 2026-03-15</p>
 |]
 
 data AboutView = AboutView
@@ -19,7 +19,7 @@ data LegalNoticeView = LegalNoticeView
 
 instance View AboutView where
     html AboutView = contentPageLayout "About Predimarkt"
-        (Just "Predimarkt is a play-money prediction market platform operated from Vilnius, Lithuania.")
+        "Predimarkt is a play-money prediction market platform operated from Vilnius, Lithuania."
         [hsx|
             <p>
                 Predimarkt is a public forecasting platform where people can
@@ -66,9 +66,9 @@ instance View AboutView where
 
 instance View HowItWorksView where
     html HowItWorksView = contentPageLayout "How It Works"
-        (Just "Predimarkt uses play money and public forecasting to explore probability, judgment, and fair market resolution.")
+        "Predimarkt uses play money and public forecasting to explore probability, judgment, and fair market resolution."
         [hsx|
-            <h2>Play-money markets</h2>
+            <h4>Play-money markets</h4>
             <p>
                 All activity on Predimarkt uses fictional balances only.
                 No deposits, withdrawals, or transfers of real-world value
@@ -76,7 +76,7 @@ instance View HowItWorksView where
                 rights or claims.
             </p>
 
-            <h2>Prediction markets</h2>
+            <h4>Prediction markets</h4>
             <p>
                 A prediction market represents a question about a future
                 event. Participants trade between possible outcomes using
@@ -84,7 +84,7 @@ instance View HowItWorksView where
                 expectations about the likelihood of those outcomes.
             </p>
 
-            <h2>User-created markets</h2>
+            <h4>User-created markets</h4>
             <p>
                 Registered users may create public markets. Market creators
                 are expected to define questions clearly, specify the
@@ -92,7 +92,7 @@ instance View HowItWorksView where
                 wherever possible.
             </p>
 
-            <h2>Market resolution</h2>
+            <h4>Market resolution</h4>
             <p>
                 The creator of a market is responsible for resolving it in
                 good faith and according to the stated rules. Resolution
@@ -107,14 +107,14 @@ instance View HowItWorksView where
                 maintain the integrity of the service.
             </p>
 
-            <h2>Public discussion</h2>
+            <h4>Public discussion</h4>
             <p>
                 Markets may include public discussion. Participants are
                 encouraged to share information, reasoning, and evidence
                 that may help others understand the event being forecast.
             </p>
 
-            <h2>No financial advice</h2>
+            <h4>No financial advice</h4>
             <p>
                 Predimarkt does not provide financial, investment, or
                 trading advice. The platform is intended for educational
@@ -125,11 +125,9 @@ instance View HowItWorksView where
 
 instance View CommunityRulesView where
     html CommunityRulesView = contentPageLayout "Community Rules"
-        (Just "Predimarkt aims to host thoughtful, civil, and responsible forecasting.")
+        "Predimarkt aims to host thoughtful, civil, and responsible forecasting."
         [hsx|
-            {lastUpdated}
-
-            <h2>Purpose of the community</h2>
+            <h4>Purpose of the community</h4>
             <p>
                 Predimarkt is intended to support constructive discussion
                 about uncertain future events. Participants should aim to
@@ -137,14 +135,14 @@ instance View CommunityRulesView where
                 dialogue.
             </p>
 
-            <h2>Be respectful</h2>
+            <h4>Be respectful</h4>
             <p>
                 Communication on the platform should remain civil,
                 relevant, and respectful. Harassment, intimidation,
                 hateful conduct, or persistent disruption are not allowed.
             </p>
 
-            <h2>Prohibited markets</h2>
+            <h4>Prohibited markets</h4>
             <p>
                 Markets must not promote or celebrate violence,
                 physical harm, or criminal activity. In particular,
@@ -153,7 +151,7 @@ instance View CommunityRulesView where
                 permitted.
             </p>
 
-            <h2>Markets concerning individuals</h2>
+            <h4>Markets concerning individuals</h4>
             <p>
                 Markets that speculate about private individuals,
                 health, death, criminal accusations, or other sensitive
@@ -166,7 +164,7 @@ instance View CommunityRulesView where
                 manner.
             </p>
 
-            <h2>Responsible forecasting</h2>
+            <h4>Responsible forecasting</h4>
             <p>
                 Markets about public events, politics, economics,
                 science, or culture may be permitted when framed
@@ -174,7 +172,7 @@ instance View CommunityRulesView where
                 harmful or abusive manner.
             </p>
 
-            <h2>No unlawful or abusive use</h2>
+            <h4>No unlawful or abusive use</h4>
             <ul>
                 <li>No fraudulent or deceptive activity.</li>
                 <li>No impersonation or privacy violations.</li>
@@ -182,7 +180,7 @@ instance View CommunityRulesView where
                 <li>No content that is unlawful under applicable law.</li>
             </ul>
 
-            <h2>Market creator responsibilities</h2>
+            <h4>Market creator responsibilities</h4>
             <ul>
                 <li>Create markets in clear and good-faith terms.</li>
                 <li>Provide transparent resolution criteria.</li>
@@ -190,7 +188,7 @@ instance View CommunityRulesView where
                 <li>Refund markets when proper resolution is not possible.</li>
             </ul>
 
-            <h2>Good-faith interpretation of markets</h2>
+            <h4>Good-faith interpretation of markets</h4>
             <p>
                 Market questions should be interpreted in good faith according to
                 their stated description, the context in which they were created,
@@ -203,7 +201,7 @@ instance View CommunityRulesView where
                 participant would have had at the time the market was active.
             </p>
 
-            <h2>Abandoned markets</h2>
+            <h4>Abandoned markets</h4>
             <p>
                 If a market creator becomes inactive or deletes their
                 account before resolving a market, the platform operator
@@ -211,7 +209,7 @@ instance View CommunityRulesView where
                 protect participants.
             </p>
 
-            <h2>Platform intervention and market integrity</h2>
+            <h4>Platform intervention and market integrity</h4>
             <p>
                 To maintain the integrity and educational purpose of the
                 platform, the operator may intervene in markets when
@@ -232,21 +230,20 @@ instance View CommunityRulesView where
                 the fairness and reliability of the platform.
             </p>
 
-            <h2>Moderation</h2>
+            <h4>Moderation</h4>
             <p>
                 Predimarkt may remove content, close markets, limit
                 functionality, or suspend accounts when necessary to
                 maintain the safety and integrity of the platform.
             </p>
+            {lastUpdated}
         |]
 
 instance View TermsView where
     html TermsView = contentPageLayout "Terms of Service"
-        (Just "These Terms govern access to and use of Predimarkt.")
+        "These Terms govern access to and use of Predimarkt."
         [hsx|
-            {lastUpdated}
-
-            <h2>Eligibility</h2>
+            <h4>Eligibility</h4>
             <p>
                 Predimarkt is intended for individuals aged 18 years
                 or older. The platform does not verify age, but by
@@ -254,7 +251,7 @@ instance View TermsView where
                 requirement.
             </p>
 
-            <h2>Nature of the service</h2>
+            <h4>Nature of the service</h4>
             <p>
                 Predimarkt is a play-money forecasting platform
                 provided for educational, informational, and
@@ -267,7 +264,7 @@ instance View TermsView where
                 advice. No real-money transactions are supported.
             </p>
 
-            <h2>Educational and experimental environment</h2>
+            <h4>Educational and experimental environment</h4>
             <p>
                 Predimarkt is intended as an experimental and educational
                 environment for exploring forecasting and probabilistic reasoning.
@@ -279,7 +276,7 @@ instance View TermsView where
                 authoritative predictions about real-world events.
             </p>
 
-            <h2>No reliance</h2>
+            <h4>No reliance</h4>
             <p>
                 Information presented on Predimarkt, including market prices,
                 probabilities, comments, and discussions, reflects the activity
@@ -293,7 +290,7 @@ instance View TermsView where
                 real-world decisions.
             </p>
 
-            <h2>Accounts and authentication</h2>
+            <h4>Accounts and authentication</h4>
             <p>
                 Accounts are accessed using passkey-based
                 authentication. Users are responsible for maintaining
@@ -306,7 +303,7 @@ instance View TermsView where
                 secure access to their authentication methods.
             </p>
 
-            <h2>Account access responsibility</h2>
+            <h4>Account access responsibility</h4>
             <p>
                 Accounts are accessed using passkey authentication controlled
                 by the user.
@@ -318,14 +315,14 @@ instance View TermsView where
                 guarantee the ability to restore lost accounts.
             </p>
 
-            <h2>User content</h2>
+            <h4>User content</h4>
             <p>
                 Users may create markets and post public messages.
                 You remain responsible for the legality and accuracy
                 of the content you publish.
             </p>
 
-            <h2>Market resolution</h2>
+            <h4>Market resolution</h4>
             <p>
                 Market creators are responsible for resolving their
                 markets fairly and according to the stated rules.
@@ -334,7 +331,7 @@ instance View TermsView where
                 integrity.
             </p>
 
-            <h2>Resolution sources</h2>
+            <h4>Resolution sources</h4>
             <p>
                 Where possible, market resolution should rely on publicly
                 available and verifiable information sources.
@@ -346,7 +343,7 @@ instance View TermsView where
                 information used by market creators.
             </p>
 
-            <h2>User responsibility for markets</h2>
+            <h4>User responsibility for markets</h4>
             <p>
                 Users who create markets are responsible for defining the
                 resolution criteria and resolving their markets in good faith.
@@ -358,7 +355,7 @@ instance View TermsView where
                 the correctness of user-generated markets.
             </p>
 
-            <h2>Prohibited conduct</h2>
+            <h4>Prohibited conduct</h4>
             <ul>
                 <li>Violent, threatening, or abusive content.</li>
                 <li>Fraudulent or unlawful activity.</li>
@@ -366,13 +363,13 @@ instance View TermsView where
                 <li>Manipulation of markets or platform systems.</li>
             </ul>
 
-            <h2>Service availability</h2>
+            <h4>Service availability</h4>
             <p>
                 The service is provided on an “as is” and “as available”
                 basis. Availability and correctness are not guaranteed.
             </p>
 
-            <h2>Limitation of liability</h2>
+            <h4>Limitation of liability</h4>
             <p>
                 To the fullest extent permitted by applicable law,
                 the operator shall not be liable for indirect,
@@ -380,20 +377,19 @@ instance View TermsView where
                 use of the service.
             </p>
 
-            <h2>Governing law</h2>
+            <h4>Governing law</h4>
             <p>
                 These Terms are governed by the laws of Lithuania,
                 subject to mandatory rights under European Union law.
             </p>
+            {lastUpdated}
         |]
 
 instance View PrivacyPolicyView where
     html PrivacyPolicyView = contentPageLayout "Privacy Policy"
-        (Just "Predimarkt is designed to collect and retain as little personal data as reasonably possible.")
+        "Predimarkt is designed to collect and retain as little personal data as reasonably possible."
         [hsx|
-            {lastUpdated}
-
-            <h2>Privacy-first design</h2>
+            <h4>Privacy-first design</h4>
             <p>
                 Predimarkt is intentionally designed to minimise
                 personal data collection. The service does not require
@@ -401,7 +397,7 @@ instance View PrivacyPolicyView where
                 or behavioural analytics.
             </p>
 
-            <h2>Data stored by the application</h2>
+            <h4>Data stored by the application</h4>
             <ul>
                 <li>Passkey authentication records.</li>
                 <li>Your chosen nickname.</li>
@@ -411,7 +407,7 @@ instance View PrivacyPolicyView where
                 <li>Operational timestamps required for platform operation.</li>
             </ul>
 
-            <h2>Data not intentionally collected</h2>
+            <h4>Data not intentionally collected</h4>
             <p>
                 Predimarkt does not require email addresses, real
                 names, or other identifying personal information for
@@ -423,7 +419,7 @@ instance View PrivacyPolicyView where
                 operate advertising or behavioural profiling systems.
             </p>
 
-            <h2>Infrastructure and technical processing</h2>
+            <h4>Infrastructure and technical processing</h4>
             <p>
                 Like most websites, limited technical information
                 such as IP addresses may be processed by hosting
@@ -438,7 +434,7 @@ instance View PrivacyPolicyView where
                 content delivery networks.
             </p>
 
-            <h2>Legal basis</h2>
+            <h4>Legal basis</h4>
             <p>
                 Where the General Data Protection Regulation (GDPR)
                 applies, processing is based on the legitimate
@@ -446,7 +442,7 @@ instance View PrivacyPolicyView where
                 on providing the service requested by the user.
             </p>
 
-            <h2>Account deletion</h2>
+            <h4>Account deletion</h4>
             <p>
                 Users may delete their accounts at any time. Account
                 deletion removes associated trades, comments, and
@@ -459,7 +455,7 @@ instance View PrivacyPolicyView where
                 markets.
             </p>
 
-            <h2>Your rights</h2>
+            <h4>Your rights</h4>
             <p>
                 Depending on your jurisdiction, you may have rights
                 under data protection law including access,
@@ -467,20 +463,19 @@ instance View PrivacyPolicyView where
                 to lodge a complaint with a supervisory authority.
             </p>
 
-            <h2>Contact</h2>
+            <h4>Contact</h4>
             <p>
                 Privacy inquiries may be sent to
                 <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>.
             </p>
+            {lastUpdated}
         |]
 
 instance View CookiePolicyView where
     html CookiePolicyView = contentPageLayout "Cookie Policy"
-        (Just "Predimarkt aims to use only technically necessary cookies and minimal browser storage required for core functionality.")
+        "Predimarkt aims to use only technically necessary cookies and minimal browser storage required for core functionality."
         [hsx|
-            {lastUpdated}
-
-            <h2>Overview</h2>
+            <h4>Overview</h4>
             <p>
                 Predimarkt is designed to minimise tracking and data
                 collection. The platform does not use advertising
@@ -493,7 +488,7 @@ instance View CookiePolicyView where
                 cookies and browser storage for interface preferences.
             </p>
 
-            <h2>Technically necessary cookies</h2>
+            <h4>Technically necessary cookies</h4>
             <p>
                 Predimarkt may use a session cookie or equivalent
                 session mechanism required for authentication,
@@ -508,7 +503,7 @@ instance View CookiePolicyView where
                 ePrivacy rules.
             </p>
 
-            <h2>Browser storage</h2>
+            <h4>Browser storage</h4>
             <p>
                 Some features may use browser storage that remains
                 on the user's device.
@@ -534,14 +529,14 @@ instance View CookiePolicyView where
                 tracking.
             </p>
 
-            <h2>No analytics or marketing cookies</h2>
+            <h4>No analytics or marketing cookies</h4>
             <p>
                 Predimarkt does not intentionally use analytics
                 cookies, advertising technologies, marketing
                 trackers, or user profiling systems.
             </p>
 
-            <h2>No consent banner</h2>
+            <h4>No consent banner</h4>
             <p>
                 Because Predimarkt currently uses only technically
                 necessary cookies and limited browser storage for
@@ -555,7 +550,7 @@ instance View CookiePolicyView where
                 required consent mechanisms will be updated.
             </p>
 
-            <h2>Third-party technical requests</h2>
+            <h4>Third-party technical requests</h4>
             <p>
                 Some frontend assets may be delivered through
                 third-party content delivery networks such as
@@ -565,7 +560,7 @@ instance View CookiePolicyView where
                 as IP addresses to those providers.
             </p>
 
-            <h2>Managing cookies</h2>
+            <h4>Managing cookies</h4>
             <p>
                 Most web browsers allow users to control or disable
                 cookies through browser settings. Please note that
@@ -573,15 +568,14 @@ instance View CookiePolicyView where
                 ability of Predimarkt to provide login and other
                 core functionality.
             </p>
+            {lastUpdated}
         |]
 
 instance View LegalNoticeView where
     html LegalNoticeView = contentPageLayout "Legal Notice"
-        (Just "Operator and contact information for Predimarkt.")
+        "Operator and contact information for Predimarkt."
         [hsx|
-            {lastUpdated}
-
-            <h2>Operator</h2>
+            <h4>Operator</h4>
             <p>
                 Predimarkt is operated by:<br/>
                 Alvydas Vitkauskas<br/>
@@ -593,27 +587,26 @@ instance View LegalNoticeView where
                 <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>
             </p>
 
-            <h2>Project character</h2>
+            <h4>Project character</h4>
             <p>
                 Predimarkt is a private, non-commercial project
                 intended for educational exploration of forecasting
                 and prediction markets.
             </p>
 
-            <h2>Third-party components</h2>
+            <h4>Third-party components</h4>
             <p>
                 Predimarkt uses TradingViews Lightweight Charts™ for market visualisation.
                 <br/>Predimarkt is not affiliated with or endorsed by TradingView.
             </p>
+            {lastUpdated}
         |]
 
 instance View ModerationPolicyView where
     html ModerationPolicyView = contentPageLayout "Content Moderation & Complaints"
-        (Just "How Predimarkt handles content moderation and user reports.")
+        "How Predimarkt handles content moderation and user reports."
         [hsx|
-            {lastUpdated}
-
-            <h2>Purpose</h2>
+            <h4>Purpose</h4>
             <p>
                 Predimarkt allows users to create markets and post
                 public discussion messages. In order to maintain a
@@ -626,7 +619,7 @@ instance View ModerationPolicyView where
                 complaints are handled on the platform.
             </p>
 
-            <h2>Types of content on the platform</h2>
+            <h4>Types of content on the platform</h4>
             <p>
                 Most content on Predimarkt is created directly by
                 users. This includes:
@@ -643,7 +636,7 @@ instance View ModerationPolicyView where
                 and are expected to follow the Community Rules.
             </p>
 
-            <h2>Content that may be moderated</h2>
+            <h4>Content that may be moderated</h4>
             <p>
                 The platform may remove or restrict content that
                 violates the Community Rules or applicable law.
@@ -658,7 +651,7 @@ instance View ModerationPolicyView where
                 <li>Disrupts the intended educational purpose of the platform</li>
             </ul>
 
-            <h2>Moderation actions</h2>
+            <h4>Moderation actions</h4>
             <p>
                 When necessary to maintain the integrity of the
                 platform, the operator may take actions such as:
@@ -677,7 +670,7 @@ instance View ModerationPolicyView where
                 platform.
             </p>
 
-            <h2>Reporting content</h2>
+            <h4>Reporting content</h4>
             <p>
                 If you believe that content on Predimarkt violates
                 the Community Rules or applicable law, you may report
@@ -694,7 +687,7 @@ instance View ModerationPolicyView where
                 <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>
             </p>
 
-            <h2>Complaints and questions</h2>
+            <h4>Complaints and questions</h4>
             <p>
                 If you believe moderation action has been taken in
                 error, you may contact the operator using the same
@@ -702,10 +695,11 @@ instance View ModerationPolicyView where
                 requests where possible.
             </p>
 
-            <h2>Project scale</h2>
+            <h4>Project scale</h4>
             <p>
                 Predimarkt is operated as a small independent
                 project. Moderation is performed manually by the
                 operator and response times may vary.
             </p>
+            {lastUpdated}
         |]

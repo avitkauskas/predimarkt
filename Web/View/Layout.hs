@@ -169,29 +169,22 @@ dashboardLayout inner = [hsx|
     </div>
 |]
 
-contentPageLayout :: Text -> Maybe Text -> Html -> Html
+contentPageLayout :: Text -> Text -> Html -> Html
 contentPageLayout heading intro inner = [hsx|
-    <div class="content-page-shell py-3 py-lg-4">
-        <div class="card shadow-sm content-page-card">
+    <div class="py-3 py-lg-4">
+        <div class="card shadow-sm">
             <div class="card-body p-4 p-md-5">
-                <div class="content-page-text">
-                    <header class="mb-4">
-                        <h1 class="h2 mb-3">{heading}</h1>
-                        {renderIntro}
-                    </header>
-                    <div class="content-page-body">
-                        {inner}
-                    </div>
+                <header class="mb-4">
+                    <h1 class="h2 mb-3">{heading}</h1>
+                    <p class="lead">{intro}</p>
+                </header>
+                <div>
+                    {inner}
                 </div>
             </div>
         </div>
     </div>
 |]
-    where
-        renderIntro :: Html
-        renderIntro = case intro of
-            Just text -> [hsx|<p class="content-page-lead mb-0">{text}</p>|]
-            Nothing   -> mempty
 
 siteFooter :: Html
 siteFooter = [hsx|
@@ -201,11 +194,12 @@ siteFooter = [hsx|
                 <div class="row gx-4">
                     <div class="col-6 col-sm-4 col-lg-2">
                         <div class="site-footer-brand gradient-text">Predimarkt</div>
+                            <div style="font-size: 0.8rem;">&copy; 2026 Predimarkt</div>
                     </div>
                     <div class="col-6 col-sm-4 col-lg-2">
                         <ul class="list-unstyled">
+                            <li class="text-secondary" style="font-size: 0.85rem; margin-top: 0.2rem;">Contact</li>
                             <li><a class="site-footer-link" href="mailto:info@predimarkt.eu">info@predimarkt.eu</a></li>
-                            <li style="font-size: 0.85rem; margin-top: 0.2rem;">Vilnius, Lithuania</li>
                         </ul>
                     </div>
                     <div class="col-6 col-sm-4 col-lg-2">

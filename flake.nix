@@ -19,11 +19,12 @@
 
             perSystem = { pkgs, lib, ... }: {
                 ihp = {
-                    appName = "app"; # Change this to your project name
+                    appName = "predimarkt"; # Change this to your project name
                     enable = true;
                     projectPath = ./.;
                     packages = with pkgs; [
                         # Native dependencies, e.g. imagemagick
+                        # pkg-config
                     ];
                     haskellPackages = p:
                         let
@@ -33,10 +34,8 @@
                                 sha256 = "sha256-iJygaLPu0NyOHxUKwpd7vMkUnIXNRtAnnCumqKqces8=";
                             } {});
                         in with p; [
-                            # Haskell dependencies go here
+                            # Haskell production dependencies go here
                             p.ihp
-                            cabal-install
-                            stylish-haskell
                             base
                             wai
                             text
@@ -45,10 +44,14 @@
                             base64
                             webauthn
                             raw-strings-qq
-
-                            # for local development testing
-                            hspec
                         ];
+                    devHaskellPackages = p: with p; [
+                        # Haskell development dependencies go here
+                        stylish-haskell
+                        cabal-install
+                        hspec
+                        hlint
+                    ];
                 };
 
                 # Custom configuration that will start with `devenv up`
