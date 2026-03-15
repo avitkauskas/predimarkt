@@ -19,14 +19,14 @@
 
             perSystem = { pkgs, lib, ... }: {
                 ihp = {
-                    appName = "predimarkt"; # Change this to your project name
+                    appName = "predimarkt";
                     enable = true;
                     projectPath = ./.;
                     packages = with pkgs; [
                         # Native dependencies, e.g. imagemagick
-                        # pkg-config
                     ];
                     haskellPackages = p:
+                        # Haskell production dependencies go here
                         let
                             webauthn = pkgs.haskell.lib.doJailbreak (p.callHackageDirect {
                                 pkg = "webauthn";
@@ -34,7 +34,6 @@
                                 sha256 = "sha256-iJygaLPu0NyOHxUKwpd7vMkUnIXNRtAnnCumqKqces8=";
                             } {});
                         in with p; [
-                            # Haskell production dependencies go here
                             p.ihp
                             base
                             wai

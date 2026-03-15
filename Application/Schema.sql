@@ -112,6 +112,7 @@ CREATE INDEX positions_market_id_index ON positions (market_id);
 CREATE INDEX positions_asset_id_index ON positions (asset_id);
 CREATE UNIQUE INDEX positions_user_id_asset_id_index ON positions (user_id, asset_id);
 CREATE TRIGGER update_positions_updated_at BEFORE UPDATE ON positions FOR EACH ROW EXECUTE FUNCTION set_updated_at_to_now();
+-- CREATE TYPE JOB_STATUS AS ENUM ('job_status_not_started', 'job_status_running', 'job_status_failed', 'job_status_timed_out', 'job_status_succeeded', 'job_status_retry');
 CREATE TABLE close_market_jobs (
     id UUID DEFAULT uuidv7() PRIMARY KEY NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
