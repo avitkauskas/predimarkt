@@ -295,7 +295,6 @@ renderMarket backToPath market = [hsx|
                 <span title="Market closing time" style="font-size: 0.7rem;">
                     <i class="bi bi-alarm"></i>
                     {renderTime market.closedAt}
-                    <!-- {market.closedAt} -->
                 </span>
             </div>
 

@@ -4,11 +4,14 @@ module Web.View.Markets.Show where
 
 import Application.Domain.LMSR
 import Application.Domain.Types
+import Data.Conduit.Process.Typed (closed)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as Text
+import GHC.Exts.Heap (GenClosure (owner))
 import qualified IHP.QueryBuilder as QueryBuilder
+import Text.Blaze.Html4.FrameSet (title)
 import Text.Printf (printf)
 import Web.Types (AssetChartData (..), PricePoint (..))
 import Web.View.Prelude
@@ -22,6 +25,7 @@ data MarketChatEntry = MarketChatEntry
 
 data ShowView = ShowView
     { market               :: Market
+    , owner                :: Maybe User
     , category             :: Category
     , assets               :: [Asset]
     , tradingAssetId       :: Maybe (Id Asset)
@@ -87,6 +91,7 @@ instance View ShowView where
 
                                 {renderSectionToggle "Rules & Description" showDescription descriptionToggleAction}
                                 <div id="market-description" class={classes [("d-none", not showDescription)]}>
+                                    {renderOwnerAndDates}
                                     {renderTextParagraphs market.description}
                                 </div>
 
@@ -107,11 +112,34 @@ instance View ShowView where
         where
             headerClass = marketStatusHeaderClasses market.status
             statusBadge =
-                when (market.status /= MarketStatusOpen)
-                    [hsx|<span>{marketStatusLabel market.status}</span>|]
+                if (market.status /= MarketStatusOpen)
+                    then [hsx|
+                        <span>{marketStatusLabel market.status}</span>
+                    |]
+                    else [hsx|
+                        <span title="Market closing time" style="font-size: 0.85rem;">
+                            <i class="bi bi-alarm"></i>
+                            {renderTime market.closedAt}
+                        </span>
+                    |]
 
             lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
                          in (qtyMap, Beta market.beta)
+
+            renderOwnerAndDates :: Html
+            renderOwnerAndDates = [hsx|
+                <div class="small text-muted my-3">
+                    <span class="text-nowrap me-2 fs-6" title="Market creator">
+                        <i class="bi bi-person-gear fs-6"></i> {fromMaybe "admin" $ fmap (.nickname) owner}
+                    </span>
+                    <span class="text-nowrap me-2" title="Market opened at">
+                        <i class="bi bi-clock"></i> {renderTime $ fromMaybe market.createdAt market.openedAt}
+                    </span>
+                    <span class="text-nowrap" title="Market closing time">
+                        <i class="bi bi-alarm"></i> {renderTime market.closedAt}
+                    </span>
+                </div>
+            |]
 
             currentPrices :: M.Map (Id Asset) Double
             currentPrices = M.map (\a -> assetPrice a.id (snd lmsrState) (fst lmsrState))

@@ -144,6 +144,7 @@ instance Controller MarketsController where
         let backToPath = sanitizeBackTo (backTo <|> paramOrNothing @Text "backTo")
 
         market :: Market <- fetch mId
+        owner :: Maybe User <- fetchOneOrNothing market.userId
         category <- fetch (market.categoryId)
         assets <- query @Asset
             |> filterWhere (#marketId, mId)
@@ -193,6 +194,7 @@ instance Controller MarketsController where
 
         render ShowView
             { market
+            , owner
             , category
             , assets = sortedAssets
             , tradingAssetId = tAssetId
