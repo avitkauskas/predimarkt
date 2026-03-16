@@ -129,7 +129,7 @@ instance Controller MarketsController where
         render NewView { .. }
 
     action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } = autoRefresh do
-        ensureIsUser
+        -- ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
         let tAction = sanitizeTradingAction (tradingAction <|> paramOrNothing @Text "tradingAction")

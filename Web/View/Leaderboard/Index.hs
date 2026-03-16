@@ -75,7 +75,7 @@ renderUserRow summary currentUserNickname =
                 <td class="px-3 py-1 text-center fw-medium">
                     {get #rank summary}
                 </td>
-                <td class="px-3 py-1 fw-medium">
+                <td class="px-3 py-1 fw-medium text-nowrap">
                     {get #nickname summary}
                 </td>
                 <td class="px-3 py-1 text-end fw-medium">

@@ -12,6 +12,7 @@ import Web.Controller.Prelude
 
 instance Controller TradesController where
     action ExecuteTradeAction { assetId } = do
+        ensureIsUser
         asset <- fetch assetId
         market <- fetch asset.marketId
 
@@ -112,6 +113,7 @@ instance Controller TradesController where
         redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (normalizePageParam currentActivityPage) (normalizePageParam currentChatPage) currentChatComposerRev Nothing backToPath)
 
     action ClosePositionAction { assetId } = do
+        ensureIsUser
         dbPosition <- query @Position
             |> filterWhere (#userId, currentUserId)
             |> filterWhere (#assetId, assetId)

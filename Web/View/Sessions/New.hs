@@ -21,14 +21,12 @@ instance View NewView where
                                 </p>
                             </div>
 
-                            <div id="passkey-auth-status" class="alert d-none mb-3" role="alert"></div>
-
                             <div class="js-passkey-login"
                                  data-begin-url={pathTo BeginPasskeyAuthenticationAction}
                                  data-finish-url={pathTo FinishPasskeyAuthenticationAction}
                                  data-status-id="passkey-auth-status"
                                  data-success-redirect="/">
-                                <button type="button" class="btn btn-primary btn-lg w-100 js-passkey-login-button">
+                                <button type="button" class="btn btn-success btn-lg w-100 js-passkey-login-button">
                                     <i class="bi bi-box-arrow-in-right me-2"></i>
                                     Log in with a passkey
                                 </button>
@@ -40,19 +38,21 @@ instance View NewView where
                                 <hr class="flex-grow-1" />
                             </div>
 
+                            <div id="passkey-auth-status" class="alert d-none mb-3" role="alert"></div>
+
                             <div class="js-passkey-register"
                                  data-begin-url={pathTo BeginPasskeyRegistrationAction}
                                  data-finish-url={pathTo FinishPasskeyRegistrationAction}
                                  data-status-id="passkey-auth-status"
                                  data-success-redirect="/"
                                  data-nickname-input-id="passkey-signup-nickname">
-                                <label class="form-label" for="passkey-signup-nickname">Choose a nickname</label>
+                                <!-- <label class="form-label" for="passkey-signup-nickname">Choose a nickname</label> -->
                                 <input id="passkey-signup-nickname"
                                        type="text"
                                        class="form-control mb-3"
                                        maxlength="50"
-                                       placeholder="e.g. market-wizard" />
-                                <button type="button" class="btn btn-outline-primary btn-lg w-100 js-passkey-register-button">
+                                       placeholder="enter your chosen nickname" />
+                                <button type="button" class="btn btn-primary btn-lg w-100 js-passkey-register-button">
                                     <i class="bi bi-person-plus me-2"></i>
                                     Create account with a passkey
                                 </button>
