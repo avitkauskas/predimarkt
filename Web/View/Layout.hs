@@ -250,6 +250,7 @@ renderThemeToggle = [hsx|
 
 stylesheets :: Html
 stylesheets = [hsx|
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
         <link rel="stylesheet" href={assetPath "/vendor/bootstrap.min.css"}/>
         <link rel="stylesheet" href={assetPath "/vendor/flatpickr.min.css"}/>
@@ -285,9 +286,9 @@ metaTags :: Html
 metaTags = [hsx|
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-        <meta property="og:title" content="App"/>
+        <meta property="og:title" content="Predimarkt"/>
         <meta property="og:type" content="website"/>
-        <meta property="og:url" content="TODO"/>
-        <meta property="og:description" content="TODO"/>
+        <meta property="og:url" content="https://predimarkt.eu"/>
+        <meta property="og:description" content="Educational prediction markets"/>
         {autoRefreshMeta}
     |]
