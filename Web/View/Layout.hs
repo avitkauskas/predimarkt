@@ -251,7 +251,8 @@ renderThemeToggle = [hsx|
 stylesheets :: Html
 stylesheets = [hsx|
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+        <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/> -->
+        <link rel="stylesheet" href={assetPath "/vendor/bootstrap-icons/bootstrap-icons.min.css"}/>
         <link rel="stylesheet" href={assetPath "/vendor/bootstrap.min.css"}/>
         <link rel="stylesheet" href={assetPath "/vendor/flatpickr.min.css"}/>
         <link rel="stylesheet" href={assetPath "/app.css"}/>
@@ -264,7 +265,8 @@ scripts = [hsx|
         <script src={assetPath "/vendor/timeago.js"}></script>
         <script src={assetPath "/vendor/popper-2.11.6.min.js"}></script>
         <script src={assetPath "/vendor/bootstrap.min.js"}></script>
-        <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-alpha7/dist/htmx.min.js"></script>
+        <script src={assetPath "/vendor/htmx.min.js"}></script>
+        <!-- <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-alpha7/dist/htmx.min.js"></script> -->
         <script src={assetPath "/vendor/flatpickr.js"}></script>
         <script src={assetPath "/vendor/morphdom-umd.min.js"}></script>
         <script src={assetPath "/vendor/turbolinks.js"}></script>
@@ -274,7 +276,8 @@ scripts = [hsx|
         <script src={assetPath "/ihp-auto-refresh.js"}></script>
         <script src={assetPath "/theme-toggle.js"}></script>
         <script src={assetPath "/app.js"}></script>
-        <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+        <!-- <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script> -->
+        <script src={assetPath "/vendor/lightweight-charts.standalone.production.js"}></script>
     |]
 
 devScripts :: Html
