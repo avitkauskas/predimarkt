@@ -4,14 +4,11 @@ module Web.View.Markets.Show where
 
 import Application.Domain.LMSR
 import Application.Domain.Types
-import Data.Conduit.Process.Typed (closed)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as Text
-import GHC.Exts.Heap (GenClosure (owner))
 import qualified IHP.QueryBuilder as QueryBuilder
-import Text.Blaze.Html4.FrameSet (title)
 import Text.Printf (printf)
 import Web.Types (AssetChartData (..), PricePoint (..))
 import Web.View.Prelude
@@ -128,10 +125,10 @@ instance View ShowView where
             renderOwnerAndDates :: Html
             renderOwnerAndDates = [hsx|
                 <div class="small text-muted my-3">
-                    <span class="text-nowrap me-2 fs-6" data-bs-toggle="tooltip" data-bs-title="Market creator">
+                    <span class="text-nowrap me-4 fs-6" data-bs-toggle="tooltip" data-bs-title="Market creator">
                         <i class="bi bi-person-gear fs-6"></i> {fromMaybe "admin" $ fmap (.nickname) owner}
                     </span>
-                    <span class="text-nowrap me-2" data-bs-toggle="tooltip" data-bs-title="Market opened at">
+                    <span class="text-nowrap me-4" data-bs-toggle="tooltip" data-bs-title="Market opened at">
                         <i class="bi bi-clock"></i> {renderTime $ fromMaybe market.createdAt market.openedAt}
                     </span>
                     <span class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="Market closing time">
@@ -596,7 +593,7 @@ instance View ShowView where
                     <div class="market-asset-row">
                         <div class="market-asset-main">
                             <div class="asset-info flex-shrink-0">
-                                <div class="fw-semibold fs-5">
+                                <div class="fw-semibold fs-5 me-3">
                                     {asset.name}
                                 </div>
                             </div>
