@@ -63,6 +63,23 @@ instance HasPath MarketsController where
     pathTo ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
         buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev tradeQuantity backTo
     pathTo CreateMarketChatMessageAction { marketId } = "/CreateMarketChatMessage?marketId=" <> inputValue marketId
+    pathTo DeleteMarketChatMessageAction { marketChatMessageId, marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
+        let queryParams = Maybe.catMaybes
+                [ Just ("marketChatMessageId=" <> inputValue marketChatMessageId)
+                , Just ("marketId=" <> inputValue marketId)
+                , fmap (\aid -> "tradingAssetId=" <> inputValue aid) tradingAssetId
+                , fmap (\action -> "tradingAction=" <> inputValue action) tradingAction
+                , fmap (showMarketFlagParam "showChart") showChart
+                , fmap (showMarketFlagParam "showDescription") showDescription
+                , fmap (showMarketFlagParam "showAllAssets") showAllAssets
+                , fmap (showMarketFlagParam "showTradeHistory") showTradeHistory
+                , fmap (\page -> "activityPage=" <> inputValue page) activityPage
+                , fmap (\page -> "chatPage=" <> inputValue page) chatPage
+                , fmap (\rev -> "chatComposerRev=" <> encodeQueryValue rev) chatComposerRev
+                , fmap (\quantity -> "tradeQuantity=" <> inputValue quantity) tradeQuantity
+                , fmap (\path -> "backTo=" <> encodeQueryValue path) backTo
+                ]
+            in "/DeleteMarketChatMessage?" <> Text.intercalate "&" queryParams
     pathTo EditMarketAction { marketId }   = "/EditMarket?marketId=" <> inputValue marketId
     pathTo UpdateMarketAction { marketId } = "/UpdateMarket?marketId=" <> inputValue marketId
     pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
@@ -76,6 +93,7 @@ instance CanRoute MarketsController where
         <|> (string "/CreateMarket" >> pure CreateMarketAction)
         <|> (string "/ShowMarket" >> pure (ShowMarketAction def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
         <|> (string "/CreateMarketChatMessage" >> onlyAllowMethods [POST] >> pure (CreateMarketChatMessageAction def))
+        <|> (string "/DeleteMarketChatMessage" >> onlyAllowMethods [POST] >> pure (DeleteMarketChatMessageAction def def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
         <|> (string "/EditMarket" >> pure (EditMarketAction def))
         <|> (string "/UpdateMarket" >> pure (UpdateMarketAction def))
         <|> (string "/DeleteMarket" >> pure (DeleteMarketAction def))

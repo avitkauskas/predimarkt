@@ -260,6 +260,42 @@ instance Controller MarketsController where
 
                 redirectToShowMarket (Just (cs (show message.id)))
 
+    action DeleteMarketChatMessageAction { marketChatMessageId } = do
+        ensureIsUser
+        let mId = paramOrNothing @(Id Market) "marketId"
+        let msgId = if marketChatMessageId == def then param @(Id MarketChatMessage) "marketChatMessageId" else marketChatMessageId
+        let tAssetId = paramOrNothing @(Id Asset) "tradingAssetId"
+        let tAction = sanitizeTradingAction (paramOrNothing @Text "tradingAction")
+        let chartVisible = fromMaybe True (readQueryFlag "showChart")
+        let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
+        let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
+        let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
+        let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
+        let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
+        let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
+        let currentTradeQuantity = sanitizeTradeQuantity (paramOrNothing @Int "tradeQuantity")
+        let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
+
+        message :: MarketChatMessage <- fetch msgId
+        accessDeniedUnless (message.userId == currentUserId)
+
+        deleteRecord message
+
+        redirectTo ShowMarketAction
+            { marketId = message.marketId
+            , tradingAssetId = tAssetId
+            , tradingAction = tAction
+            , showChart = Just chartVisible
+            , showDescription = Just descriptionVisible
+            , showAllAssets = Just allAssetsVisible
+            , showTradeHistory = Just tradeHistoryVisible
+            , activityPage = normalizePageParam currentActivityPage
+            , chatPage = normalizePageParam currentChatPage
+            , chatComposerRev = currentChatComposerRev
+            , tradeQuantity = currentTradeQuantity
+            , backTo = backToPath
+            }
+
     action EditMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId

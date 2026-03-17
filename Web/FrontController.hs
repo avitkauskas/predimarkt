@@ -28,6 +28,7 @@ instance FrontController WebApplication where
         , parseRoute @DashboardController
         , parseRoute @LeaderboardController
         , post "/CreateMarketChatMessage" (CreateMarketChatMessageAction def)
+        , post "/DeleteMarketChatMessage" (DeleteMarketChatMessageAction def def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing)
         , parseRoute @MarketsController
         , parseRoute @TradesController
         , parseRoute @UsersController

@@ -37,10 +37,10 @@ instance View IndexView where
                                 <th scope="col" class="py-1 info-label text-center">Rank</th>
                                 <th scope="col" class="px-3 py-1 info-label">User</th>
                                 {renderHeaderWithTooltip "Cash" "Available funds" "text-end"}
-                                {renderHeaderWithTooltip "Positions" "Current value of open positions" "text-end"}
+                                {renderHeaderWithTooltip "Positions" "Current value of positions" "text-end"}
                                 {renderHeaderWithTooltip "Total Value" "Cash plus positions" "text-end text-nowrap"}
                                 {renderHeaderWithTooltip "Return" "Total return since signup" "text-end text-nowrap"}
-                                {renderHeaderWithTooltip "Annual" "Annualized return (displayed after 30 days)" "text-end text-nowrap"}
+                                {renderHeaderWithTooltip "Annual" "Annualized return" "text-end text-nowrap"}
                                 {renderHeaderWithTooltip "Years" "Time since signup" "text-end text-nowrap"}
                             </tr>
                         </thead>

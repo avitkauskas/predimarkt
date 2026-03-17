@@ -76,6 +76,21 @@ data MarketsController
         , backTo           :: !(Maybe Text)
         }
     | CreateMarketChatMessageAction { marketId :: !(Id Market) }
+    | DeleteMarketChatMessageAction
+        { marketChatMessageId :: !(Id MarketChatMessage)
+        , marketId            :: !(Id Market)
+        , tradingAssetId      :: !(Maybe (Id Asset))
+        , tradingAction       :: !(Maybe Text)
+        , showChart           :: !(Maybe Bool)
+        , showDescription     :: !(Maybe Bool)
+        , showAllAssets       :: !(Maybe Bool)
+        , showTradeHistory    :: !(Maybe Bool)
+        , activityPage        :: !(Maybe Int)
+        , chatPage            :: !(Maybe Int)
+        , chatComposerRev     :: !(Maybe Text)
+        , tradeQuantity       :: !(Maybe Int)
+        , backTo              :: !(Maybe Text)
+        }
     | CreateMarketAction
     | EditMarketAction { marketId :: !(Id Market) }
     | UpdateMarketAction { marketId :: !(Id Market) }

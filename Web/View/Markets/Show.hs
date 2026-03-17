@@ -62,8 +62,7 @@ instance View ShowView where
                             <header class="mb-4">
                                 <div class="d-flex align-items-center gap-2">
                                     <a href={backLink}
-                                       class="btn btn-outline-secondary back-button flex-shrink-0"
-                                       title="Back to markets">
+                                       class="btn btn-outline-secondary back-button flex-shrink-0">
                                         <i class="bi bi-chevron-left"></i>
                                     </a>
                                     <div class="flex-grow-1 overflow-x-auto scroll-no-bar ms-1"
@@ -117,7 +116,7 @@ instance View ShowView where
                         <span>{marketStatusLabel market.status}</span>
                     |]
                     else [hsx|
-                        <span title="Market closing time" style="font-size: 0.85rem;">
+                        <span data-bs-toggle="tooltip" data-bs-title="Market closing time" style="font-size: 0.85rem;">
                             <i class="bi bi-alarm"></i>
                             {renderTime market.closedAt}
                         </span>
@@ -129,13 +128,13 @@ instance View ShowView where
             renderOwnerAndDates :: Html
             renderOwnerAndDates = [hsx|
                 <div class="small text-muted my-3">
-                    <span class="text-nowrap me-2 fs-6" title="Market creator">
+                    <span class="text-nowrap me-2 fs-6" data-bs-toggle="tooltip" data-bs-title="Market creator">
                         <i class="bi bi-person-gear fs-6"></i> {fromMaybe "admin" $ fmap (.nickname) owner}
                     </span>
-                    <span class="text-nowrap me-2" title="Market opened at">
+                    <span class="text-nowrap me-2" data-bs-toggle="tooltip" data-bs-title="Market opened at">
                         <i class="bi bi-clock"></i> {renderTime $ fromMaybe market.createdAt market.openedAt}
                     </span>
-                    <span class="text-nowrap" title="Market closing time">
+                    <span class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="Market closing time">
                         <i class="bi bi-alarm"></i> {renderTime market.closedAt}
                     </span>
                 </div>
@@ -218,6 +217,23 @@ instance View ShowView where
             chatPageAction :: Int -> MarketsController
             chatPageAction pageNum =
                 marketShowAction tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityCurrentPage pageNum
+
+            deleteChatMessageAction :: Id MarketChatMessage -> MarketsController
+            deleteChatMessageAction messageId = DeleteMarketChatMessageAction
+                { marketChatMessageId = messageId
+                , marketId = market.id
+                , tradingAssetId = tradingAssetId
+                , tradingAction = tradingAction
+                , showChart = Just showChart
+                , showDescription = Just showDescription
+                , showAllAssets = Just showAllAssets
+                , showTradeHistory = Just showTradeHistory
+                , activityPage = Just activityCurrentPage
+                , chatPage = Just chatCurrentPage
+                , chatComposerRev = chatComposerRev
+                , tradeQuantity = tradeQuantity
+                , backTo = backTo
+                }
 
             toggleAssetsButton :: Html
             toggleAssetsButton = if hasLeadingAssets
@@ -421,9 +437,12 @@ instance View ShowView where
 
             renderChatMessage :: MarketChatEntry -> Html
             renderChatMessage chatEntry = [hsx|
-                <div>
+                <div class="chat-message" style="position: relative;">
                     <div class="d-flex justify-content-between align-items-baseline gap-2 mb-0 text-secondary small">
-                        <span>{author.nickname}</span>
+                        <span class="text-nowrap d-flex align-items-center gap-1">
+                            {author.nickname}
+                            {renderDeleteButton message.id author.id}
+                        </span>
                         <span class="text-nowrap" style="font-size: 0.8em;">
                             {timeAgo message.createdAt}
                         </span>
@@ -436,6 +455,19 @@ instance View ShowView where
                 where
                     message = chatEntry.message
                     author = chatEntry.author
+                    renderDeleteButton msgId authorId =
+                        case currentUserOrNothing :: Maybe User of
+                            Just currentUser ->
+                                if authorId == get #id currentUser
+                                    then [hsx|
+                                        <form method="POST" action={pathTo (deleteChatMessageAction msgId)} class="d-inline">
+                                            <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="tooltip" data-bs-title="Delete">
+                                                <i class="bi bi-x-lg text-danger"></i>
+                                            </button>
+                                        </form>
+                                    |]
+                                    else mempty
+                            Nothing -> mempty
 
             renderChatLoadMore :: Html
             renderChatLoadMore =
