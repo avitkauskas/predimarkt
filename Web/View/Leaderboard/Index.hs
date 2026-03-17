@@ -35,7 +35,7 @@ instance View IndexView where
                         <thead>
                             <tr class="align-middle">
                                 <th scope="col" class="py-1 info-label text-center">Rank</th>
-                                <th scope="col" class="py-1 info-label">User</th>
+                                <th scope="col" class="px-3 py-1 info-label">User</th>
                                 {renderHeaderWithTooltip "Cash" "Available funds" "text-end"}
                                 {renderHeaderWithTooltip "Positions" "Current value of open positions" "text-end"}
                                 {renderHeaderWithTooltip "Total Value" "Cash plus positions" "text-end text-nowrap"}

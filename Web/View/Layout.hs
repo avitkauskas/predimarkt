@@ -188,7 +188,7 @@ contentPageLayout heading intro inner = [hsx|
 
 siteFooter :: Html
 siteFooter = [hsx|
-    <footer class="site-footer pt-3 pb-2">
+    <footer class="site-footer mt-4 pt-3 pb-2">
         <div class="container-xxl">
             <div class="site-footer-inner">
                 <div class="row gx-4">

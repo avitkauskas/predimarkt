@@ -12,7 +12,7 @@ instance View EditView where
         <div id="users-edit">
             <div class="d-flex align-items-center">
                 <div class="w-100">
-                    <div style="max-width: 500px" class="mb-5">
+                    <div style="max-width: 500px" class="mb-2">
                         <h5>Profile</h5>
                         {renderForm user}
 
