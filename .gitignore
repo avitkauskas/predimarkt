@@ -3,8 +3,6 @@
 .idea
 .env
 tmp
-result
-deploy.sh
 node_modules
 bin
 *.iml
@@ -20,12 +18,16 @@ gen
 del
 plans
 static/prod.*
+Application/Fixtures.sql
 Config/client_session_key.aes
+deploy*.*
+result-worker
+result
 
 # Ignore locally checked out IHP version
 IHP
 
 # devenv.sh
-.devenv*
 devenv.local.nix
+.devenv*
 .direnv
