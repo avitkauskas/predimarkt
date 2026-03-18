@@ -33,9 +33,9 @@ instance Controller DashboardController where
             Just query -> do
                 -- Use sqlQueryScalar for efficient counting
                 -- Search in both market title and asset name
-                count :: Int <- sqlQueryScalar
+                count <- sqlQueryScalar
                     [r|
-                        SELECT COUNT(*)
+                        SELECT COUNT(*)::INTEGER
                         FROM positions p
                         JOIN markets m ON p.market_id = m.id
                         JOIN assets a ON p.asset_id = a.id
@@ -255,9 +255,9 @@ instance Controller DashboardController where
             Just query -> do
                 -- Use sqlQueryScalar for efficient counting
                 -- Search in both market title and asset name
-                count :: Int <- sqlQueryScalar
+                count <- sqlQueryScalar
                     [r|
-                        SELECT COUNT(*)
+                        SELECT COUNT(*)::INTEGER
                         FROM transactions t
                         JOIN markets m ON t.market_id = m.id
                         JOIN assets a ON t.asset_id = a.id
