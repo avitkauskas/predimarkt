@@ -21,10 +21,6 @@ isPathPrefix prefix =
         actualPrefix = fromMaybe prefix prefixStripped
     in Text.isPrefixOf actualPrefix fullPath
 
--- | Check if current request path is exactly the given path
-isCurrentPath :: (?request :: Request) => Text -> Bool
-isCurrentPath path = Text.intercalate "/" (pathInfo theRequest) == path
-
 -- Market Status Helpers
 
 marketStatusLabel :: MarketStatus -> Text

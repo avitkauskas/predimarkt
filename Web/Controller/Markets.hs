@@ -309,7 +309,7 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render EditView { .. }
 
-    action UpdateMarketAction { marketId, page } = do
+    action UpdateMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let returnPage = paramOrNothing @Int "returnPage"
         market <- fetch mId

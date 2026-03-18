@@ -93,7 +93,7 @@ data MarketsController
         }
     | CreateMarketAction
     | EditMarketAction { marketId :: !(Id Market), page :: !(Maybe Int) }
-    | UpdateMarketAction { marketId :: !(Id Market), page :: !(Maybe Int) }
+    | UpdateMarketAction { marketId :: !(Id Market) }
     | DeleteMarketAction { marketId :: !(Id Market) }
     | SetResolveAssetAction { marketId :: !(Id Market) }
     | ConfirmRefundMarketAction { marketId :: !(Id Market) }
