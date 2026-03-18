@@ -131,9 +131,21 @@ instance Controller DashboardController where
             , searchFilter = searchQuery
             }
 
-    action DashboardMarketsAction { statusFilter } = do
+    action DashboardMarketsAction { statusFilter, page } = do
         let activeStatus = fromMaybe MarketStatusDraft $ statusFilter
                 <|> paramOrNothing @MarketStatus "statusFilter"
+        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
+        let itemsPerPage = 10
+
+        totalCount <- query @Market
+            |> filterWhere (#userId, Just currentUserId)
+            |> filterWhere (#status, activeStatus)
+            |> fetchCount
+
+        let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
+        let validPage = max 1 (min currentPage totalPages)
+        let pageOffset = (validPage - 1) * itemsPerPage
+
         let applySorting queryBuilder =
                 case activeStatus of
                     MarketStatusDraft -> queryBuilder |> orderByDesc #createdAt
@@ -146,6 +158,8 @@ instance Controller DashboardController where
             |> filterWhere (#userId, Just currentUserId)
             |> filterWhere (#status, activeStatus)
             |> applySorting
+            |> limit itemsPerPage
+            |> offset pageOffset
             |> fetch
         render MarketsView { .. }
 
@@ -162,7 +176,7 @@ instance Controller DashboardController where
 
         when (st == MarketStatusOpen && market.closedAt <= now) $ do
             setModal OpenMarketView { market }
-            jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status }
+            jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = Nothing }
 
         let marketWithStatus = market |> set #status st
 
@@ -187,7 +201,7 @@ instance Controller DashboardController where
             pure ()
 
         setSuccessMessage "Market status updated"
-        redirectTo $ DashboardMarketsAction { statusFilter = Just st }
+        redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing }
 
     action OpenMarketAction { marketId } = do
         let mId = fromMaybe (param @(Id Market) "marketId") marketId
@@ -202,7 +216,7 @@ instance Controller DashboardController where
                 let marketWithError = market
                         |> validateField #closedAt (const $ Failure "Please provide a closing time.")
                 setModal OpenMarketView { market = marketWithError }
-                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status }
+                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = Nothing }
             Just closedAtVal ->
                 if closedAtVal <= now
                     then do
@@ -210,7 +224,7 @@ instance Controller DashboardController where
                                 |> set #closedAt closedAtVal
                                 |> validateField #closedAt (const $ Failure "Closing time must be in the future.")
                         setModal OpenMarketView { market = marketWithError }
-                        jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status }
+                        jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = Nothing }
                     else do
                         market
                             |> set #closedAt closedAtVal
@@ -229,7 +243,7 @@ instance Controller DashboardController where
                         pure ()
 
                         setSuccessMessage "Market opened successfully"
-                        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen }
+                        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen, page = Nothing }
 
     action DashboardTransactionsAction { page, searchFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")

@@ -370,7 +370,7 @@ instance Controller MarketsController where
                                         |> set #runAt market.closedAt
                                         |> createRecord
 
-                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
+                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing }
 
     action CreateMarketAction = do
         ensureIsUser
@@ -418,7 +418,7 @@ instance Controller MarketsController where
                                         |> createRecord
 
                                 setSuccessMessage "Market created"
-                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
+                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing }
 
     action DeleteMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
@@ -427,7 +427,7 @@ instance Controller MarketsController where
         accessDeniedUnless (market.status == MarketStatusDraft)
         deleteRecord market
         setSuccessMessage "Market deleted"
-        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft }
+        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing }
 
     action SetResolveAssetAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId

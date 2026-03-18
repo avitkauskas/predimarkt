@@ -146,8 +146,10 @@ encodeQueryValue value = cs $ ByteString.foldr encodeByte "" (Text.encodeUtf8 va
 instance HasPath DashboardController where
     pathTo DashboardPositionsAction { page, searchFilter } =
         buildPaginatedSearchPath "/DashboardPositions" page searchFilter
-    pathTo DashboardMarketsAction { statusFilter } =
-        "/DashboardMarkets" <> maybe "" (\s -> "?statusFilter=" <> inputValue s) statusFilter
+    pathTo DashboardMarketsAction { statusFilter, page } =
+        let base = "/DashboardMarkets" <> maybe "" (\s -> "?statusFilter=" <> inputValue s) statusFilter
+            pageParam = maybe "" (\p -> (if isNothing statusFilter then "?" else "&") <> "page=" <> inputValue p) page
+        in base <> pageParam
     pathTo DashboardTransactionsAction { page, searchFilter } =
         buildPaginatedSearchPath "/DashboardTransactions" page searchFilter
     pathTo ChangeMarketStatusAction { marketId, status } =
@@ -160,7 +162,7 @@ instance HasPath DashboardController where
 instance CanRoute DashboardController where
     parseRoute' =
         (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
-        <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing))
+        <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing))
         <|> (string "/OpenMarket" >> pure (OpenMarketAction Nothing))

@@ -5,6 +5,8 @@ import Web.View.Prelude
 data MarketsView = MarketsView
     { markets      :: [Market]
     , activeStatus :: MarketStatus
+    , currentPage  :: Int
+    , totalPages   :: Int
     }
 
 instance View MarketsView where
@@ -22,10 +24,11 @@ instance View MarketsView where
                     {forEach markets (renderMarket currentBackToPath)}
                 </tbody>
             </table>
+            {renderMarketsPagination currentPage totalPages activeStatus}
         </div>
     |]
         where
-            currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus))
+            currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus) Nothing)
 
 renderMarket :: (?context :: ControllerContext) => Text -> Market -> Html
 renderMarket backToPath market = [hsx|
@@ -53,7 +56,7 @@ renderTabs activeStatus = [hsx|
         renderTab status = [hsx|
             <li class="nav-item">
                 <a class={classes [("nav-link", True), ("active", status == activeStatus)]}
-                   href={DashboardMarketsAction (Just status)}>
+                   href={DashboardMarketsAction (Just status) Nothing}>
                     {statusLabel status}
                 </a>
             </li>
@@ -90,3 +93,8 @@ renderActions market =
         |]
         MarketStatusRefunded -> mempty
         MarketStatusResolved -> mempty
+
+renderMarketsPagination :: Int -> Int -> MarketStatus -> Html
+renderMarketsPagination currentPage totalPages statusFilter =
+    renderSmartPagination currentPage totalPages "Markets pagination"
+        (\pageNum -> pathTo (DashboardMarketsAction (Just statusFilter) (Just pageNum)))

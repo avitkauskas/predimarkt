@@ -9,7 +9,7 @@ data OpenMarketView = OpenMarketView
 instance View OpenMarketView where
     html OpenMarketView { .. } = renderModal Modal
         { modalTitle = "Update Closing Time"
-        , modalCloseUrl = pathTo $ DashboardMarketsAction (Just MarketStatusClosed)
+        , modalCloseUrl = pathTo $ DashboardMarketsAction (Just MarketStatusClosed) Nothing
         , modalFooter = Nothing
         , modalContent = [hsx|
             <p>The closing time for this market is in the past.<br/>
@@ -29,7 +29,7 @@ instance View OpenMarketView where
             }}
             <div class="mt-3">
                 <button type="submit" class="btn btn-primary">Open Market</button>
-                <a href={DashboardMarketsAction (Just MarketStatusClosed)}
+                <a href={DashboardMarketsAction (Just MarketStatusClosed) Nothing}
                    class="btn btn-outline-secondary ms-2">
                    Cancel
                 </a>
