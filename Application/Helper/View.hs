@@ -12,6 +12,19 @@ import IHP.ViewPrelude
 import Network.Wai.Middleware.FlashMessages (FlashMessage (ErrorFlashMessage, SuccessFlashMessage))
 import Text.Printf (printf)
 
+-- | Check if current request path starts with the given prefix
+isPathPrefix :: (?request :: Request) => Text -> Bool
+isPathPrefix prefix =
+    let pathSegments = pathInfo theRequest
+        fullPath = Text.intercalate "/" pathSegments
+        prefixStripped = Text.stripPrefix "/" prefix
+        actualPrefix = fromMaybe prefix prefixStripped
+    in Text.isPrefixOf actualPrefix fullPath
+
+-- | Check if current request path is exactly the given path
+isCurrentPath :: (?request :: Request) => Text -> Bool
+isCurrentPath path = Text.intercalate "/" (pathInfo theRequest) == path
+
 -- Market Status Helpers
 
 marketStatusLabel :: MarketStatus -> Text

@@ -143,9 +143,7 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", any (\s ->
-                                        isActivePath (pathTo (DashboardMarketsAction s Nothing))
-                                    ) (Nothing : map Just allEnumValues))]}
+                                    ("active", isPathPrefix "/DashboardMarkets")]}
                                href={DashboardMarketsAction (Just MarketStatusOpen) Nothing}>
                               <i class="bi bi-cart3"></i>Markets
                             </a>
