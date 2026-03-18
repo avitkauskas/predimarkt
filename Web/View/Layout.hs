@@ -127,7 +127,7 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", isActivePath (pathTo (DashboardPositionsAction Nothing Nothing)))]}
+                                    ("active", isPathPrefix "/DashboardPositions")]}
                                href={DashboardPositionsAction Nothing Nothing}>
                               <i class="bi bi-wallet"></i>Positions
                             </a>
@@ -135,7 +135,7 @@ dashboardLayout inner = [hsx|
                         <li class="nav-item">
                             <a class={classes
                                     ["nav-link",
-                                    ("active", isActivePath (pathTo (DashboardTransactionsAction Nothing Nothing)))]}
+                                    ("active", isPathPrefix "/DashboardTransactions")]}
                                href={DashboardTransactionsAction Nothing Nothing}>
                               <i class="bi bi-arrow-left-right"></i>Transactions
                             </a>
