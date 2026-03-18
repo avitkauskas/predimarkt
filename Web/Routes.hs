@@ -61,28 +61,46 @@ instance HasPath MarketsController where
     pathTo NewMarketAction          = "/NewMarket"
     pathTo CreateMarketAction       = "/CreateMarket"
     pathTo ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
-        buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev tradeQuantity backTo
+        "/ShowMarket"
+            |> addQueryParam "marketId" (Just $ inputValue marketId)
+            |> addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
+            |> addQueryParam "tradingAction" (inputValue <$> tradingAction)
+            |> addMarketFlag "showChart" showChart
+            |> addMarketFlag "showDescription" showDescription
+            |> addMarketFlag "showAllAssets" showAllAssets
+            |> addMarketFlag "showTradeHistory" showTradeHistory
+            |> addQueryParam "activityPage" (inputValue <$> activityPage)
+            |> addQueryParam "chatPage" (inputValue <$> chatPage)
+            |> addQueryParam "chatComposerRev" (encodeQueryValue <$> chatComposerRev)
+            |> addQueryParam "tradeQuantity" (inputValue <$> tradeQuantity)
+            |> addQueryParam "backTo" (encodeQueryValue <$> backTo)
     pathTo CreateMarketChatMessageAction { marketId } = "/CreateMarketChatMessage?marketId=" <> inputValue marketId
     pathTo DeleteMarketChatMessageAction { marketChatMessageId, marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
-        let queryParams = Maybe.catMaybes
-                [ Just ("marketChatMessageId=" <> inputValue marketChatMessageId)
-                , Just ("marketId=" <> inputValue marketId)
-                , fmap (\aid -> "tradingAssetId=" <> inputValue aid) tradingAssetId
-                , fmap (\action -> "tradingAction=" <> inputValue action) tradingAction
-                , fmap (showMarketFlagParam "showChart") showChart
-                , fmap (showMarketFlagParam "showDescription") showDescription
-                , fmap (showMarketFlagParam "showAllAssets") showAllAssets
-                , fmap (showMarketFlagParam "showTradeHistory") showTradeHistory
-                , fmap (\page -> "activityPage=" <> inputValue page) activityPage
-                , fmap (\page -> "chatPage=" <> inputValue page) chatPage
-                , fmap (\rev -> "chatComposerRev=" <> encodeQueryValue rev) chatComposerRev
-                , fmap (\quantity -> "tradeQuantity=" <> inputValue quantity) tradeQuantity
-                , fmap (\path -> "backTo=" <> encodeQueryValue path) backTo
-                ]
-            in "/DeleteMarketChatMessage?" <> Text.intercalate "&" queryParams
-    pathTo EditMarketAction { marketId, page }   = "/EditMarket?marketId=" <> inputValue marketId <> maybe "" (("&page=" <>) . inputValue) page
+        "/DeleteMarketChatMessage"
+            |> addQueryParam "marketChatMessageId" (Just $ inputValue marketChatMessageId)
+            |> addQueryParam "marketId" (Just $ inputValue marketId)
+            |> addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
+            |> addQueryParam "tradingAction" (inputValue <$> tradingAction)
+            |> addMarketFlag "showChart" showChart
+            |> addMarketFlag "showDescription" showDescription
+            |> addMarketFlag "showAllAssets" showAllAssets
+            |> addMarketFlag "showTradeHistory" showTradeHistory
+            |> addQueryParam "activityPage" (inputValue <$> activityPage)
+            |> addQueryParam "chatPage" (inputValue <$> chatPage)
+            |> addQueryParam "chatComposerRev" (encodeQueryValue <$> chatComposerRev)
+            |> addQueryParam "tradeQuantity" (inputValue <$> tradeQuantity)
+            |> addQueryParam "backTo" (encodeQueryValue <$> backTo)
+    pathTo EditMarketAction { marketId, page, searchFilter } =
+        "/EditMarket"
+            |> addQueryParam "marketId" (Just $ inputValue marketId)
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
     pathTo UpdateMarketAction { marketId } = "/UpdateMarket?marketId=" <> inputValue marketId
-    pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
+    pathTo DeleteMarketAction { marketId, page, searchFilter } =
+        "/DeleteMarket"
+            |> addQueryParam "marketId" (Just $ inputValue marketId)
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
     pathTo SetResolveAssetAction { marketId } = "/SetResolveAsset?marketId=" <> inputValue marketId
     pathTo ConfirmRefundMarketAction { marketId } = "/ConfirmRefundMarket?marketId=" <> inputValue marketId
 
@@ -94,31 +112,54 @@ instance CanRoute MarketsController where
         <|> (string "/ShowMarket" >> pure (ShowMarketAction def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
         <|> (string "/CreateMarketChatMessage" >> onlyAllowMethods [POST] >> pure (CreateMarketChatMessageAction def))
         <|> (string "/DeleteMarketChatMessage" >> onlyAllowMethods [POST] >> pure (DeleteMarketChatMessageAction def def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
-        <|> (string "/EditMarket" >> pure (EditMarketAction def Nothing))
+        <|> (string "/EditMarket" >> pure (EditMarketAction def Nothing Nothing))
         <|> (string "/UpdateMarket" >> pure (UpdateMarketAction def))
-        <|> (string "/DeleteMarket" >> pure (DeleteMarketAction def))
+        <|> (string "/DeleteMarket" >> pure (DeleteMarketAction def Nothing Nothing))
         <|> (string "/SetResolveAsset" >> pure (SetResolveAssetAction def))
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
-buildShowMarketPath marketId tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev tradeQuantity backTo =
-    let queryParams = Maybe.catMaybes
-            [ Just ("marketId=" <> inputValue marketId)
-            , fmap (\aid -> "tradingAssetId=" <> inputValue aid) tradingAssetId
-            , fmap (\action -> "tradingAction=" <> inputValue action) tradingAction
-            , fmap (showMarketFlagParam "showChart") showChart
-            , fmap (showMarketFlagParam "showDescription") showDescription
-            , fmap (showMarketFlagParam "showAllAssets") showAllAssets
-            , fmap (showMarketFlagParam "showTradeHistory") showTradeHistory
-            , fmap (\page -> "activityPage=" <> inputValue page) activityPage
-            , fmap (\page -> "chatPage=" <> inputValue page) chatPage
-            , fmap (\rev -> "chatComposerRev=" <> encodeQueryValue rev) chatComposerRev
-            , fmap (\quantity -> "tradeQuantity=" <> inputValue quantity) tradeQuantity
-            , fmap (\path -> "backTo=" <> encodeQueryValue path) backTo
-            ]
-    in "/ShowMarket?" <> Text.intercalate "&" queryParams
+instance HasPath DashboardController where
+    pathTo DashboardPositionsAction { page, searchFilter } =
+        "/DashboardPositions"
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
+    pathTo DashboardMarketsAction { statusFilter, page, searchFilter } =
+        "/DashboardMarkets"
+            |> addQueryParam "statusFilter" (inputValue <$> statusFilter)
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
+    pathTo DashboardTransactionsAction { page, searchFilter } =
+        "/DashboardTransactions"
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
+    pathTo ChangeMarketStatusAction { marketId, status, page, searchFilter } =
+        "/ChangeMarketStatus"
+            |> addQueryParam "marketId" (inputValue <$> marketId)
+            |> addQueryParam "status" (inputValue <$> status)
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
+    pathTo OpenMarketAction { marketId, page, searchFilter } =
+        "/OpenMarket"
+            |> addQueryParam "marketId" (inputValue <$> marketId)
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
 
-showMarketFlagParam :: Text -> Bool -> Text
-showMarketFlagParam name value = name <> "=" <> if value then "true" else "false"
+instance CanRoute DashboardController where
+    parseRoute' =
+        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
+        <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing Nothing))
+        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
+        <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing Nothing Nothing))
+        <|> (string "/OpenMarket" >> pure (OpenMarketAction Nothing Nothing Nothing))
+
+addMarketFlag :: Text -> Maybe Bool -> Text -> Text
+addMarketFlag name mValue base =
+    case mValue of
+        Nothing    -> base
+        Just True  -> base <> separator <> name <> "=true"
+        Just False -> base <> separator <> name <> "=false"
+  where
+    separator = if Text.any (== '?') base then "&" else "?"
 
 encodeQueryValue :: Text -> Text
 encodeQueryValue value = cs $ ByteString.foldr encodeByte "" (Text.encodeUtf8 value)
@@ -143,34 +184,11 @@ encodeQueryValue value = cs $ ByteString.foldr encodeByte "" (Text.encodeUtf8 va
                 [singleDigit] -> ['0', singleDigit]
                 digits        -> digits
 
-instance HasPath DashboardController where
-    pathTo DashboardPositionsAction { page, searchFilter } =
-        buildPaginatedSearchPath "/DashboardPositions" page searchFilter
-    pathTo DashboardMarketsAction { statusFilter, page } =
-        let base = "/DashboardMarkets" <> maybe "" (\s -> "?statusFilter=" <> inputValue s) statusFilter
-            pageParam = maybe "" (\p -> (if isNothing statusFilter then "?" else "&") <> "page=" <> inputValue p) page
-        in base <> pageParam
-    pathTo DashboardTransactionsAction { page, searchFilter } =
-        buildPaginatedSearchPath "/DashboardTransactions" page searchFilter
-    pathTo ChangeMarketStatusAction { marketId, status } =
-        "/ChangeMarketStatus"
-        <> maybe "" (\mid -> "?marketId=" <> inputValue mid) marketId
-        <> maybe "" (\s -> "&status=" <> inputValue s) status
-    pathTo OpenMarketAction { marketId } =
-        "/OpenMarket" <> maybe "" (\mid -> "?marketId=" <> inputValue mid) marketId
-
-instance CanRoute DashboardController where
-    parseRoute' =
-        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
-        <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing))
-        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
-        <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing))
-        <|> (string "/OpenMarket" >> pure (OpenMarketAction Nothing))
-
-buildPaginatedSearchPath :: Text -> Maybe Int -> Maybe Text -> Text
-buildPaginatedSearchPath basePath page searchFilter =
-    let pageParam = maybe "" (\p -> "?page=" <> inputValue p) page
-        searchParam = case (page, searchFilter) of
-            (_, Just search) | search /= "" -> (if isNothing page then "?" else "&") <> "search=" <> inputValue search
-            _ -> ""
-    in basePath <> pageParam <> searchParam
+addQueryParam :: Text -> Maybe Text -> Text -> Text
+addQueryParam name mValue base =
+    case mValue of
+        Nothing -> base
+        Just value | Text.null value -> base
+        Just value -> base <> separator <> name <> "=" <> value
+  where
+    separator = if Text.any (== '?') base then "&" else "?"

@@ -131,41 +131,78 @@ instance Controller DashboardController where
             , searchFilter = searchQuery
             }
 
-    action DashboardMarketsAction { statusFilter, page } = do
+    action DashboardMarketsAction { statusFilter, page, searchFilter } = do
         let activeStatus = fromMaybe MarketStatusDraft $ statusFilter
                 <|> paramOrNothing @MarketStatus "statusFilter"
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
+        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
         let itemsPerPage = 10
 
-        totalCount <- query @Market
-            |> filterWhere (#userId, Just currentUserId)
-            |> filterWhere (#status, activeStatus)
-            |> fetchCount
+        totalCount <- case searchQuery of
+            Just query -> do
+                count <- sqlQueryScalar
+                    [r|
+                        SELECT COUNT(*)::INTEGER
+                        FROM markets
+                        WHERE user_id = ?
+                        AND status = ?
+                        AND title ILIKE ?
+                    |]
+                    (currentUserId, activeStatus, "%" <> query <> "%")
+                pure count
+            Nothing ->
+                case activeStatus of
+                    MarketStatusDraft -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
+                    MarketStatusOpen -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
+                    MarketStatusClosed -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
+                    MarketStatusResolved -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
+                    MarketStatusRefunded -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
         let pageOffset = (validPage - 1) * itemsPerPage
 
-        let applySorting queryBuilder =
+        markets <- case searchQuery of
+            Just query -> do
+                (marketIdRows :: [Only UUID]) <- case activeStatus of
+                    MarketStatusDraft -> sqlQuery
+                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?|]
+                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
+                    MarketStatusOpen -> sqlQuery
+                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY opened_at DESC LIMIT ? OFFSET ?|]
+                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
+                    MarketStatusClosed -> sqlQuery
+                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY closed_at DESC LIMIT ? OFFSET ?|]
+                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
+                    MarketStatusResolved -> sqlQuery
+                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY resolved_at DESC LIMIT ? OFFSET ?|]
+                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
+                    MarketStatusRefunded -> sqlQuery
+                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY refunded_at DESC LIMIT ? OFFSET ?|]
+                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
+                let marketIds = map (\(Only uuid) -> Id uuid :: Id Market) marketIdRows
+                mapM fetch marketIds
+            Nothing ->
                 case activeStatus of
-                    MarketStatusDraft -> queryBuilder |> orderByDesc #createdAt
-                    MarketStatusOpen -> queryBuilder |> orderByDesc #openedAt
-                    MarketStatusClosed -> queryBuilder |> orderByDesc #closedAt
-                    MarketStatusResolved -> queryBuilder |> orderByDesc #resolvedAt
-                    MarketStatusRefunded -> queryBuilder |> orderByDesc #refundedAt
+                    MarketStatusDraft -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> orderByDesc #createdAt |> limit itemsPerPage |> offset pageOffset |> fetch
+                    MarketStatusOpen -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> orderByDesc #openedAt |> limit itemsPerPage |> offset pageOffset |> fetch
+                    MarketStatusClosed -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> orderByDesc #closedAt |> limit itemsPerPage |> offset pageOffset |> fetch
+                    MarketStatusResolved -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> orderByDesc #resolvedAt |> limit itemsPerPage |> offset pageOffset |> fetch
+                    MarketStatusRefunded -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> orderByDesc #refundedAt |> limit itemsPerPage |> offset pageOffset |> fetch
 
-        markets <- query @Market
-            |> filterWhere (#userId, Just currentUserId)
-            |> filterWhere (#status, activeStatus)
-            |> applySorting
-            |> limit itemsPerPage
-            |> offset pageOffset
-            |> fetch
-        render MarketsView { .. }
+        render MarketsView
+            { markets = markets
+            , activeStatus = activeStatus
+            , currentPage = validPage
+            , totalPages = totalPages
+            , searchFilter = searchQuery
+            }
 
-    action ChangeMarketStatusAction { marketId, status } = do
+    action ChangeMarketStatusAction { marketId, status, page, searchFilter } = do
         let mId = fromMaybe (param @(Id Market) "marketId") marketId
         let st = fromMaybe (param @MarketStatus "status") status
+        let mPage = page <|> paramOrNothing @Int "page"
+        let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
 
@@ -175,8 +212,8 @@ instance Controller DashboardController where
         now <- getCurrentTime
 
         when (st == MarketStatusOpen && market.closedAt <= now) $ do
-            setModal OpenMarketView { market }
-            jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = Nothing }
+            setModal OpenMarketView { market, page = mPage, searchFilter = mSearchFilter }
+            jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
 
         let marketWithStatus = market |> set #status st
 
@@ -208,10 +245,12 @@ instance Controller DashboardController where
                 _                    -> "Market status updated"
 
         setSuccessMessage message
-        redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing }
+        redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing, searchFilter = mSearchFilter }
 
-    action OpenMarketAction { marketId } = do
+    action OpenMarketAction { marketId, page, searchFilter } = do
         let mId = fromMaybe (param @(Id Market) "marketId") marketId
+        let mPage = page <|> paramOrNothing @Int "page"
+        let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
 
@@ -222,16 +261,16 @@ instance Controller DashboardController where
             Nothing -> do
                 let marketWithError = market
                         |> validateField #closedAt (const $ Failure "Please provide a closing time.")
-                setModal OpenMarketView { market = marketWithError }
-                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = Nothing }
+                setModal OpenMarketView { market = marketWithError, page = mPage, searchFilter = mSearchFilter }
+                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
             Just closedAtVal ->
                 if closedAtVal <= now
                     then do
                         let marketWithError = market
                                 |> set #closedAt closedAtVal
                                 |> validateField #closedAt (const $ Failure "Closing time must be in the future.")
-                        setModal OpenMarketView { market = marketWithError }
-                        jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = Nothing }
+                        setModal OpenMarketView { market = marketWithError, page = mPage, searchFilter = mSearchFilter }
+                        jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
                     else do
                         market
                             |> set #closedAt closedAtVal
@@ -250,7 +289,7 @@ instance Controller DashboardController where
                         pure ()
 
                         setSuccessMessage "Market opened successfully"
-                        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen, page = Nothing }
+                        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen, page = Nothing, searchFilter = mSearchFilter }
 
     action DashboardTransactionsAction { page, searchFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")

@@ -299,6 +299,7 @@ instance Controller MarketsController where
     action EditMarketAction { marketId, page } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let returnPage = page <|> paramOrNothing @Int "page"
+        let searchFilter = paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
@@ -312,6 +313,7 @@ instance Controller MarketsController where
     action UpdateMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let returnPage = paramOrNothing @Int "returnPage"
+        let searchFilter = paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
@@ -372,7 +374,7 @@ instance Controller MarketsController where
                                         |> set #runAt market.closedAt
                                         |> createRecord
 
-                                redirectToPath $ pathTo (DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = returnPage })
+                                redirectToPath $ pathTo (DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = returnPage, searchFilter = searchFilter })
 
     action CreateMarketAction = do
         ensureIsUser
@@ -420,16 +422,17 @@ instance Controller MarketsController where
                                         |> createRecord
 
                                 setSuccessMessage "Market created"
-                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing }
+                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing, searchFilter = Nothing }
 
-    action DeleteMarketAction { marketId } = do
+    action DeleteMarketAction { marketId, page, searchFilter } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
         deleteRecord market
         setSuccessMessage "Market deleted"
-        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing }
+        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing, searchFilter = mSearchFilter }
 
     action SetResolveAssetAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId

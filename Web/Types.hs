@@ -92,9 +92,9 @@ data MarketsController
         , backTo              :: !(Maybe Text)
         }
     | CreateMarketAction
-    | EditMarketAction { marketId :: !(Id Market), page :: !(Maybe Int) }
+    | EditMarketAction { marketId :: !(Id Market), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     | UpdateMarketAction { marketId :: !(Id Market) }
-    | DeleteMarketAction { marketId :: !(Id Market) }
+    | DeleteMarketAction { marketId :: !(Id Market), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     | SetResolveAssetAction { marketId :: !(Id Market) }
     | ConfirmRefundMarketAction { marketId :: !(Id Market) }
     deriving (Eq, Show, Data)
@@ -112,10 +112,10 @@ data TradesController
 
 data DashboardController
     = DashboardPositionsAction { page :: Maybe Int, searchFilter :: Maybe Text }
-    | DashboardMarketsAction { statusFilter :: Maybe MarketStatus, page :: Maybe Int }
+    | DashboardMarketsAction { statusFilter :: Maybe MarketStatus, page :: Maybe Int, searchFilter :: Maybe Text }
     | DashboardTransactionsAction { page :: Maybe Int, searchFilter :: Maybe Text }
-    | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus) }
-    | OpenMarketAction { marketId :: !(Maybe (Id Market)) }
+    | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
+    | OpenMarketAction { marketId :: !(Maybe (Id Market)), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     deriving (Eq, Show, Data)
 
 data LeaderboardController

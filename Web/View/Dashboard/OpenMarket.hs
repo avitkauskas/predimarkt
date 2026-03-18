@@ -3,13 +3,15 @@ module Web.View.Dashboard.OpenMarket where
 import Web.View.Prelude
 
 data OpenMarketView = OpenMarketView
-    { market :: Market
+    { market       :: Market
+    , page         :: Maybe Int
+    , searchFilter :: Maybe Text
     }
 
 instance View OpenMarketView where
     html OpenMarketView { .. } = renderModal Modal
         { modalTitle = "Update Closing Time"
-        , modalCloseUrl = pathTo $ DashboardMarketsAction (Just MarketStatusClosed) Nothing
+        , modalCloseUrl = pathTo $ DashboardMarketsAction (Just MarketStatusClosed) page searchFilter
         , modalFooter = Nothing
         , modalContent = [hsx|
             <p>The closing time for this market is in the past.<br/>
@@ -18,7 +20,7 @@ instance View OpenMarketView where
         |]
         }
       where
-        renderForm = formFor' market (pathTo $ OpenMarketAction (Just market.id)) [hsx|
+        renderForm = formFor' market (pathTo $ OpenMarketAction (Just market.id) page searchFilter) [hsx|
             {(dateTimeField #closedAt) {
                 fieldLabel = "Closing time",
                 additionalAttributes =
@@ -29,7 +31,7 @@ instance View OpenMarketView where
             }}
             <div class="mt-3">
                 <button type="submit" class="btn btn-primary">Open Market</button>
-                <a href={DashboardMarketsAction (Just MarketStatusClosed) Nothing}
+                <a href={DashboardMarketsAction (Just MarketStatusClosed) page searchFilter}
                    class="btn btn-outline-secondary ms-2">
                    Cancel
                 </a>
