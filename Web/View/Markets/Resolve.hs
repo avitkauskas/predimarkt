@@ -14,19 +14,17 @@ instance View ResolveView where
                     <span class="ms-2">Resolve Market</span>
                 </div>
                 <div class="card-body p-4">
-                    <header class="mb-4">
-                        <button class="btn btn-outline-secondary back-button mb-3"
+                    <header>
+                        <button class="btn btn-outline-secondary back-button ms-2 mb-3"
                                 onclick="history.back()"
-                                type="button"
-                                title="Go back">
+                                type="button">
                             ←
                         </button>
                         <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
-                        <p class="text-muted ms-2">{market.description}</p>
                     </header>
 
                     <div class="alert alert-info ms-2" role="alert">
-                        <strong>Select the outcome:</strong><br/>
+                        <strong>Select the outcome</strong><br/>
                         Choose which asset represents what actually happened.<br/>
                         All user positions will be settled based on this selection.
                     </div>

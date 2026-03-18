@@ -28,7 +28,7 @@ instance View MarketsView where
         </div>
     |]
         where
-            currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus) Nothing)
+            currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus) (Just currentPage))
 
 renderMarket :: (?context :: ControllerContext) => Text -> Market -> Html
 renderMarket backToPath market = [hsx|

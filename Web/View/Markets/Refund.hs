@@ -12,18 +12,16 @@ instance View RefundView where
                     <span class="ms-2">Refund Market</span>
                 </div>
                 <div class="card-body p-4">
-                    <header class="mb-4">
-                        <button class="btn btn-outline-secondary back-button mb-3"
+                    <header>
+                        <button class="btn btn-outline-secondary back-button mb-3 ms-2"
                                 onclick="history.back()"
-                                type="button"
-                                title="Go back">
+                                type="button">
                             ←
                         </button>
                         <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
-                        <p class="text-muted ms-2">{market.description}</p>
                     </header>
 
-                    <div class="alert alert-warning ms-2" role="alert">
+                    <div class="alert alert-warning mb-4 mx-2" role="alert">
                         <strong>Refunding this market:</strong><br/>
                         All users will receive back their net position amounts.<br/>
                         This will reverse all transactions and change the market status to "Refunded".
