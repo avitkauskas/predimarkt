@@ -200,7 +200,14 @@ instance Controller DashboardController where
                 |> createRecord
             pure ()
 
-        setSuccessMessage "Market status updated"
+        let message = case st of
+                MarketStatusOpen     -> "Market opened successfully"
+                MarketStatusClosed   -> "Market closed successfully"
+                MarketStatusResolved -> "Market resolved successfully"
+                MarketStatusRefunded -> "Market refunded successfully"
+                _                    -> "Market status updated"
+
+        setSuccessMessage message
         redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing }
 
     action OpenMarketAction { marketId } = do

@@ -80,8 +80,8 @@ instance HasPath MarketsController where
                 , fmap (\path -> "backTo=" <> encodeQueryValue path) backTo
                 ]
             in "/DeleteMarketChatMessage?" <> Text.intercalate "&" queryParams
-    pathTo EditMarketAction { marketId }   = "/EditMarket?marketId=" <> inputValue marketId
-    pathTo UpdateMarketAction { marketId } = "/UpdateMarket?marketId=" <> inputValue marketId
+    pathTo EditMarketAction { marketId, page }   = "/EditMarket?marketId=" <> inputValue marketId <> maybe "" (("&page=" <>) . inputValue) page
+    pathTo UpdateMarketAction { marketId, page } = "/UpdateMarket?marketId=" <> inputValue marketId <> maybe "" (("&page=" <>) . inputValue) page
     pathTo DeleteMarketAction { marketId } = "/DeleteMarket?marketId=" <> inputValue marketId
     pathTo SetResolveAssetAction { marketId } = "/SetResolveAsset?marketId=" <> inputValue marketId
     pathTo ConfirmRefundMarketAction { marketId } = "/ConfirmRefundMarket?marketId=" <> inputValue marketId
@@ -94,8 +94,8 @@ instance CanRoute MarketsController where
         <|> (string "/ShowMarket" >> pure (ShowMarketAction def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
         <|> (string "/CreateMarketChatMessage" >> onlyAllowMethods [POST] >> pure (CreateMarketChatMessageAction def))
         <|> (string "/DeleteMarketChatMessage" >> onlyAllowMethods [POST] >> pure (DeleteMarketChatMessageAction def def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
-        <|> (string "/EditMarket" >> pure (EditMarketAction def))
-        <|> (string "/UpdateMarket" >> pure (UpdateMarketAction def))
+        <|> (string "/EditMarket" >> pure (EditMarketAction def Nothing))
+        <|> (string "/UpdateMarket" >> pure (UpdateMarketAction def Nothing))
         <|> (string "/DeleteMarket" >> pure (DeleteMarketAction def))
         <|> (string "/SetResolveAsset" >> pure (SetResolveAssetAction def))
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))

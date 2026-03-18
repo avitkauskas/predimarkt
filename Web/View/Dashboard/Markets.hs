@@ -21,7 +21,7 @@ instance View MarketsView where
             {renderTabs activeStatus}
             <table class="table table-hover ms-0">
                 <tbody>
-                    {forEach markets (renderMarket currentBackToPath)}
+                    {forEach markets (\m -> renderMarket currentBackToPath currentPage m)}
                 </tbody>
             </table>
             {renderMarketsPagination currentPage totalPages activeStatus}
@@ -30,8 +30,8 @@ instance View MarketsView where
         where
             currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus) (Just currentPage))
 
-renderMarket :: (?context :: ControllerContext) => Text -> Market -> Html
-renderMarket backToPath market = [hsx|
+renderMarket :: (?context :: ControllerContext) => Text -> Int -> Market -> Html
+renderMarket backToPath currentPage market = [hsx|
     <tr>
         <td class="align-middle">
             <a class="text-decoration-none"
@@ -40,7 +40,7 @@ renderMarket backToPath market = [hsx|
             </a>
         </td>
         <td class="text-end">
-            {renderActions market}
+            {renderActions market currentPage backToPath}
         </td>
     </tr>
 |]
@@ -69,11 +69,11 @@ renderTabs activeStatus = [hsx|
         statusLabel MarketStatusRefunded = "Refunded"
         statusLabel MarketStatusResolved = "Resolved"
 
-renderActions :: (?context :: ControllerContext) => Market -> Html
-renderActions market =
+renderActions :: (?context :: ControllerContext) => Market -> Int -> Text -> Html
+renderActions market currentPage backToPath =
     case market.status of
         MarketStatusDraft -> [hsx|
-            <a href={EditMarketAction market.id} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+            <a href={EditMarketAction market.id (Just currentPage)} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen)} class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
             </form>

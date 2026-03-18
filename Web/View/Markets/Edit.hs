@@ -7,7 +7,7 @@ instance CanSelect Category where
     selectValue = get #id
     selectLabel = get #name
 
-data EditView = EditView { market :: Market, assets :: [Asset], categories :: [Category] }
+data EditView = EditView { market :: Market, assets :: [Asset], categories :: [Category], returnPage :: Maybe Int }
 
 instance View EditView where
     html EditView { .. } = dashboardLayout [hsx|
@@ -16,15 +16,16 @@ instance View EditView where
                 <div class="card shadow-sm">
                     <div class="card-body px-4 px-md-5 py-2 py-md-4">
                         <h3 class="mb-4">Edit Market</h3>
-                        {renderForm market assets categories}
+                        {renderForm market assets categories returnPage}
                     </div>
                 </div>
             </div>
         </div>
     |]
 
-renderForm :: Market -> [Asset] -> [Category] -> Html
-renderForm market assets categories = formFor market [hsx|
+renderForm :: Market -> [Asset] -> [Category] -> Maybe Int -> Html
+renderForm market assets categories returnPage = formFor market [hsx|
+    {renderReturnPageInput returnPage}
     {(textField #title)}
     {(textareaField #description) {
         fieldLabel = "Rules & Description",
@@ -79,9 +80,13 @@ renderForm market assets categories = formFor market [hsx|
     </div>
     <div class="d-flex gap-2">
         {submitButton}
-        <a href={DashboardMarketsAction (Just MarketStatusDraft) Nothing}
+        <a href={pathTo (DashboardMarketsAction (Just MarketStatusDraft) returnPage)}
            class="btn btn-outline-secondary">
             Cancel
         </a>
     </div>
 |]
+
+renderReturnPageInput :: Maybe Int -> Html
+renderReturnPageInput Nothing = mempty
+renderReturnPageInput (Just p) = [hsx|<input type="hidden" name="returnPage" value={show p} />|]

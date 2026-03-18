@@ -39,10 +39,7 @@ instance View ResolveView where
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Resolve Market</button>
-                            <a href={DashboardMarketsAction (Just MarketStatusClosed) Nothing}
-                               class="btn btn-outline-secondary">
-                               Cancel
-                            </a>
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>

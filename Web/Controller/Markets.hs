@@ -296,8 +296,9 @@ instance Controller MarketsController where
             , backTo = backToPath
             }
 
-    action EditMarketAction { marketId } = do
+    action EditMarketAction { marketId, page } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let returnPage = page <|> paramOrNothing @Int "page"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
@@ -308,8 +309,9 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render EditView { .. }
 
-    action UpdateMarketAction { marketId } = do
+    action UpdateMarketAction { marketId, page } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let returnPage = paramOrNothing @Int "returnPage"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
@@ -370,7 +372,7 @@ instance Controller MarketsController where
                                         |> set #runAt market.closedAt
                                         |> createRecord
 
-                                redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing }
+                                redirectToPath $ pathTo (DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = returnPage })
 
     action CreateMarketAction = do
         ensureIsUser
