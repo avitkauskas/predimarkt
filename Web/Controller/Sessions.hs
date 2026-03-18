@@ -6,7 +6,12 @@ import Web.Controller.Prelude
 instance Controller SessionsController where
     action DeleteSessionAction = do
         case currentUserOrNothing of
-            Just user -> logout user
+            Just user -> do
+                currentDateTime <- liftIO getCurrentTime
+                user
+                    |> set #loggedOutAt currentDateTime
+                    |> updateRecord
+                logout user
             Nothing   -> pure ()
         setSuccessMessage "Logged out successfully"
         redirectToPath "/"

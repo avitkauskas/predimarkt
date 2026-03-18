@@ -189,6 +189,10 @@ instance Controller AuthController where
             SignatureCounterZero -> pure ()
 
         login user
+        currentDateTime <- liftIO (timeConvert <$> getCurrentTime)
+        _ <-user
+            |> set #loggedInAt currentDateTime
+            |> updateRecord
         setSuccessMessage "Logged in successfully"
         renderJson (Aeson.object ["ok" Aeson..= True, "redirectTo" Aeson..= ("/" :: Text)])
 
