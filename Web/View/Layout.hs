@@ -1,4 +1,4 @@
-module Web.View.Layout (defaultLayout, dashboardLayout, contentPageLayout, Html) where
+module Web.View.Layout (withoutFooterLayout, withFooterLayout, dashboardLayout, contentPageLayout, Html) where
 
 import Application.Helper.View
 
@@ -8,8 +8,33 @@ import IHP.ViewPrelude
 import Web.Routes
 import Web.Types
 
-defaultLayout :: Html -> Html
-defaultLayout inner = [hsx|
+withoutFooterLayout :: (?request :: Request) => Html -> Html
+withoutFooterLayout inner = [hsx|
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                {metaTags}
+                {stylesheets}
+                {scripts}
+                <title>{pageTitleOrDefault "Predimarkt"}</title>
+            </head>
+            <body class="d-flex flex-column min-vh-100">
+                <div class="flex-grow-1">
+                    <div class="container-xxl mt-1">
+                        {navbar}
+                        {renderFlashToasts}
+                        <div class="container-xxl mt-0">
+                            {inner}
+                            {modal}
+                        </div>
+                    </div>
+                </div>
+            </body>
+        </html>
+    |]
+
+withFooterLayout :: (?request :: Request) => Html -> Html
+withFooterLayout inner = [hsx|
         <!DOCTYPE html>
         <html lang="en">
             <head>
@@ -34,7 +59,7 @@ defaultLayout inner = [hsx|
         </html>
     |]
 
-navbar :: (?request :: Request) => Html
+navbar :: Html
 navbar = [hsx|
         <nav class="navbar navbar-expand-md bg-body">
             <div class="container-fluid">
@@ -75,7 +100,7 @@ navbar = [hsx|
     |]
     where
         navItems :: Html
-        navItems = maybe loggedOutNav loggedInNav currentUserOrNothing
+        navItems = maybe loggedOutNav (\user -> loggedInNav user) currentUserOrNothing
 
         leaderboardNavItem :: Html
         leaderboardNavItem = [hsx|<li class="nav-item"><a class="nav-link" href={LeaderboardAction}>Leaderboard</a></li>|]

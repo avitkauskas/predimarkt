@@ -5,7 +5,7 @@ import IHP.LoginSupport.Middleware
 import IHP.RouterPrelude
 import Web.Controller.Prelude
 import Web.Controller.Sessions
-import Web.View.Layout (defaultLayout)
+import Web.View.Layout (withoutFooterLayout)
 
 -- Controller Imports
 import Web.Controller.Assets
@@ -16,6 +16,8 @@ import Web.Controller.Markets
 import Web.Controller.Static
 import Web.Controller.Trades
 import Web.Controller.Users
+
+-- Generator Marker
 
 instance FrontController WebApplication where
     controllers =
@@ -36,5 +38,5 @@ instance FrontController WebApplication where
 
 instance InitControllerContext WebApplication where
     initContext = do
-        setLayout defaultLayout
+        setLayout withoutFooterLayout
         initAuthentication @User

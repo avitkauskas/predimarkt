@@ -18,6 +18,7 @@ import Text.RawString.QQ (r)
 import Web.Controller.Prelude
 import Web.Job.CloseMarket
 import Web.Types
+import Web.View.Layout (withFooterLayout)
 import Web.View.Markets.Edit
 import Web.View.Markets.Index
 import Web.View.Markets.New
@@ -27,6 +28,7 @@ import Web.View.Markets.Show
 
 instance Controller MarketsController where
     action MarketsAction = autoRefresh do
+        setLayout withFooterLayout
         let categoryFilter = paramOrNothing "category"
         let statusFilter = parseMarketIndexStatusFilter (paramOrNothing @Text "status")
         let searchFilter = normalizeSearchQuery (paramOrNothing "search")
