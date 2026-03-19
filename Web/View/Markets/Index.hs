@@ -255,9 +255,9 @@ renderMarket backToPath market = [hsx|
             <div class={classes ["card-body d-flex flex-column position-relative pb-2",
                         (bodyClass, True)]}>
 
-                <!-- Scrollable, clickable title -->
-                <div class="position-relative scroll-no-bar mb-2">
-                    <h6 class="card-title fs-6 mb-0 d-inline-block">
+                <!-- Wrapping, vertically-scrollable title (always 2 lines tall) -->
+                <div class="position-relative market-title-container mb-2">
+                    <h6 class="card-title fs-6 mb-0">
                         <a href={showMarketLink}
                            data-start-market-page-at-top="true"
                            class="stretched-link text-reset text-decoration-none">

@@ -57,13 +57,12 @@ instance View ShowView where
                         </div>
                         <div class="card-body p-4">
                             <header class="mb-4">
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-start gap-2">
                                     <a href={backLink}
                                        class="btn btn-outline-secondary back-button flex-shrink-0">
                                         <i class="bi bi-chevron-left"></i>
                                     </a>
-                                    <div class="flex-grow-1 overflow-x-auto scroll-no-bar ms-1"
-                                         style="white-space: nowrap;">
+                                    <div class="flex-grow-1 ms-1" style="padding-top: 0.29rem;">
                                         <span class="h4 fw-bold">
                                             {market.title}
                                         </span>
@@ -690,7 +689,10 @@ instance View ShowView where
                                 <div class="d-flex flex-column align-items-end gap-2">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="input-group" style="width: 160px">
-                                            <span class="input-group-text info-label">shares</span>
+                                            <span class="input-group-text info-label"
+                                                  style="font-size: 0.64rem;">
+                                                  shares
+                                            </span>
                                             <input type="number" name="quantity"
                                                    id={"trade-quantity-buy-" <> inputValue asset.id}
                                                    value={tradeQuantityValue isBuyFormOpen} step="1" min="0"

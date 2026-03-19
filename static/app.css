@@ -52,6 +52,19 @@
     display: none;
 }
 
+/* Market card title: always 2 lines tall, wraps, scrolls vertically without a scrollbar */
+.market-title-container {
+    height: 2.5em; /* 2 lines tall */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.market-title-container::-webkit-scrollbar {
+    display: none;
+}
+
 /* Market asset rows on the market show page */
 .market-asset-row {
     display: flex;
