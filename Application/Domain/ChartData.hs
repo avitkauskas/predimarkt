@@ -6,16 +6,14 @@ module Application.Domain.ChartData
 
 import Application.Domain.LMSR
 import Application.Domain.Types
+import Application.Market.State (parseMarketState)
 import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Types as AesonTypes
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Data.Time (Day, addDays, utctDay)
 import Data.Time.Clock (UTCTime (..), getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Data.UUID (UUID)
-import qualified Data.UUID as UUID
 import Generated.Types
 import IHP.Fetch
 import IHP.ModelSupport
@@ -97,15 +95,6 @@ fetchChartData market assets beta = do
         computeDayPrices txn = case parseMarketState (get #marketState txn) of
             Just qtyMap -> allAssetPrices (Beta beta') qtyMap
             Nothing     -> M.empty
-
-    parseMarketState :: Aeson.Value -> Maybe (M.Map (Id Asset) Quantity)
-    parseMarketState value = case Aeson.fromJSON value of
-        AesonTypes.Success (obj :: [(Text, Int)]) -> Just $ M.fromList
-            [ (Id uid, Quantity (fromIntegral qty))
-            | (key, qty) <- obj
-            , Just uid <- [UUID.fromText key]
-            ]
-        AesonTypes.Error _ -> Nothing
 
     buildFlatAssetChart :: [Day] -> M.Map (Id Asset) Double -> Asset -> AssetChartData
     buildFlatAssetChart days prices asset =

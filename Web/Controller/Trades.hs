@@ -4,10 +4,11 @@ module Web.Controller.Trades where
 import Application.Domain.LMSR
 import Application.Domain.Position
 import Application.Domain.Types
-import Application.Helper.View (formatMoney)
+import Application.Helper.Formatting (formatMoney)
+import qualified Application.Helper.QueryParams as QueryParams
+import Application.Market.State (buildMarketState)
 import qualified Data.Aeson as Aeson
 import qualified Data.Map.Strict as M
-import qualified Data.Text as Text
 import Web.Controller.Prelude
 
 instance Controller TradesController where
@@ -24,7 +25,8 @@ instance Controller TradesController where
         let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
         let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
-        let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
+        let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
+                (paramOrNothing @Text "chatComposerRev")
         let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
 
         let isBuy = tradeType == "buy"
@@ -110,7 +112,7 @@ instance Controller TradesController where
         let action = if isBuy then "bought" else "sold"
         setSuccessMessage $ "Successfully " <> action <> " " <> show paramQty <> " shares for " <> formatMoney tradeAmountCents
 
-        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (normalizePageParam currentActivityPage) (normalizePageParam currentChatPage) currentChatComposerRev Nothing backToPath)
+        redirectTo (ShowMarketAction asset.marketId Nothing Nothing (Just chartVisible) (Just descriptionVisible) (Just allAssetsVisible) (Just tradeHistoryVisible) (QueryParams.normalizePageParam currentActivityPage) (QueryParams.normalizePageParam currentChatPage) currentChatComposerRev Nothing backToPath)
 
     action ClosePositionAction { assetId } = do
         ensureIsUser
@@ -342,27 +344,6 @@ instance Controller TradesController where
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
-buildMarketState :: M.Map (Id Asset) Quantity -> [(Text, Int)]
-buildMarketState qtyMap =
-    [ (cs (show assetId), fromIntegral qty)
-    | (assetId, Quantity qty) <- M.toList qtyMap
-    ]
-
 readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
 readQueryFlag name =
-    case Text.toLower <$> paramOrNothing @Text (cs name) of
-        Just "true"  -> Just True
-        Just "1"     -> Just True
-        Just "false" -> Just False
-        Just "0"     -> Just False
-        _            -> Nothing
-
-normalizePageParam :: Int -> Maybe Int
-normalizePageParam pageNum
-    | pageNum > 1 = Just pageNum
-    | otherwise = Nothing
-
-normalizeOptionalTextParam :: Maybe Text -> Maybe Text
-normalizeOptionalTextParam = \case
-    Just value | Text.strip value /= "" -> Just (Text.strip value)
-    _ -> Nothing
+    QueryParams.parseBooleanText (paramOrNothing @Text (cs name))

@@ -4,8 +4,8 @@ module Web.Controller.Dashboard where
 import Application.Domain.LMSR as LMSR
 import Application.Domain.Position
 import Application.Domain.Types
+import Application.Helper.QueryParams (normalizeSearchQuery)
 import qualified Data.Map as M
-import Data.Text (strip)
 import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
@@ -368,8 +368,3 @@ instance Controller DashboardController where
             , wallet = wallet
             , searchFilter = searchQuery
             }
-
-normalizeSearchQuery :: Maybe Text -> Maybe Text
-normalizeSearchQuery (Just query)
-    | strip query /= "" = Just (strip query)
-normalizeSearchQuery _ = Nothing

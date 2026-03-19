@@ -5,7 +5,8 @@ module Web.View.Dashboard.Transactions where
 
 import Admin.Controller.Prelude
 import Application.Domain.Types (Quantity (Quantity))
-import Application.Helper.View (formatMoney, formatPricePercent)
+import Application.Helper.Formatting (formatMoney, formatPricePercent)
+import Application.Helper.QueryParams (normalizePageParam)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Text.Printf (printf)
@@ -158,8 +159,3 @@ renderTxnPagination :: Int -> Int -> Maybe Text -> Html
 renderTxnPagination currentPage totalPages searchFilter =
     renderSmartPagination currentPage totalPages "Transaction pagination"
         (\pageNum -> pathTo (DashboardTransactionsAction (Just pageNum) searchFilter))
-
-normalizePageParam :: Int -> Maybe Int
-normalizePageParam pageNum
-    | pageNum > 1 = Just pageNum
-    | otherwise = Nothing

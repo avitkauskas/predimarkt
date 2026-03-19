@@ -4,6 +4,7 @@ module Web.View.Markets.Show where
 
 import Application.Domain.LMSR
 import Application.Domain.Types
+import Application.Helper.QueryParams (normalizePageParam)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -315,11 +316,6 @@ instance View ShowView where
 
             boolText :: Bool -> Text
             boolText value = if value then "true" else "false"
-
-            normalizePageParam :: Int -> Maybe Int
-            normalizePageParam pageNum
-                | pageNum > 1 = Just pageNum
-                | otherwise = Nothing
 
             chatTradeQuantityValue :: Text
             chatTradeQuantityValue = inputValue (fromMaybe 10 tradeQuantity)

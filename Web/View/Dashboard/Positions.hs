@@ -4,6 +4,7 @@
 module Web.View.Dashboard.Positions where
 
 import Application.Domain.Position (EnrichedPosition (..))
+import Application.Helper.QueryParams (normalizePageParam)
 import Web.View.Prelude
 
 data PositionsView = PositionsView
@@ -241,11 +242,6 @@ renderPositionsPagination :: Int -> Int -> Maybe Text -> Html
 renderPositionsPagination currentPage totalPages searchFilter =
     renderSmartPagination currentPage totalPages "Positions pagination"
         (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilter))
-
-normalizePageParam :: Int -> Maybe Int
-normalizePageParam pageNum
-    | pageNum > 1 = Just pageNum
-    | otherwise = Nothing
 
 renderClosedPnL :: Integer -> Html
 renderClosedPnL pnl

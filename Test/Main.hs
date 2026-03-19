@@ -2,14 +2,34 @@
 module Test.Main where
 
 import Application.Domain.LMSR
+import Application.Domain.MarketAssets (sortAssetsForDisplay)
+import Application.Domain.Position (Side (Long, Short), currentPnL,
+                                    positionSide, positionValue,
+                                    resolutionPayout)
 import qualified Application.Domain.Types as NewDomain
-import Application.Helper.Controller (sanitizeBackTo)
+import Application.Helper.Formatting (formatMoney, formatMoneyOrDash,
+                                      formatMoneySigned, formatPricePercent,
+                                      formatWithSep)
+import Application.Helper.Navigation (sanitizeBackTo)
+import Application.Helper.Pagination (PaginationItem (Ellipsis, PageNumber),
+                                      generatePaginationItems)
 import Application.Helper.Passkeys (rpIdTextFromHost)
-import Application.Helper.View (textParagraphs)
+import Application.Helper.QueryParams (normalizeOptionalTextParam,
+                                       normalizePageParam, normalizeSearchQuery,
+                                       parseBooleanText)
+import Application.Helper.Text (textParagraphs)
+import Application.Market.Input (normalizeChatMessageBody,
+                                 sanitizeTradeQuantity, sanitizeTradingAction,
+                                 validateAssetNames, validateAssetSymbols,
+                                 validateChatMessageBody)
+import Application.Market.State (buildMarketState, parseMarketState)
+import qualified Data.Aeson as Aeson
 import qualified Data.Map.Strict as M
+import Data.Maybe (fromJust)
 import qualified Data.Text as Text
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime (..), secondsToDiffTime)
+import qualified Data.UUID as UUID
 import Generated.Types
 import IHP.ModelSupport (newRecord)
 import IHP.Prelude
@@ -35,6 +55,14 @@ testYesAsset = unsafeCoerce ("test-yes-001" :: Text)
 
 testNoAsset :: Id Asset
 testNoAsset = unsafeCoerce ("test-no-002" :: Text)
+
+mkTestAsset :: Text -> Text -> Integer -> Asset
+mkTestAsset name symbol quantity =
+    newRecord @Asset
+        |> set #id (unsafeCoerce (name <> "-" <> symbol) :: Id Asset)
+        |> set #name name
+        |> set #symbol symbol
+        |> set #quantity quantity
 
 main :: IO ()
 main = hspec do
@@ -241,6 +269,170 @@ main = hspec do
                             |> buildMarket now
                 getValidationFailure #closedAt market `shouldSatisfy` isJust
 
+        describe "Market input helpers" do
+            it "rejects empty and duplicate asset symbols" do
+                validateAssetSymbols
+                    [ mkTestAsset "One" "  " 0
+                    , mkTestAsset "Two" "TWO" 0
+                    ]
+                    `shouldBe` Just "Asset symbols cannot be empty"
+
+                validateAssetSymbols
+                    [ mkTestAsset "One" "YES" 0
+                    , mkTestAsset "Two" "YES" 0
+                    ]
+                    `shouldBe` Just "Asset symbols must be unique within the market"
+
+            it "rejects empty and duplicate asset names" do
+                validateAssetNames
+                    [ mkTestAsset "  " "ONE" 0
+                    , mkTestAsset "Two" "TWO" 0
+                    ]
+                    `shouldBe` Just "Asset names cannot be empty"
+
+                validateAssetNames
+                    [ mkTestAsset "Outcome" "ONE" 0
+                    , mkTestAsset "Outcome" "TWO" 0
+                    ]
+                    `shouldBe` Just "Asset names must be unique within the market"
+
+            it "accepts valid distinct asset names and symbols" do
+                validateAssetSymbols
+                    [ mkTestAsset "Yes" "YES" 0
+                    , mkTestAsset "No" "NO" 0
+                    ]
+                    `shouldBe` Nothing
+                validateAssetNames
+                    [ mkTestAsset "Yes" "YES" 0
+                    , mkTestAsset "No" "NO" 0
+                    ]
+                    `shouldBe` Nothing
+
+            it "normalizes and validates chat message bodies" do
+                normalizeChatMessageBody "  hello  " `shouldBe` "hello"
+                validateChatMessageBody "" `shouldBe` Just "Please enter a message"
+                validateChatMessageBody "hello\nworld"
+                    `shouldBe` Just "Message must be a single line"
+                validateChatMessageBody (Text.replicate 281 "a")
+                    `shouldBe` Just "Message must be at most 280 characters"
+                validateChatMessageBody (Text.replicate 280 "a")
+                    `shouldBe` Nothing
+
+            it "sanitizes trade quantity and trading action" do
+                sanitizeTradeQuantity (Just 0) `shouldBe` Just 0
+                sanitizeTradeQuantity (Just 42) `shouldBe` Just 42
+                sanitizeTradeQuantity (Just (-1)) `shouldBe` Nothing
+                sanitizeTradeQuantity Nothing `shouldBe` Nothing
+
+                sanitizeTradingAction (Just "buy") `shouldBe` Just "buy"
+                sanitizeTradingAction (Just "sell") `shouldBe` Just "sell"
+                sanitizeTradingAction (Just "hold") `shouldBe` Nothing
+                sanitizeTradingAction Nothing `shouldBe` Nothing
+
+        describe "Query param helpers" do
+            it "normalizes search and optional text params" do
+                normalizeSearchQuery (Just "  inflation  ")
+                    `shouldBe` Just "inflation"
+                normalizeSearchQuery (Just "   ") `shouldBe` Nothing
+                normalizeSearchQuery Nothing `shouldBe` Nothing
+
+                normalizeOptionalTextParam (Just "  rev-123  ")
+                    `shouldBe` Just "rev-123"
+                normalizeOptionalTextParam (Just "   ") `shouldBe` Nothing
+                normalizeOptionalTextParam Nothing `shouldBe` Nothing
+
+            it "normalizes page params and parses boolean text" do
+                normalizePageParam 1 `shouldBe` Nothing
+                normalizePageParam 2 `shouldBe` Just 2
+                normalizePageParam 0 `shouldBe` Nothing
+
+                parseBooleanText (Just "true") `shouldBe` Just True
+                parseBooleanText (Just "FALSE") `shouldBe` Just False
+                parseBooleanText (Just "1") `shouldBe` Just True
+                parseBooleanText (Just "0") `shouldBe` Just False
+                parseBooleanText (Just "maybe") `shouldBe` Nothing
+                parseBooleanText Nothing `shouldBe` Nothing
+
+        describe "Market state helpers" do
+            it "round-trips market state through JSON" do
+                let assetOne = unsafeCoerce <$> UUID.fromText
+                        "11111111-1111-1111-1111-111111111111" :: Maybe (Id Asset)
+                    assetTwo = unsafeCoerce <$> UUID.fromText
+                        "22222222-2222-2222-2222-222222222222" :: Maybe (Id Asset)
+                    state = M.fromList
+                        [ (fromJust assetOne, NewDomain.Quantity 15)
+                        , (fromJust assetTwo, NewDomain.Quantity (-7))
+                        ]
+                parseMarketState (Aeson.toJSON (buildMarketState state))
+                    `shouldBe` Just state
+
+            it "rejects invalid shapes and skips invalid UUID keys" do
+                parseMarketState (Aeson.toJSON ["not-an-object" :: Text])
+                    `shouldBe` Nothing
+
+                let partiallyValid = Aeson.toJSON
+                        [ ("not-a-uuid" :: Text, 5 :: Int)
+                        , ("33333333-3333-3333-3333-333333333333" :: Text, 9 :: Int)
+                        ]
+                    expectedAssetId = unsafeCoerce <$> UUID.fromText
+                        "33333333-3333-3333-3333-333333333333" :: Maybe (Id Asset)
+                parseMarketState partiallyValid
+                    `shouldBe` Just
+                        (M.fromList [(fromJust expectedAssetId, NewDomain.Quantity 9)])
+
+        describe "Asset display ordering" do
+            it "puts Yes before No in binary markets" do
+                map (get #name) (sortAssetsForDisplay
+                    [ mkTestAsset "No" "NO" 0
+                    , mkTestAsset "Yes" "YES" 0
+                    ])
+                    `shouldBe` ["Yes", "No"]
+
+            it "sorts non-binary markets by quantity descending" do
+                map (get #name) (sortAssetsForDisplay
+                    [ mkTestAsset "Low" "LOW" 10
+                    , mkTestAsset "High" "HIGH" 50
+                    , mkTestAsset "Mid" "MID" 30
+                    ])
+                    `shouldBe` ["High", "Mid", "Low"]
+
+        describe "Formatting helpers" do
+            it "formats money and signed money values" do
+                formatMoney (123456 :: Integer) `shouldBe` "1'234.56"
+                formatMoney ((-123456) :: Integer) `shouldBe` "-1'234.56"
+                formatMoneySigned (500 :: Integer) `shouldBe` "+5.00"
+                formatMoneySigned ((-500) :: Integer) `shouldBe` "-5.00"
+                formatMoneyOrDash (0 :: Integer) `shouldBe` "--"
+                formatWithSep (1234567 :: Integer) `shouldBe` "1'234'567"
+
+            it "formats price percentages" do
+                formatPricePercent 0.123 `shouldBe` "12.3%"
+
+        describe "Pagination helpers" do
+            it "returns all pages for short paginations" do
+                generatePaginationItems 3 5
+                    `shouldBe` map PageNumber [1, 2, 3, 4, 5]
+
+            it "builds early, middle, and late pagination windows" do
+                generatePaginationItems 3 20
+                    `shouldBe`
+                        (map PageNumber [1 .. 8]
+                            <> [Ellipsis 13]
+                            <> map PageNumber [19, 20])
+
+                generatePaginationItems 10 20
+                    `shouldBe`
+                        [ PageNumber 1, PageNumber 2, Ellipsis 5
+                        , PageNumber 8, PageNumber 9, PageNumber 10
+                        , PageNumber 11, PageNumber 12
+                        , Ellipsis 15, PageNumber 19, PageNumber 20
+                        ]
+
+                generatePaginationItems 18 20
+                    `shouldBe`
+                        ([PageNumber 1, PageNumber 2, Ellipsis 7]
+                            <> map PageNumber [13 .. 20])
+
         describe "Market index status filters" do
             it "defaults to open and recent other for missing or unknown params" do
                 parseMarketIndexStatusFilter Nothing
@@ -285,6 +477,34 @@ main = hspec do
         describe "portfolioReturn" do
             it "returns the total portfolio return since signup" do
                 abs (portfolioReturn 120000 - 0.2) `shouldSatisfy` (< 0.000001)
+
+        describe "Position helpers" do
+            it "computes position side, value, pnl, and resolution payouts" do
+                positionSide 5 `shouldBe` Just Long
+                positionSide (-5) `shouldBe` Just Short
+                positionSide 0 `shouldBe` Nothing
+
+                let qtyMap = M.fromList
+                        [ (testYesAsset, NewDomain.Quantity 100)
+                        , (testNoAsset, NewDomain.Quantity 0)
+                        ]
+                    beta = NewDomain.Beta testBeta
+                positionValue testYesAsset (NewDomain.Quantity 0) beta qtyMap
+                    `shouldBe` NewDomain.Money 0
+                positionValue testYesAsset (NewDomain.Quantity 10) beta qtyMap
+                    `shouldBe` tradeValue testYesAsset (NewDomain.Quantity (-10)) beta qtyMap
+
+                currentPnL (NewDomain.Money 1500) (NewDomain.Money (-1000)) (NewDomain.Money 200)
+                    `shouldBe` NewDomain.Money 2700
+
+                resolutionPayout (NewDomain.Quantity 7) Long True
+                    `shouldBe` NewDomain.Money 700
+                resolutionPayout (NewDomain.Quantity 7) Long False
+                    `shouldBe` NewDomain.Money 0
+                resolutionPayout (NewDomain.Quantity 7) Short True
+                    `shouldBe` NewDomain.Money 0
+                resolutionPayout (NewDomain.Quantity 7) Short False
+                    `shouldBe` NewDomain.Money (-700)
 
         describe "annualRateOfReturn" do
             it "returns annualized return once time since registration is known" do

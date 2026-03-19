@@ -5,7 +5,10 @@
 module Web.Controller.Markets where
 
 import Application.Domain.ChartData
+import Application.Domain.MarketAssets (sortAssetsForDisplay)
 import Application.Domain.Types
+import qualified Application.Helper.QueryParams as QueryParams
+import qualified Application.Market.Input as MarketInput
 import Data.List (zipWith4)
 import qualified Data.Map.Strict as M
 import Data.Text (strip)
@@ -31,7 +34,7 @@ instance Controller MarketsController where
         setLayout withFooterLayout
         let categoryFilter = paramOrNothing "category"
         let statusFilter = parseMarketIndexStatusFilter (paramOrNothing @Text "status")
-        let searchFilter = normalizeSearchQuery (paramOrNothing "search")
+        let searchFilter = QueryParams.normalizeSearchQuery (paramOrNothing "search")
         let currentPage = max 1 $ fromMaybe 1 (paramOrNothing @Int "page")
         let marketsPerPage = 12
         let visibleMarkets = currentPage * marketsPerPage
@@ -134,15 +137,18 @@ instance Controller MarketsController where
         -- ensureIsUser
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
-        let tAction = sanitizeTradingAction (tradingAction <|> paramOrNothing @Text "tradingAction")
+        let tAction = MarketInput.sanitizeTradingAction
+                (tradingAction <|> paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (showChart <|> readQueryFlag "showChart")
         let descriptionVisible = fromMaybe False (showDescription <|> readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (showAllAssets <|> readQueryFlag "showAllAssets")
         let tradeHistoryVisible = fromMaybe False (showTradeHistory <|> readQueryFlag "showTradeHistory")
         let requestedActivityPage = max 1 (fromMaybe 1 (activityPage <|> paramOrNothing @Int "activityPage"))
         let requestedChatPage = max 1 (fromMaybe 1 (chatPage <|> paramOrNothing @Int "chatPage"))
-        let currentChatComposerRev = normalizeOptionalTextParam (chatComposerRev <|> paramOrNothing @Text "chatComposerRev")
-        let currentTradeQuantity = sanitizeTradeQuantity (tradeQuantity <|> paramOrNothing @Int "tradeQuantity")
+        let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
+                (chatComposerRev <|> paramOrNothing @Text "chatComposerRev")
+        let currentTradeQuantity = MarketInput.sanitizeTradeQuantity
+                (tradeQuantity <|> paramOrNothing @Int "tradeQuantity")
         let backToPath = sanitizeBackTo (backTo <|> paramOrNothing @Text "backTo")
 
         market :: Market <- fetch mId
@@ -223,17 +229,20 @@ instance Controller MarketsController where
         _market :: Market <- fetch mId
 
         let tAssetId = paramOrNothing @(Id Asset) "tradingAssetId"
-        let tAction = sanitizeTradingAction (paramOrNothing @Text "tradingAction")
+        let tAction = MarketInput.sanitizeTradingAction
+                (paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (readQueryFlag "showChart")
         let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
         let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
         let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
-        let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
-        let currentTradeQuantity = sanitizeTradeQuantity (paramOrNothing @Int "tradeQuantity")
+        let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
+                (paramOrNothing @Text "chatComposerRev")
+        let currentTradeQuantity = MarketInput.sanitizeTradeQuantity
+                (paramOrNothing @Int "tradeQuantity")
         let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
-        let messageBody = normalizeChatMessageBody (param @Text "body")
+        let messageBody = MarketInput.normalizeChatMessageBody (param @Text "body")
         let redirectToShowMarket chatComposerRevision = redirectTo ShowMarketAction
                 { marketId = mId
                 , tradingAssetId = tAssetId
@@ -242,14 +251,14 @@ instance Controller MarketsController where
                 , showDescription = Just descriptionVisible
                 , showAllAssets = Just allAssetsVisible
                 , showTradeHistory = Just tradeHistoryVisible
-                , activityPage = normalizePageParam currentActivityPage
-                , chatPage = normalizePageParam currentChatPage
+                , activityPage = QueryParams.normalizePageParam currentActivityPage
+                , chatPage = QueryParams.normalizePageParam currentChatPage
                 , chatComposerRev = chatComposerRevision
                 , tradeQuantity = currentTradeQuantity
                 , backTo = backToPath
                 }
 
-        case validateChatMessageBody messageBody of
+        case MarketInput.validateChatMessageBody messageBody of
             Just errorMessage -> do
                 setErrorMessage errorMessage
                 redirectToShowMarket currentChatComposerRev
@@ -267,15 +276,18 @@ instance Controller MarketsController where
         let mId = paramOrNothing @(Id Market) "marketId"
         let msgId = if marketChatMessageId == def then param @(Id MarketChatMessage) "marketChatMessageId" else marketChatMessageId
         let tAssetId = paramOrNothing @(Id Asset) "tradingAssetId"
-        let tAction = sanitizeTradingAction (paramOrNothing @Text "tradingAction")
+        let tAction = MarketInput.sanitizeTradingAction
+                (paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (readQueryFlag "showChart")
         let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
         let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
         let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
-        let currentChatComposerRev = normalizeOptionalTextParam (paramOrNothing @Text "chatComposerRev")
-        let currentTradeQuantity = sanitizeTradeQuantity (paramOrNothing @Int "tradeQuantity")
+        let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
+                (paramOrNothing @Text "chatComposerRev")
+        let currentTradeQuantity = MarketInput.sanitizeTradeQuantity
+                (paramOrNothing @Int "tradeQuantity")
         let backToPath = sanitizeBackTo (paramOrNothing @Text "backTo")
 
         message :: MarketChatMessage <- fetch msgId
@@ -291,8 +303,8 @@ instance Controller MarketsController where
             , showDescription = Just descriptionVisible
             , showAllAssets = Just allAssetsVisible
             , showTradeHistory = Just tradeHistoryVisible
-            , activityPage = normalizePageParam currentActivityPage
-            , chatPage = normalizePageParam currentChatPage
+            , activityPage = QueryParams.normalizePageParam currentActivityPage
+            , chatPage = QueryParams.normalizePageParam currentChatPage
             , chatComposerRev = currentChatComposerRev
             , tradeQuantity = currentTradeQuantity
             , backTo = backToPath
@@ -328,12 +340,12 @@ instance Controller MarketsController where
                 setErrorMessage "Market must have at least 2 assets"
                 categories <- fetchCategories
                 render EditView { market = marketWithFormData, .. }
-            else case validateAssetSymbols assets of
+            else case MarketInput.validateAssetSymbols assets of
                 Just errorMsg -> do
                     setErrorMessage errorMsg
                     categories <- fetchCategories
                     render EditView { market = marketWithFormData, .. }
-                Nothing -> case validateAssetNames assets of
+                Nothing -> case MarketInput.validateAssetNames assets of
                     Just errorMsg -> do
                         setErrorMessage errorMsg
                         categories <- fetchCategories
@@ -389,12 +401,12 @@ instance Controller MarketsController where
                 setErrorMessage "Market must have at least 2 assets"
                 categories <- fetchCategories
                 render NewView { market = marketWithFormData, .. }
-            else case validateAssetSymbols assets of
+            else case MarketInput.validateAssetSymbols assets of
                 Just errorMsg -> do
                     setErrorMessage errorMsg
                     categories <- fetchCategories
                     render NewView { market = marketWithFormData, .. }
-                Nothing -> case validateAssetNames assets of
+                Nothing -> case MarketInput.validateAssetNames assets of
                     Just errorMsg -> do
                         setErrorMessage errorMsg
                         categories <- fetchCategories
@@ -477,28 +489,6 @@ attachAssetsToMarket
 attachAssetsToMarket market assets =
     market { GeneratedMarket.assets = sortAssetsForDisplay assets }
 
-validateAssetSymbols :: [Asset] -> Maybe Text
-validateAssetSymbols assets =
-    let symbols = map (get #symbol) assets
-        emptySymbols = filter (isEmpty . strip) symbols
-        uniqueSymbols = nub symbols
-    in if not (null emptySymbols)
-        then Just "Asset symbols cannot be empty"
-        else if length uniqueSymbols /= length symbols
-            then Just "Asset symbols must be unique within the market"
-            else Nothing
-
-validateAssetNames :: [Asset] -> Maybe Text
-validateAssetNames assets =
-    let names = map (get #name) assets
-        emptyNames = filter (isEmpty . strip) names
-        uniqueNames = nub names
-    in if not (null emptyNames)
-        then Just "Asset names cannot be empty"
-        else if length uniqueNames /= length names
-            then Just "Asset names must be unique within the market"
-            else Nothing
-
 fillMarketWithFormData :: (?context :: ControllerContext, ?request :: Request) => Market -> Market
 fillMarketWithFormData market =
     let title = fromMaybe (get #title market) (paramOrNothing @Text "title")
@@ -520,47 +510,6 @@ buildMarket now market = market
 fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
 fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch
 
-normalizeSearchQuery :: Maybe Text -> Maybe Text
-normalizeSearchQuery (Just query)
-    | strip query /= "" = Just (strip query)
-normalizeSearchQuery _ = Nothing
-
-normalizePageParam :: Int -> Maybe Int
-normalizePageParam pageNum
-    | pageNum > 1 = Just pageNum
-    | otherwise = Nothing
-
-normalizeOptionalTextParam :: Maybe Text -> Maybe Text
-normalizeOptionalTextParam = \case
-    Just value | strip value /= "" -> Just (strip value)
-    _ -> Nothing
-
-sanitizeTradeQuantity :: Maybe Int -> Maybe Int
-sanitizeTradeQuantity = \case
-    Just quantity | quantity >= 0 -> Just quantity
-    _ -> Nothing
-
-sanitizeTradingAction :: Maybe Text -> Maybe Text
-sanitizeTradingAction = \case
-    Just "buy" -> Just "buy"
-    Just "sell" -> Just "sell"
-    _ -> Nothing
-
-normalizeChatMessageBody :: Text -> Text
-normalizeChatMessageBody = strip
-
-validateChatMessageBody :: Text -> Maybe Text
-validateChatMessageBody body
-    | body == "" = Just "Please enter a message"
-    | Text.any (\char -> char == '\n' || char == '\r') body = Just "Message must be a single line"
-    | Text.length body > 280 = Just "Message must be at most 280 characters"
-    | otherwise = Nothing
-
 readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
 readQueryFlag name =
-    case Text.toLower <$> paramOrNothing @Text (cs name) of
-        Just "true"  -> Just True
-        Just "1"     -> Just True
-        Just "false" -> Just False
-        Just "0"     -> Just False
-        _            -> Nothing
+    QueryParams.parseBooleanText (paramOrNothing @Text (cs name))
