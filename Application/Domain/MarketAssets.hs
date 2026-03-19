@@ -5,7 +5,6 @@ import Generated.Types
 import IHP.Prelude
 
 sortAssetsForDisplay :: [Asset] -> [Asset]
-sortAssetsForDisplay [] = []
 sortAssetsForDisplay assets =
     case assets of
         [a, b]

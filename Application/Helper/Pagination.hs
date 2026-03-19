@@ -9,6 +9,8 @@ data PaginationItem
 
 generatePaginationItems :: Int -> Int -> [PaginationItem]
 generatePaginationItems currentPage totalPages
+    | totalPages < 1 = []
+    | currentPage < 1 || currentPage > totalPages = []
     | totalPages <= 11 = map PageNumber [1 .. totalPages]
     | currentPage < 7 =
         let firstEllipsisPage = (8 + totalPages - 1) `div` 2
@@ -61,12 +63,12 @@ renderSmartPagination currentPage totalPages ariaLabel pageUrlFn =
         if currentPage <= 1
         then [hsx|
             <li class="page-item disabled">
-                <span class="page-link">Previous</span>
+                <span class="page-link">←</span>
             </li>
         |]
         else [hsx|
             <li class="page-item">
-                <a class="page-link" href={pageUrlFn (currentPage - 1)}>Previous</a>
+                <a class="page-link" href={pageUrlFn (currentPage - 1)}>←</a>
             </li>
         |]
 
@@ -74,12 +76,12 @@ renderSmartPagination currentPage totalPages ariaLabel pageUrlFn =
         if currentPage >= totalPages
         then [hsx|
             <li class="page-item disabled">
-                <span class="page-link">Next</span>
+                <span class="page-link">→</span>
             </li>
         |]
         else [hsx|
             <li class="page-item">
-                <a class="page-link" href={pageUrlFn (currentPage + 1)}>Next</a>
+                <a class="page-link" href={pageUrlFn (currentPage + 1)}>→</a>
             </li>
         |]
 

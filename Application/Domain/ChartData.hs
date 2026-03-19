@@ -1,5 +1,6 @@
 module Application.Domain.ChartData
     ( fetchChartData
+    , buildChartData
     , PricePoint (..)
     , AssetChartData (..)
     ) where
@@ -7,7 +8,6 @@ module Application.Domain.ChartData
 import Application.Domain.LMSR
 import Application.Domain.Types
 import Application.Market.State (parseMarketState)
-import qualified Data.Aeson as Aeson
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -44,36 +44,41 @@ fetchChartData market assets beta = do
     let today = utctDay now
     let maxEndDay = min (utctDay market.closedAt) today
 
-    let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
-    let currentPrices = allAssetPrices (Beta beta) currentQtyMap
-
-    let topAssets = take 6 $ sortBy (\a1 a2 ->
-            let p1 = fromMaybe 0.0 (M.lookup (get #id a1) currentPrices)
-                p2 = fromMaybe 0.0 (M.lookup (get #id a2) currentPrices)
-             in compare p2 p1) assets
-    let topAssetIds = S.fromList (map (get #id) topAssets)
-
     transactions <- query @Transaction
         |> filterWhere (#marketId, get #id market)
         |> orderByAsc #createdAt
         |> fetch
 
-    let validTransactions = filter (\t -> get #assetId t `S.member` topAssetIds) transactions
+    pure $ buildChartData maxEndDay assets beta transactions
 
-    if null validTransactions
-        then pure $ map (buildFlatAssetChart [] currentPrices) topAssets
-        else do
+buildChartData
+    :: Day
+    -> [Asset]
+    -> Integer
+    -> [Transaction]
+    -> [AssetChartData]
+buildChartData maxEndDay assets beta transactions =
+    let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
+        currentPrices = allAssetPrices (Beta beta) currentQtyMap
+        topAssets = take 6 $ sortBy (\a1 a2 ->
+            let p1 = fromMaybe 0.0 (M.lookup (get #id a1) currentPrices)
+                p2 = fromMaybe 0.0 (M.lookup (get #id a2) currentPrices)
+             in compare p2 p1) assets
+        topAssetIds = S.fromList (map (get #id) topAssets)
+        validTransactions = filter (\t -> get #assetId t `S.member` topAssetIds) transactions
+    in if null validTransactions
+        then map (buildFlatAssetChart assets [] currentPrices) topAssets
+        else
             let txnDays = map (utctDay . get #createdAt) validTransactions
-            let startDay = minimum txnDays
-            let lastTxnDay = maximum txnDays
-            let endDay = min maxEndDay (max lastTxnDay today)
-            let filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
-            let lastTxnPerDay = getLastTxnPerDay filteredTxns
-            let dayRange = generateDayRange startDay endDay
-            let pricesPerDay = computePricesFromLastTxn lastTxnPerDay topAssets beta
-            let filledData = fillMissingDays dayRange pricesPerDay currentPrices
-
-            pure $ map (buildAssetChartData filledData) topAssets
+                startDay = minimum txnDays
+                lastTxnDay = maximum txnDays
+                endDay = min maxEndDay lastTxnDay
+                filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
+                lastTxnPerDay = getLastTxnPerDay filteredTxns
+                dayRange = generateDayRange startDay endDay
+                pricesPerDay = computePricesFromLastTxn beta lastTxnPerDay
+                filledData = fillMissingDays dayRange pricesPerDay currentPrices
+            in map (buildAssetChartData assets filledData) topAssets
   where
     getLastTxnPerDay :: [Transaction] -> M.Map Day Transaction
     getLastTxnPerDay txns =
@@ -86,18 +91,22 @@ fetchChartData market assets beta = do
     generateDayRange start end = takeWhile (<= end) (iterate (addDays 1) start)
 
     computePricesFromLastTxn
-        :: M.Map Day Transaction
-        -> [Asset]
-        -> Integer
+        :: Integer
+        -> M.Map Day Transaction
         -> M.Map Day (M.Map (Id Asset) Double)
-    computePricesFromLastTxn lastTxns assets' beta' = M.map computeDayPrices lastTxns
+    computePricesFromLastTxn beta' lastTxns = M.map computeDayPrices lastTxns
       where
         computeDayPrices txn = case parseMarketState (get #marketState txn) of
             Just qtyMap -> allAssetPrices (Beta beta') qtyMap
             Nothing     -> M.empty
 
-    buildFlatAssetChart :: [Day] -> M.Map (Id Asset) Double -> Asset -> AssetChartData
-    buildFlatAssetChart days prices asset =
+    buildFlatAssetChart
+        :: [Asset]
+        -> [Day]
+        -> M.Map (Id Asset) Double
+        -> Asset
+        -> AssetChartData
+    buildFlatAssetChart allAssets days prices asset =
         let assetId = get #id asset
             price = fromMaybe 0.0 (M.lookup assetId prices)
             points = map (\d -> PricePoint (dayToTimestamp d) price) days
@@ -105,7 +114,7 @@ fetchChartData market assets beta = do
             { chartAssetId = assetId
             , chartAssetSymbol = get #symbol asset
             , chartAssetName = get #name asset
-            , chartAssetColor = assetColorFor assets asset
+            , chartAssetColor = assetColorFor allAssets asset
             , chartData = points
             }
 
@@ -125,8 +134,11 @@ fetchChartData market assets beta = do
         in M.insert day dayPrices rest
 
     buildAssetChartData
-        :: M.Map Day (M.Map (Id Asset) Double) -> Asset -> AssetChartData
-    buildAssetChartData filledData asset =
+        :: [Asset]
+        -> M.Map Day (M.Map (Id Asset) Double)
+        -> Asset
+        -> AssetChartData
+    buildAssetChartData allAssets filledData asset =
         let assetId = get #id asset
             points = map (\day ->
                 let price = case M.lookup day filledData of
@@ -138,7 +150,7 @@ fetchChartData market assets beta = do
             { chartAssetId = assetId
             , chartAssetSymbol = get #symbol asset
             , chartAssetName = get #name asset
-            , chartAssetColor = assetColorFor assets asset
+            , chartAssetColor = assetColorFor allAssets asset
             , chartData = points
             }
 

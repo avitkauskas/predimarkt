@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Main where
 
+import Application.Domain.ChartData (AssetChartData (..), PricePoint (..),
+                                     buildChartData)
 import Application.Domain.LMSR
 import Application.Domain.MarketAssets (sortAssetsForDisplay)
 import Application.Domain.Position (Side (Long, Short), currentPnL,
@@ -90,6 +92,25 @@ mkTestAsset name symbol quantity =
         |> set #name name
         |> set #symbol symbol
         |> set #quantity quantity
+
+mkUuidAsset :: Text -> Text -> Integer -> Text -> Asset
+mkUuidAsset name symbol quantity uuidText =
+    newRecord @Asset
+        |> set #id (unsafeCoerce (fromJust (UUID.fromText uuidText)) :: Id Asset)
+        |> set #name name
+        |> set #symbol symbol
+        |> set #quantity quantity
+
+mkTransactionAt
+    :: Id Asset
+    -> UTCTime
+    -> Aeson.Value
+    -> Transaction
+mkTransactionAt assetId createdAt marketState =
+    newRecord @Transaction
+        |> set #assetId assetId
+        |> set #createdAt createdAt
+        |> set #marketState marketState
 
 mkRequest :: Bool -> Maybe ByteString.ByteString -> [(ByteString.ByteString, ByteString.ByteString)] -> Request
 mkRequest secure host headers =
@@ -496,6 +517,72 @@ main = hspec do
                 parseMarketState partiallyValid
                     `shouldBe` Just
                         (M.fromList [(fromJust expectedAssetId, NewDomain.Quantity 9)])
+
+        describe "Chart data helpers" do
+            it "returns only the top 6 assets with empty history when there are no transactions" do
+                let assets =
+                        [ mkUuidAsset "A1" "A1" 100 "11111111-1111-1111-1111-111111111111"
+                        , mkUuidAsset "A2" "A2" 90 "22222222-2222-2222-2222-222222222222"
+                        , mkUuidAsset "A3" "A3" 80 "33333333-3333-3333-3333-333333333333"
+                        , mkUuidAsset "A4" "A4" 70 "44444444-4444-4444-4444-444444444444"
+                        , mkUuidAsset "A5" "A5" 60 "55555555-5555-5555-5555-555555555555"
+                        , mkUuidAsset "A6" "A6" 50 "66666666-6666-6666-6666-666666666666"
+                        , mkUuidAsset "A7" "A7" 40 "77777777-7777-7777-7777-777777777777"
+                        ]
+                    builtChartData = buildChartData (fromGregorian 2026 1 10) assets 300 []
+                fmap chartAssetName builtChartData `shouldBe` ["A1", "A2", "A3", "A4", "A5", "A6"]
+                fmap chartData builtChartData `shouldBe` replicate 6 []
+
+            it "fills missing days from the last known prices and clamps to the end day" do
+                let assetA = mkUuidAsset "Alpha" "ALP" 100 "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+                    assetB = mkUuidAsset "Beta" "BET" 0 "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+                    assets = [assetA, assetB]
+                    stateDay1 = M.fromList
+                        [ (get #id assetA, NewDomain.Quantity 30)
+                        , (get #id assetB, NewDomain.Quantity 0)
+                        ]
+                    stateDay4 = M.fromList
+                        [ (get #id assetA, NewDomain.Quantity 0)
+                        , (get #id assetB, NewDomain.Quantity 30)
+                        ]
+                    txns =
+                        [ mkTransactionAt
+                            (get #id assetA)
+                            (UTCTime (fromGregorian 2026 1 1) 0)
+                            (Aeson.toJSON (buildMarketState stateDay1))
+                        , mkTransactionAt
+                            (get #id assetA)
+                            (UTCTime (fromGregorian 2026 1 4) 0)
+                            (Aeson.toJSON (buildMarketState stateDay4))
+                        ]
+                    built = buildChartData (fromGregorian 2026 1 3) assets 300 txns
+                    alphaSeries =
+                        chartData (fromJust (head (filter (\entry -> chartAssetName entry == "Alpha") built)))
+                    alphaPrices = fmap priceValue alphaSeries
+                length alphaSeries `shouldBe` 3
+                alphaPrices !! 1 `shouldBe` alphaPrices !! 0
+                alphaPrices !! 2 `shouldBe` alphaPrices !! 0
+
+            it "falls back to current prices when a day's market state is invalid" do
+                let assetA = mkUuidAsset "Alpha" "ALP" 100 "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+                    assetB = mkUuidAsset "Beta" "BET" 0 "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+                    assets = [assetA, assetB]
+                    currentPrices = allAssetPrices (NewDomain.Beta 300)
+                        (M.fromList
+                            [ (get #id assetA, NewDomain.Quantity 100)
+                            , (get #id assetB, NewDomain.Quantity 0)
+                            ])
+                    txns =
+                        [ mkTransactionAt
+                            (get #id assetA)
+                            (UTCTime (fromGregorian 2026 1 1) 0)
+                            (Aeson.toJSON ["invalid" :: Text])
+                        ]
+                    built = buildChartData (fromGregorian 2026 1 1) assets 300 txns
+                    alphaSeries =
+                        chartData (fromJust (head (filter (\entry -> chartAssetName entry == "Alpha") built)))
+                fmap priceValue alphaSeries
+                    `shouldBe` [currentPrices M.! get #id assetA]
 
         describe "Asset display ordering" do
             it "puts Yes before No in binary markets" do

@@ -9,7 +9,8 @@ sanitizeBackTo = (>>= sanitizeLocalPath)
         sanitizeLocalPath path
             | Text.null trimmedPath = Nothing
             | "/" `Text.isPrefixOf` trimmedPath
-                && not ("//" `Text.isPrefixOf` trimmedPath) = Just trimmedPath
+                && not ("//" `Text.isPrefixOf` trimmedPath)
+                && not ("/\\" `Text.isPrefixOf` trimmedPath) = Just trimmedPath
             | otherwise = Nothing
             where
                 trimmedPath = Text.strip path
