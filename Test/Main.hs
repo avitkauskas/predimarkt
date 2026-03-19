@@ -13,7 +13,12 @@ import Application.Helper.Formatting (formatMoney, formatMoneyOrDash,
 import Application.Helper.Navigation (sanitizeBackTo)
 import Application.Helper.Pagination (PaginationItem (Ellipsis, PageNumber),
                                       generatePaginationItems)
-import Application.Helper.Passkeys (rpIdTextFromHost)
+import Application.Helper.Passkeys (allowedOrigins,
+                                    authenticationCredentialOptions,
+                                    passkeyRelyingPartyName,
+                                    registrationCredentialOptions,
+                                    rpIdTextFromHost, rpIdTextFromRequest,
+                                    userHandleForUserId)
 import Application.Helper.QueryParams (normalizeOptionalTextParam,
                                        normalizePageParam, normalizeSearchQuery,
                                        parseBooleanText)
@@ -23,7 +28,27 @@ import Application.Market.Input (normalizeChatMessageBody,
                                  validateAssetNames, validateAssetSymbols,
                                  validateChatMessageBody)
 import Application.Market.State (buildMarketState, parseMarketState)
+import Crypto.WebAuthn.Cose.SignAlg
+import Crypto.WebAuthn.Model.Types (AttestationConveyancePreference (AttestationConveyancePreferenceNone),
+                                    AuthenticatorSelectionCriteria (AuthenticatorSelectionCriteria),
+                                    Challenge (Challenge),
+                                    CredentialOptions (CredentialOptionsAuthentication, CredentialOptionsRegistration),
+                                    CredentialParameters (CredentialParameters),
+                                    CredentialRpEntity (CredentialRpEntity),
+                                    CredentialType (CredentialTypePublicKey),
+                                    CredentialUserEntity (CredentialUserEntity),
+                                    Origin (Origin),
+                                    RelyingPartyName (RelyingPartyName),
+                                    ResidentKeyRequirement (ResidentKeyRequirementPreferred),
+                                    RpId (RpId), Timeout (Timeout),
+                                    UserAccountDisplayName (UserAccountDisplayName),
+                                    UserAccountName (UserAccountName),
+                                    UserVerificationRequirement (UserVerificationRequirementPreferred),
+                                    unOrigin)
 import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Char8 as ByteString
+import qualified Data.CaseInsensitive as CI
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Text as Text
@@ -35,6 +60,8 @@ import IHP.ModelSupport (newRecord)
 import IHP.Prelude
 import IHP.RouterPrelude (pathTo)
 import IHP.ValidationSupport (getValidationFailure)
+import Network.Wai (Request, defaultRequest, isSecure, requestHeaderHost,
+                    requestHeaders)
 import Test.Hspec
 import Test.QuickCheck
 import Unsafe.Coerce
@@ -63,6 +90,14 @@ mkTestAsset name symbol quantity =
         |> set #name name
         |> set #symbol symbol
         |> set #quantity quantity
+
+mkRequest :: Bool -> Maybe ByteString.ByteString -> [(ByteString.ByteString, ByteString.ByteString)] -> Request
+mkRequest secure host headers =
+    defaultRequest
+        { isSecure = secure
+        , requestHeaderHost = host
+        , requestHeaders = map (\(name, value) -> (CI.mk name, value)) headers
+        }
 
 main :: IO ()
 main = hspec do
@@ -237,6 +272,88 @@ main = hspec do
             it "extracts the RP id from hosts with ports" do
                 rpIdTextFromHost "localhost:8000" `shouldBe` "localhost"
                 rpIdTextFromHost "predimarkt.example" `shouldBe` "predimarkt.example"
+
+            it "prefers forwarded host and proto when building request-derived values" do
+                let req = mkRequest False (Just "ignored.example:80")
+                        [ ("x-forwarded-host", "app.predimarkt.example:443")
+                        , ("x-forwarded-proto", "https")
+                        ]
+                let ?request = req in do
+                    rpIdTextFromRequest `shouldBe` "app.predimarkt.example"
+                    fmap unOrigin (NonEmpty.toList allowedOrigins)
+                        `shouldBe` ["https://app.predimarkt.example:443"]
+
+            it "falls back to host header and request security when forwarded headers are missing" do
+                let req = mkRequest True (Just "predimarkt.example:8443") []
+                let ?request = req in do
+                    rpIdTextFromRequest `shouldBe` "predimarkt.example"
+                    fmap unOrigin (NonEmpty.toList allowedOrigins)
+                        `shouldBe` ["https://predimarkt.example:8443"]
+
+            it "falls back to localhost when no host information is present" do
+                let req = mkRequest False Nothing []
+                let ?request = req in do
+                    rpIdTextFromRequest `shouldBe` "localhost"
+                    fmap unOrigin (NonEmpty.toList allowedOrigins)
+                        `shouldBe` ["http://localhost:8000"]
+
+            it "builds registration options from the derived RP id and user data" do
+                let req = mkRequest False (Just "predimarkt.example:8000") []
+                    challenge = Challenge "test-challenge"
+                    userId = unsafeCoerce ("test-user-001" :: Text) :: Id User
+                    nickname = "alice"
+                let ?request = req in do
+                    let options =
+                            registrationCredentialOptions challenge userId nickname []
+                    case options of
+                        CredentialOptionsRegistration rpEntity userEntity actualChallenge algorithms timeout excludeCredentials authSelection attestation extensions -> do
+                            rpEntity
+                                `shouldBe` CredentialRpEntity
+                                    (Just (RpId "predimarkt.example"))
+                                    passkeyRelyingPartyName
+                            userEntity
+                                `shouldBe` CredentialUserEntity
+                                    (userHandleForUserId userId)
+                                    (UserAccountDisplayName nickname)
+                                    (UserAccountName nickname)
+                            actualChallenge `shouldBe` challenge
+                            algorithms
+                                `shouldBe`
+                                    [ CredentialParameters
+                                        CredentialTypePublicKey
+                                        (CoseSignAlgECDSA CoseHashAlgECDSASHA256)
+                                    , CredentialParameters
+                                        CredentialTypePublicKey
+                                        CoseSignAlgEdDSA
+                                    , CredentialParameters
+                                        CredentialTypePublicKey
+                                        (CoseSignAlgRSA CoseHashAlgRSASHA256)
+                                    ]
+                            timeout `shouldBe` Just (Timeout 60000)
+                            excludeCredentials `shouldBe` []
+                            authSelection
+                                `shouldBe` Just
+                                    (AuthenticatorSelectionCriteria
+                                        Nothing
+                                        ResidentKeyRequirementPreferred
+                                        UserVerificationRequirementPreferred
+                                    )
+                            attestation `shouldBe` AttestationConveyancePreferenceNone
+                            extensions `shouldBe` Nothing
+
+            it "builds authentication options from the derived RP id" do
+                let req = mkRequest False (Just "predimarkt.example:8000") []
+                    challenge = Challenge "test-auth-challenge"
+                let ?request = req in do
+                    let options = authenticationCredentialOptions challenge
+                    case options of
+                        CredentialOptionsAuthentication actualChallenge timeout rpId allowCredentials userVerification extensions -> do
+                            actualChallenge `shouldBe` challenge
+                            timeout `shouldBe` Just (Timeout 60000)
+                            rpId `shouldBe` Just (RpId "predimarkt.example")
+                            allowCredentials `shouldBe` []
+                            userVerification `shouldBe` UserVerificationRequirementPreferred
+                            extensions `shouldBe` Nothing
 
         describe "textParagraphs" do
             it "keeps single newlines inside the same paragraph" do
