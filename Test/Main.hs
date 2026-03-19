@@ -23,8 +23,7 @@ import Web.Controller.Leaderboard (annualRateOfReturn, leaderboardScore,
                                    yearsSinceRegistration)
 import Web.Controller.Markets (buildMarket)
 import Web.Controller.Trades ()
-import Web.Routes (buildShowMarketPath)
-import Web.Types (StaticController (..))
+import Web.Types (MarketsController (..), StaticController (..))
 import Web.View.Markets.Index (MarketIndexStatusFilter (..), buildMarketsPath,
                                parseMarketIndexStatusFilter)
 
@@ -105,73 +104,77 @@ main = hspec do
             it "URL-encodes backTo so nested market filters survive round-trips" do
                 let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
                     backToPath = "/Markets?category=test-category&status=refunded&search=one"
-                    path = buildShowMarketPath
-                        marketId
-                        (Nothing :: Maybe (Id Asset))
-                        (Nothing :: Maybe Text)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Text)
-                        (Nothing :: Maybe Int)
-                        (Just backToPath)
+                    path = pathTo ShowMarketAction
+                        { marketId = marketId
+                        , tradingAssetId = Nothing
+                        , tradingAction = Nothing
+                        , showChart = Nothing
+                        , showDescription = Nothing
+                        , showAllAssets = Nothing
+                        , showTradeHistory = Nothing
+                        , activityPage = Nothing
+                        , chatPage = Nothing
+                        , chatComposerRev = Nothing
+                        , tradeQuantity = Nothing
+                        , backTo = Just backToPath
+                        }
                 path `shouldSatisfy` Text.isInfixOf "backTo=%2FMarkets%3Fcategory%3Dtest-category%26status%3Drefunded%26search%3Done"
                 path `shouldSatisfy` not . Text.isInfixOf "&search=one"
 
             it "includes chat state parameters when present" do
                 let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
-                    path = buildShowMarketPath
-                        marketId
-                        (Nothing :: Maybe (Id Asset))
-                        (Nothing :: Maybe Text)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Int)
-                        (Just (3 :: Int))
-                        (Just ("rev-123" :: Text))
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Text)
+                    path = pathTo ShowMarketAction
+                        { marketId = marketId
+                        , tradingAssetId = Nothing
+                        , tradingAction = Nothing
+                        , showChart = Nothing
+                        , showDescription = Nothing
+                        , showAllAssets = Nothing
+                        , showTradeHistory = Nothing
+                        , activityPage = Nothing
+                        , chatPage = Just 3
+                        , chatComposerRev = Just "rev-123"
+                        , tradeQuantity = Nothing
+                        , backTo = Nothing
+                        }
                 path `shouldSatisfy` Text.isInfixOf "chatPage=3"
                 path `shouldSatisfy` Text.isInfixOf "chatComposerRev=rev-123"
 
             it "includes trade quantity when present" do
                 let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
-                    path = buildShowMarketPath
-                        marketId
-                        (Nothing :: Maybe (Id Asset))
-                        (Nothing :: Maybe Text)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Text)
-                        (Just (37 :: Int))
-                        (Nothing :: Maybe Text)
+                    path = pathTo ShowMarketAction
+                        { marketId = marketId
+                        , tradingAssetId = Nothing
+                        , tradingAction = Nothing
+                        , showChart = Nothing
+                        , showDescription = Nothing
+                        , showAllAssets = Nothing
+                        , showTradeHistory = Nothing
+                        , activityPage = Nothing
+                        , chatPage = Nothing
+                        , chatComposerRev = Nothing
+                        , tradeQuantity = Just 37
+                        , backTo = Nothing
+                        }
                 path `shouldSatisfy` Text.isInfixOf "tradeQuantity=37"
 
             it "URL-encodes dashboard backTo paths with page and search state" do
                 let marketId = unsafeCoerce ("test-market-001" :: Text) :: Id Market
                     backToPath = "/DashboardPositions?page=3&search=gold"
-                    path = buildShowMarketPath
-                        marketId
-                        (Nothing :: Maybe (Id Asset))
-                        (Nothing :: Maybe Text)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Bool)
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Int)
-                        (Nothing :: Maybe Text)
-                        (Nothing :: Maybe Int)
-                        (Just backToPath)
+                    path = pathTo ShowMarketAction
+                        { marketId = marketId
+                        , tradingAssetId = Nothing
+                        , tradingAction = Nothing
+                        , showChart = Nothing
+                        , showDescription = Nothing
+                        , showAllAssets = Nothing
+                        , showTradeHistory = Nothing
+                        , activityPage = Nothing
+                        , chatPage = Nothing
+                        , chatComposerRev = Nothing
+                        , tradeQuantity = Nothing
+                        , backTo = Just backToPath
+                        }
                 path `shouldSatisfy` Text.isInfixOf "backTo=%2FDashboardPositions%3Fpage%3D3%26search%3Dgold"
 
         describe "sanitizeBackTo" do
@@ -199,6 +202,7 @@ main = hspec do
                 pathTo TermsAction `shouldBe` "/terms-of-service"
                 pathTo PrivacyPolicyAction `shouldBe` "/privacy-policy"
                 pathTo CookiePolicyAction `shouldBe` "/cookie-policy"
+                pathTo ModerationPolicyAction `shouldBe` "/moderation-policy"
                 pathTo LegalNoticeAction `shouldBe` "/legal-notice"
 
         describe "passkey helpers" do
