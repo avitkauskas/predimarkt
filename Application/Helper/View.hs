@@ -5,6 +5,7 @@ module Application.Helper.View
 import Application.Helper.Text (textParagraphs)
 import qualified Data.List as List
 import qualified Data.Text as Text
+import Data.Time.Format (defaultTimeLocale, formatTime)
 import Generated.Enums
 import Generated.Types
 import IHP.ViewPrelude
@@ -52,6 +53,10 @@ renderTime time =
     [hsx|
         <span class="local-time" data-time={tshow time}></span>
     |]
+
+utcDateTimeInputValue :: UTCTime -> Text
+utcDateTimeInputValue time =
+    cs (formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" time)
 
 renderFlashToasts :: (?request :: Request) => Html
 renderFlashToasts =

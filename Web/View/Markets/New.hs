@@ -37,10 +37,12 @@ renderForm market assets categories = formFor market [hsx|
         <div class="col-12 col-md-6">
             {(dateTimeField #closedAt) {
                 fieldLabel = "Closing time",
+                fieldValue = utcDateTimeInputValue (get #closedAt market),
                 additionalAttributes =
                     [ ("data-alt-format", "Y-m-d H:i")
                     , ("data-month-selector-type", "static")
                     , ("data-allow-input", "true")
+                    , ("autocomplete", "off")
                     ]
             }}
         </div>

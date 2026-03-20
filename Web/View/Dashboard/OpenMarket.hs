@@ -23,10 +23,12 @@ instance View OpenMarketView where
         renderForm = formFor' market (pathTo $ OpenMarketAction (Just market.id) page searchFilter) [hsx|
             {(dateTimeField #closedAt) {
                 fieldLabel = "Closing time",
+                fieldValue = utcDateTimeInputValue (get #closedAt market),
                 additionalAttributes =
                     [ ("data-alt-format", "Y-m-d H:i")
                     , ("data-month-selector-type", "static")
                     , ("data-allow-input", "true")
+                    , ("autocomplete", "off")
                     ]
             }}
             <div class="mt-3">
