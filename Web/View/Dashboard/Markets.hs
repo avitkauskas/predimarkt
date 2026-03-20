@@ -85,11 +85,13 @@ renderActions market currentPage searchFilter backToPath =
             <a href={DeleteMarketAction market.id pageValue searchFilter} class="btn btn-sm btn-outline-danger js-delete" data-confirm="Are you sure?">Delete</a>
         |]
         MarketStatusOpen -> [hsx|
+            <a href={EditMarketAction market.id (Just currentPage) searchFilter} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed) pageValue searchFilter} class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-primary me-2">Close</button>
             </form>
         |]
         MarketStatusClosed -> [hsx|
+            <a href={EditMarketAction market.id (Just currentPage) searchFilter} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
             <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter} class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
             </form>

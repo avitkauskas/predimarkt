@@ -315,12 +315,14 @@ instance Controller MarketsController where
         let searchFilter = paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        accessDeniedUnless (market.status == MarketStatusDraft)
+        accessDeniedUnless (market.status `elem` editableMarketStatuses)
         assets <- query @Asset
             |> filterWhere (#marketId, mId)
             |> orderByAsc #quantity
             |> fetch
+        let marketAssets = assets
         categories <- fetchCategories
+        let editMode = marketEditMode market.status
         render EditView { .. }
 
     action UpdateMarketAction { marketId } = do
@@ -329,65 +331,92 @@ instance Controller MarketsController where
         let searchFilter = paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
-        accessDeniedUnless (market.status == MarketStatusDraft)
+        accessDeniedUnless (market.status `elem` editableMarketStatuses)
         now <- getCurrentTime
-        assets <- fetchAssetsFromParams
-        let marketWithFormData = fillMarketWithFormData market
+        categories <- fetchCategories
+        assets <- query @Asset
+            |> filterWhere (#marketId, mId)
+            |> orderByAsc #quantity
+            |> fetch
+        let marketAssets = assets
+        let editMode = marketEditMode market.status
 
-        if length assets < 2
-            then do
-                setErrorMessage "Market must have at least 2 assets"
-                categories <- fetchCategories
-                render EditView { market = marketWithFormData, .. }
-            else case MarketInput.validateAssetSymbols assets of
-                Just errorMsg -> do
-                    setErrorMessage errorMsg
-                    categories <- fetchCategories
-                    render EditView { market = marketWithFormData, .. }
-                Nothing -> case MarketInput.validateAssetNames assets of
-                    Just errorMsg -> do
-                        setErrorMessage errorMsg
-                        categories <- fetchCategories
-                        render EditView { market = marketWithFormData, .. }
-                    Nothing -> do
-                        marketWithFormData
-                        |> buildMarket now
-                        |> ifValid \case
-                            Left market -> do
-                                categories <- fetchCategories
-                                render EditView { .. }
-                            Right market -> do
-                                uniqueSlug <- constructUniqueSlug
-                                    market.categoryId (toSlug market.title) (Just mId)
+        case editMode of
+            DraftEditMode -> do
+                draftAssets <- fetchAssetsFromParams
+                let marketWithFormData = fillMarketWithFormData market
 
-                                withTransaction do
-                                    market <- market
-                                        |> set #slug uniqueSlug
-                                        |> updateRecord
+                if length draftAssets < 2
+                    then do
+                        setErrorMessage "Market must have at least 2 assets"
+                        render EditView { market = marketWithFormData, marketAssets = draftAssets, .. }
+                    else case MarketInput.validateAssetSymbols draftAssets of
+                        Just errorMsg -> do
+                            setErrorMessage errorMsg
+                            render EditView { market = marketWithFormData, marketAssets = draftAssets, .. }
+                        Nothing -> case MarketInput.validateAssetNames draftAssets of
+                            Just errorMsg -> do
+                                setErrorMessage errorMsg
+                                render EditView { market = marketWithFormData, marketAssets = draftAssets, .. }
+                            Nothing -> do
+                                marketWithFormData
+                                    |> buildMarket now
+                                    |> ifValid \case
+                                        Left market -> render EditView { marketAssets = draftAssets, .. }
+                                        Right market -> do
+                                            uniqueSlug <- constructUniqueSlug
+                                                market.categoryId (toSlug market.title) (Just mId)
 
-                                    existingAssets <- query @Asset |> filterWhere (#marketId, mId) |> fetch
-                                    let existingIds = map (.id) existingAssets
-                                    let newIds = map (\a -> if a.id == def then Nothing else Just a.id) assets
-                                    let keptIds = catMaybes newIds
+                                            withTransaction do
+                                                market <- market
+                                                    |> set #slug uniqueSlug
+                                                    |> updateRecord
 
-                                    let assetsToDelete = filter (\a -> a.id `notElem` keptIds) existingAssets
-                                    deleteRecords assetsToDelete
+                                                existingAssets <- query @Asset |> filterWhere (#marketId, mId) |> fetch
+                                                let newIds = map (\a -> if a.id == def then Nothing else Just a.id) draftAssets
+                                                let keptIds = catMaybes newIds
 
-                                    forM_ assets \asset -> do
-                                        if asset.id == def
-                                            then asset |> set #marketId market.id |> createRecord
-                                            else asset |> set #marketId market.id |> updateRecord
+                                                let assetsToDelete = filter (\a -> a.id `notElem` keptIds) existingAssets
+                                                deleteRecords assetsToDelete
 
-                                    existingJobs <- query @CloseMarketJob
-                                        |> filterWhere (#marketId, market.id)
-                                        |> fetch
-                                    deleteRecords existingJobs
-                                    newRecord @CloseMarketJob
-                                        |> set #marketId market.id
-                                        |> set #runAt market.closedAt
-                                        |> createRecord
+                                                forM_ draftAssets \asset -> do
+                                                    if asset.id == def
+                                                        then asset |> set #marketId market.id |> createRecord
+                                                        else asset |> set #marketId market.id |> updateRecord
 
-                                redirectToPath $ pathTo (DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = returnPage, searchFilter = searchFilter })
+                                                existingJobs <- query @CloseMarketJob
+                                                    |> filterWhere (#marketId, market.id)
+                                                    |> fetch
+                                                deleteRecords existingJobs
+                                                newRecord @CloseMarketJob
+                                                    |> set #marketId market.id
+                                                    |> set #runAt market.closedAt
+                                                    |> createRecord
+
+                                            redirectToPath $ pathTo
+                                                DashboardMarketsAction
+                                                    { statusFilter = Just MarketStatusDraft
+                                                    , page = returnPage
+                                                    , searchFilter = searchFilter
+                                                    }
+            LimitedEditMode -> do
+                let marketWithFormData = fillMarketWithEditableFormData market
+                marketWithFormData
+                    |> buildEditableMarket
+                    |> ifValid \case
+                        Left market -> render EditView { .. }
+                        Right market -> do
+                            uniqueSlug <- constructUniqueSlug
+                                market.categoryId (toSlug market.title) (Just mId)
+                            _ <- market
+                                |> set #slug uniqueSlug
+                                |> updateRecord
+                            redirectToPath $ pathTo
+                                DashboardMarketsAction
+                                    { statusFilter = Just market.status
+                                    , page = returnPage
+                                    , searchFilter = searchFilter
+                                    }
 
     action CreateMarketAction = do
         ensureIsUser
@@ -500,11 +529,36 @@ fillMarketWithFormData market =
         |> set #categoryId categoryId
         |> set #closedAt closedAt
 
+fillMarketWithEditableFormData :: (?context :: ControllerContext, ?request :: Request) => Market -> Market
+fillMarketWithEditableFormData market =
+    let title = fromMaybe (get #title market) (paramOrNothing @Text "title")
+        description = fromMaybe (get #description market) (paramOrNothing @Text "description")
+        categoryId = fromMaybe (get #categoryId market) (paramOrNothing @(Id Category) "categoryId")
+    in market
+        |> set #title (strip title)
+        |> set #description description
+        |> set #categoryId categoryId
+
 buildMarket now market = market
     |> validateField #title nonEmpty
     |> validateField #description nonEmpty
     |> validateField #categoryId nonEmpty
     |> validateField #closedAt (isGreaterThan now)
+
+buildEditableMarket :: Market -> Market
+buildEditableMarket market = market
+    |> validateField #title nonEmpty
+    |> validateField #description nonEmpty
+    |> validateField #categoryId nonEmpty
+
+marketEditMode :: MarketStatus -> EditMode
+marketEditMode MarketStatusDraft  = DraftEditMode
+marketEditMode MarketStatusOpen   = LimitedEditMode
+marketEditMode MarketStatusClosed = LimitedEditMode
+marketEditMode status = error ("Unsupported market edit status: " <> show status)
+
+editableMarketStatuses :: [MarketStatus]
+editableMarketStatuses = [MarketStatusDraft, MarketStatusOpen, MarketStatusClosed]
 
 fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
 fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch

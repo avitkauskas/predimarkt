@@ -1,4 +1,5 @@
 module Web.View.Markets.Edit where
+
 import Web.View.Assets.New
 import Web.View.Prelude
 
@@ -7,7 +8,18 @@ instance CanSelect Category where
     selectValue = get #id
     selectLabel = get #name
 
-data EditView = EditView { market :: Market, assets :: [Asset], categories :: [Category], returnPage :: Maybe Int, searchFilter :: Maybe Text }
+data EditMode
+    = DraftEditMode
+    | LimitedEditMode
+
+data EditView = EditView
+    { market       :: Market
+    , marketAssets :: [Asset]
+    , categories   :: [Category]
+    , returnPage   :: Maybe Int
+    , searchFilter :: Maybe Text
+    , editMode     :: EditMode
+    }
 
 instance View EditView where
     html EditView { .. } = dashboardLayout [hsx|
@@ -16,37 +28,70 @@ instance View EditView where
                 <div class="card shadow-sm">
                     <div class="card-body px-4 px-md-5 py-2 py-md-4">
                         <h3 class="mb-4">Edit Market</h3>
-                        {renderForm market assets categories returnPage searchFilter}
+                        {renderForm market marketAssets categories returnPage searchFilter editMode}
                     </div>
                 </div>
             </div>
         </div>
     |]
 
-renderForm :: Market -> [Asset] -> [Category] -> Maybe Int -> Maybe Text -> Html
-renderForm market assets categories returnPage searchFilter = formFor market [hsx|
-    {renderReturnPageInput returnPage}
-    {renderSearchFilterInput searchFilter}
-    {(textField #title)}
-    {(textareaField #description) {
-        fieldLabel = "Rules & Description",
-        additionalAttributes = [("rows", "3")]
-    }}
-    <div class="row">
-        <div class="col-12 col-md-6">
-            {(selectField #categoryId categories)}
-        </div>
-        <div class="col-12 col-md-6">
-            {(dateTimeField #closedAt) {
-                fieldLabel = "Closing time",
-                additionalAttributes =
-                    [ ("data-alt-format", "Y-m-d H:i")
-                    , ("data-month-selector-type", "static")
-                    , ("data-allow-input", "true")
-                    ]
+renderForm :: Market -> [Asset] -> [Category] -> Maybe Int -> Maybe Text -> EditMode -> Html
+renderForm market marketAssets categories returnPage searchFilter editMode =
+    case editMode of
+        DraftEditMode -> formFor market [hsx|
+            {renderReturnPageInput returnPage}
+            {renderSearchFilterInput searchFilter}
+            {(textField #title)}
+            {(textareaField #description) {
+                fieldLabel = "Rules & Description",
+                additionalAttributes = [("rows", "3")]
             }}
-        </div>
-    </div>
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    {(selectField #categoryId categories)}
+                </div>
+                <div class="col-12 col-md-6">
+                    {(dateTimeField #closedAt) {
+                        fieldLabel = "Closing time",
+                        additionalAttributes =
+                            [ ("data-alt-format", "Y-m-d H:i")
+                            , ("data-month-selector-type", "static")
+                            , ("data-allow-input", "true")
+                            ]
+                    }}
+                </div>
+            </div>
+            {renderAssets market marketAssets}
+            <div class="d-flex gap-2">
+                {submitButton}
+                <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                    Cancel
+                </button>
+            </div>
+        |]
+        LimitedEditMode -> formFor market [hsx|
+            {renderReturnPageInput returnPage}
+            {renderSearchFilterInput searchFilter}
+            {(textField #title)}
+            {(textareaField #description) {
+                fieldLabel = "Rules & Description",
+                additionalAttributes = [("rows", "3")]
+            }}
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    {(selectField #categoryId categories)}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                {submitButton}
+                <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                    Cancel
+                </button>
+            </div>
+        |]
+
+renderAssets :: Market -> [Asset] -> Html
+renderAssets market marketAssets = [hsx|
     <div class="mb-4">
         <div class="overflow-auto">
             <div class="row flex-nowrap" style="min-width: 600px">
@@ -66,10 +111,10 @@ renderForm market assets categories returnPage searchFilter = formFor market [hs
                 </div>
             </div>
             <div id="assets-list" data-beta={show market.beta}>
-                {forEach assets (\asset -> renderAssetRow asset market.beta)}
+                {forEach marketAssets (\asset -> renderAssetRow asset market.beta)}
             </div>
         </div>
-         <div class="mt-2">
+        <div class="mt-2">
             <a href="#"
                class="btn btn-outline-primary btn-sm"
                hx-get={NewAssetAction}
@@ -78,12 +123,6 @@ renderForm market assets categories returnPage searchFilter = formFor market [hs
                 Add Asset
             </a>
         </div>
-    </div>
-    <div class="d-flex gap-2">
-        {submitButton}
-        <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
-            Cancel
-        </button>
     </div>
 |]
 
