@@ -199,7 +199,7 @@ contentPageLayout heading intro inner = [hsx|
             <div class="card-body p-4 p-md-5">
                 <header class="mb-4">
                     <h1 class="h2 mb-3">{heading}</h1>
-                    <p class="lead">{intro}</p>
+                    <p class="lead fw-medium">{intro}</p>
                 </header>
                 <div>
                     {inner}

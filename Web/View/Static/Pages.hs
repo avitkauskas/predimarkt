@@ -1,10 +1,11 @@
 module Web.View.Static.Pages where
 
-import Text.Blaze.Html4.FrameSet (h2)
+import IHP.Prelude
 import Web.View.Prelude
 
 lastUpdated :: Html
-lastUpdated = [hsx|
+lastUpdated =
+    [hsx|
     <p class="small text-muted mt-4 mb-0">Last updated: 2026-03-15</p>
 |]
 
@@ -18,688 +19,810 @@ data ModerationPolicyView = ModerationPolicyView
 data LegalNoticeView = LegalNoticeView
 
 instance View AboutView where
-    html AboutView = contentPageLayout "About Predimarkt"
-        "Predimarkt is a play-money prediction market platform operated from Vilnius, Lithuania."
-        [hsx|
+    html AboutView =
+        contentPageLayout
+            "About Predimarkt"
+            "Predimarkt is a play-money prediction market platform for curious minds."
+            [hsx|
             <p>
-                Predimarkt is a public forecasting platform where people can
-                create and participate in prediction markets using fictional
-                balances rather than real money. Markets represent questions
-                about future events and allow participants to express
-                probabilistic beliefs through trading with play money.
+                It's a place to learn what prediction markets are, how they work in practice, and
+                how they help reveal people's beliefs about the likelihood of future events. Here
+                you can explore questions about the future by creating and participating in your
+                own markets, observing how probabilities shift over time, and gaining insight into
+                how collective expectations form and evolve.
+            </p>
+
+            <h5>What is a prediction market?</h5>
+            <p>
+                A prediction market is a system where people forecast outcomes by trading on what
+                they think will happen. It works in a way that's similar to a stock market:
+                instead of buying shares in companies, you're buying and selling "shares" in
+                possible outcomes. The price of those shares reflects how likely the crowd thinks
+                something is to happen.
             </p>
 
             <p>
-                The platform is intended primarily for educational,
-                informational, and entertainment purposes. It aims to encourage
-                careful reasoning about uncertainty, probability, and public
-                information.
+                Instead of simply saying "I think this will happen," you back your view with a
+                decision — buying or selling based on your belief. Prices then adjust as people
+                trade, forming a real-time, crowd-driven probability. Over time, this process
+                often produces accurate forecasts — not because any single person is right, but
+                because many perspectives combine into one signal.
+            </p>
+
+            <h5>How is this different from betting?</h5>
+            <p>
+                At a glance, it may look similar — but the purpose and mechanics are quite
+                different. Prediction markets combine estimating probabilities with taking on
+                risk, where potential rewards are tied to how accurate your judgments are. The
+                focus is on:
+            </p>
+
+            <ul>
+                <li>reasoning under uncertainty</li>
+                <li>reacting to new information</li>
+                <li>improving your judgment over time</li>
+            </ul>
+
+            <p>
+                Unlike traditional betting, where you place a bet and wait for the outcome,
+                prediction markets are dynamic. You can adjust your position over time — buying
+                more shares or selling the ones you hold as new information becomes available.
+                This turns participation into an ongoing process of updating beliefs, where both
+                risk and reward reflect how well you anticipate what happens next.
             </p>
 
             <p>
-                Predimarkt is not a brokerage, financial exchange, gambling
-                operator, or investment advisory service. The platform does
-                not accept deposits, does not provide withdrawals, and does
-                not offer any real-world financial payouts.
+                On Predimarkt, all of this happens using play money. There's no real-world value at
+                stake — you can't earn real money, but you also can't lose it. This keeps things
+                safe and accessible, allowing you to focus on learning, experimenting, and
+                improving your judgment rather than worrying about financial risk.
+            </p>
+
+            <h5>Learn by doing</h5>
+            <p>
+                Predimarkt is designed as a hands-on way to understand:
+            </p>
+
+            <ul>
+                <li>probability and uncertainty</li>
+                <li>how "crowd wisdom" emerges</li>
+                <li>how information influences expectations</li>
+            </ul>
+
+            <p>
+                You don't need any prior experience. Just pick a question, make your prediction,
+                and see how it evolves.
+            </p>
+
+            <h5>Simple by design</h5>
+            <p>
+                Predimarkt is a non-commercial, educational, independently run project.
             </p>
 
             <p>
-                Predimarkt does not permit wagering or staking of anything
-                of real-world value.
+                The platform is intentionally lightweight:
+            </p>
+
+            <ul>
+                <li>no real money</li>
+                <li>no data collection</li>
+                <li>no ads</li>
+            </ul>
+
+            <p>
+                You can get started with a secure passkey and a nickname — no email required. This
+                keeps things simple and minimizes the personal information you share. It also means
+                we won't contact you with emails. The trade-off is that the platform can't send
+                notifications or help recover your account if you lose your passkey.
+            </p>
+
+            <h5>What Predimarkt is — and isn't</h5>
+            <p>
+                Predimarkt is:
+            </p>
+
+            <ul>
+                <li>an educational and exploratory platform</li>
+                <li>a space for curiosity, discussion, and informed guessing</li>
+            </ul>
+
+            <p>
+            Predimarkt is <strong>not</strong>:
+            </p>
+
+            <ul>
+                <li>a gambling service</li>
+                <li>a financial exchange</li>
+                <li>an investment or advisory platform</li>
+            </ul>
+
+            <p>
+                Nothing on the site should be interpreted as financial advice or a real-world
+                opportunity.
+            </p>
+
+            <h5>Join the experiment</h5>
+            <p>
+                Predimarkt is an open invitation to think a bit more carefully about the future.
             </p>
 
             <p>
-                A central design goal of Predimarkt is user data minimisation.
-                Accounts use passkey-based authentication and do not require
-                email addresses or other identifying personal information.
-                The service is operated without advertising, behavioural
-                tracking, or marketing analytics.
-            </p>
-
-            <p>
-                Predimarkt is operated as a private, non-commercial project
-                from Vilnius, Lithuania. It is intended as an experimental
-                and educational environment for exploring forecasting and
-                prediction markets while respecting user privacy.
+                Create markets. Trade on your beliefs. See how your expectations compare with
+                everyone else.
             </p>
         |]
 
 instance View HowItWorksView where
-    html HowItWorksView = contentPageLayout "How It Works"
-        "Predimarkt uses play money and public forecasting to explore probability, judgment, and fair market resolution."
-        [hsx|
-            <h4>Play-money markets</h4>
-            <p>
-                All activity on Predimarkt uses fictional balances only.
-                No deposits, withdrawals, or transfers of real-world value
-                are possible. Participation does not create any financial
-                rights or claims.
-            </p>
-
-            <h4>Prediction markets</h4>
-            <p>
-                A prediction market represents a question about a future
-                event. Participants trade between possible outcomes using
-                play money, and the resulting prices reflect collective
-                expectations about the likelihood of those outcomes.
-            </p>
-
-            <h4>User-created markets</h4>
-            <p>
-                Registered users may create public markets. Market creators
-                are expected to define questions clearly, specify the
-                resolution criteria in advance, and avoid ambiguity
-                wherever possible.
-            </p>
-
-            <h4>Market resolution</h4>
-            <p>
-                The creator of a market is responsible for resolving it in
-                good faith and according to the stated rules. Resolution
-                should be based on publicly verifiable information whenever
-                possible.
-            </p>
+    html HowItWorksView =
+        contentPageLayout
+            "How It Works"
+            "Predimarkt is a space for exploring forecasts through interactive markets."
+            [hsx|
+            <h5>Play-money system</h5>
 
             <p>
-                If a market cannot reasonably be resolved or continued,
-                it should be refunded. The platform operator may intervene
-                to close, refund, or remove markets when necessary to
-                maintain the integrity of the service.
+                All activity on Predimarkt uses fictional balances. You start with an initial
+                balance and use it to trade on events. Everything runs on play money, allowing you
+                to focus on reasoning, information, and judgment without financial risk. There are
+                no deposits, withdrawals, or real-world rewards. You can't earn real money — but
+                you also can't lose it. Your balance simply reflects how accurate your predictions
+                have been over time. Balances may go negative. This allows you to fully
+                participate in markets, including taking positions that may later turn out to be
+                incorrect.
             </p>
 
-            <h4>Public discussion</h4>
+            <h5>Prediction markets</h5>
+
             <p>
-                Markets may include public discussion. Participants are
-                encouraged to share information, reasoning, and evidence
-                that may help others understand the event being forecast.
+                Each market represents a question about a future event. It includes a set of
+                possible outcomes (assets), and each outcome has a price that reflects its current
+                estimated probability. By trading — buying or selling outcomes — participants
+                collectively shape these probabilities. As new information becomes available, users
+                make new trades and prices update to reflect changing expectations.
             </p>
 
-            <h4>No financial advice</h4>
+            <h5>Trading</h5>
+
             <p>
-                Predimarkt does not provide financial, investment, or
-                trading advice. The platform is intended for educational
-                forecasting only and should not be interpreted as guidance
-                for real-world financial decisions.
+                Trading is continuous and flexible. You can act at any time:
+            </p>
+
+            <ul>
+                <li>Buy an outcome if you believe it is more likely than the current price
+                    suggests</li>
+                <li>Sell an outcome if you believe it is less likely than the current price
+                    suggests</li>
+            </ul>
+
+            <p>
+                In binary markets, buying "Yes" is equivalent to selling "No," and vice versa —
+                though the framing may differ in how you think about the trade.
+            </p>
+
+            <p>
+                When buying, you spend money now and profit if the outcome happens. But you can
+                sell at any time to cut losses or take profits before resolution. This allows you
+                to adjust your position as the situation evolves. You can also short sell (sell
+                assets that you don't own yet). In this case, you receive money immediately, and
+                this is your maximum possible gain — but if you're wrong, you may have to pay back
+                more later.
+            </p>
+
+            <p>
+                Predimarkt uses an automated market maker based on the logarithmic market scoring
+                rule. This means:
+            </p>
+
+            <ul>
+                <li>You can always trade instantly — there are no bids or asks, and liquidity is
+                    always available</li>
+                <li>Prices adjust smoothly with each trade, so the total cost is not simply "price
+                    × quantity"</li>
+                <li>The price you pay varies within a trade: earlier shares are cheaper, and later
+                    shares reflect the updated probability</li>
+            </ul>
+
+            <h5>Creating a market</h5>
+
+            <p>
+                Anyone can create a market. With that comes responsibility.
+                A well-created market should be:
+            </p>
+
+            <ul>
+                <li>Clear — the title should be short, informative, and unambiguous</li>
+                <li>Well-defined — the description must explain exactly how the outcome will be
+                    determined</li>
+                <li>Verifiable — resolution should rely on publicly available information whenever
+                    possible</li>
+            </ul>
+
+            <p>
+                When creating a market, you should:
+            </p>
+
+            <ul>
+                <li>Write a clear title</li>
+                <li>Provide rules and description, including definitions and resolution criteria</li>
+                <li>Optionally include references to sources</li>
+                <li>Define the possible outcomes (assets)</li>
+                <li>Assign short, unique symbols for each outcome (used in charts)</li>
+                <li>Set initial probabilities to reflect your best estimate at the time</li>
+            </ul>
+
+            <p>
+                Setting reasonable initial probabilities is important — large inaccuracies can
+                create unfair advantages for early traders. Creators are also expected to avoid
+                immediately taking large positions in their own market to exploit initial pricing.
+            </p>
+
+            <h5>Responsibilities of market creators</h5>
+
+            <p>
+                Market creators act as stewards of their markets. They are expected to:
+            </p>
+
+            <ul>
+                <li>Treat participants fairly and respectfully</li>
+                <li>Keep rules clear and consistent</li>
+                <li>Update descriptions if clarification is needed (without changing the core meaning)</li>
+                <li>Monitor the event and resolve the market promptly once the outcome is known</li>
+            </ul>
+
+            <p>
+                Resolution is simple but critical:
+            </p>
+
+            <ul>
+                <li>You select the winning outcome</li>
+                <li>All payouts are handled automatically</li>
+            </ul>
+
+            <p>
+                This action is final and cannot be reversed, so it must be done carefully. Always
+                verify the result before resolving.
+            </p>
+
+            <h5>Refunds</h5>
+
+            <p>
+                If a market cannot be resolved fairly — due to ambiguity, missing information, or
+                unforeseen circumstances — it should be refunded. Refunding returns all invested
+                funds to participants and is handled automatically by the system. Refunds should be
+                used only as a last resort, when proper resolution is not possible.
+            </p>
+
+            <h5>Leaderboard and goals</h5>
+
+            <p>
+                The leaderboard highlights the top participants, based on performance adjusted over
+                time. It accounts for factors like consistency and duration, rather than just total
+                accumulated gains. However, the goal of Predimarkt is not to "win" the leaderboard.
+                There are no material rewards. The real value comes from improving your judgment,
+                learning how to reason under uncertainty, and understanding how information shapes
+                expectations.
+            </p>
+
+            <h5>Final note</h5>
+
+            <p>
+                Predimarkt is an educational platform. It does not provide financial or investment
+                advice, and nothing on the platform should be interpreted as guidance for real-world
+                decisions.
             </p>
         |]
 
 instance View CommunityRulesView where
-    html CommunityRulesView = contentPageLayout "Community Rules"
-        "Predimarkt aims to host thoughtful, civil, and responsible forecasting."
-        [hsx|
-            <h4>Purpose of the community</h4>
-            <p>
-                Predimarkt is intended to support constructive discussion
-                about uncertain future events. Participants should aim to
-                contribute thoughtful forecasts, evidence, and respectful
-                dialogue.
-            </p>
-
-            <h4>Be respectful</h4>
-            <p>
-                Communication on the platform should remain civil,
-                relevant, and respectful. Harassment, intimidation,
-                hateful conduct, or persistent disruption are not allowed.
-            </p>
-
-            <h4>Prohibited markets</h4>
-            <p>
-                Markets must not promote or celebrate violence,
-                physical harm, or criminal activity. In particular,
-                markets about assassination, death speculation,
-                violent acts, or similar harmful scenarios are not
-                permitted.
-            </p>
-
-            <h4>Markets concerning individuals</h4>
-            <p>
-                Markets that speculate about private individuals,
-                health, death, criminal accusations, or other sensitive
-                personal matters may be removed.
-            </p>
+    html CommunityRulesView =
+        contentPageLayout
+            "Community Rules"
+            "Predimarkt aims to host thoughtful, civil, and responsible forecasting."
+            [hsx|
+            <h5>Purpose of the community</h5>
 
             <p>
-                Markets about public figures or public events may be
-                permitted when framed in a responsible and non-abusive
-                manner.
+                Our community exists to learn about future events, improve judgment, and enjoy the
+                process of prediction — not to maximize play-money gains. Predimarkt supports
+                constructive discussion about uncertain future events. Participants should focus on
+                providing thoughtful forecasts, relevant evidence, and respectful dialogue that
+                helps everyone understand the events being traded.
             </p>
 
-            <h4>Responsible forecasting</h4>
-            <p>
-                Markets about public events, politics, economics,
-                science, or culture may be permitted when framed
-                responsibly and without targeting individuals in a
-                harmful or abusive manner.
-            </p>
-
-            <h4>No unlawful or abusive use</h4>
-            <ul>
-                <li>No fraudulent or deceptive activity.</li>
-                <li>No impersonation or privacy violations.</li>
-                <li>No spam, manipulation, or artificial market activity.</li>
-                <li>No content that is unlawful under applicable law.</li>
-            </ul>
-
-            <h4>Market creator responsibilities</h4>
-            <ul>
-                <li>Create markets in clear and good-faith terms.</li>
-                <li>Provide transparent resolution criteria.</li>
-                <li>Resolve markets fairly and in a timely manner.</li>
-                <li>Refund markets when proper resolution is not possible.</li>
-            </ul>
-
-            <h4>Good-faith interpretation of markets</h4>
-            <p>
-                Market questions should be interpreted in good faith according to
-                their stated description, the context in which they were created,
-                and the reasonable expectations of participants.
-            </p>
+            <h5>Be respectful</h5>
 
             <p>
-                Where ambiguity exists, interpretation may consider the intent of
-                the market creator and the understanding that a reasonable
-                participant would have had at the time the market was active.
+                Communication on the platform must remain civil, relevant, and respectful.
+                Harassment, intimidation, hateful conduct, or persistent disruption are not
+                allowed.
             </p>
 
-            <h4>Abandoned markets</h4>
-            <p>
-                If a market creator becomes inactive or deletes their
-                account before resolving a market, the platform operator
-                may resolve, close, or refund the market in order to
-                protect participants.
-            </p>
-
-            <h4>Platform intervention and market integrity</h4>
-            <p>
-                To maintain the integrity and educational purpose of the
-                platform, the operator may intervene in markets when
-                necessary.
-            </p>
-
-            <p>Such intervention may include:</p>
-            <ul>
-                <li>closing markets</li>
-                <li>refunding trades</li>
-                <li>removing markets</li>
-                <li>restricting participation</li>
-                <li>suspending accounts involved in abuse</li>
-            </ul>
-
-            <p>
-                Intervention decisions are made in good faith to preserve
-                the fairness and reliability of the platform.
-            </p>
-
-            <h4>Moderation</h4>
-            <p>
-                Predimarkt may remove content, close markets, limit
-                functionality, or suspend accounts when necessary to
-                maintain the safety and integrity of the platform.
-            </p>
-            {lastUpdated}
-        |]
-
-instance View TermsView where
-    html TermsView = contentPageLayout "Terms of Service"
-        "These Terms govern access to and use of Predimarkt."
-        [hsx|
-            <h4>Eligibility</h4>
-            <p>
-                Predimarkt is intended for individuals aged 18 years
-                or older. The platform does not verify age, but by
-                using the service you represent that you meet this
-                requirement.
-            </p>
-
-            <h4>Nature of the service</h4>
-            <p>
-                Predimarkt is a play-money forecasting platform
-                provided for educational, informational, and
-                entertainment purposes only.
-            </p>
-
-            <p>
-                The platform does not provide financial services,
-                brokerage services, gambling payouts, or investment
-                advice. No real-money transactions are supported.
-            </p>
-
-            <h4>Educational and experimental environment</h4>
-            <p>
-                Predimarkt is intended as an experimental and educational
-                environment for exploring forecasting and probabilistic reasoning.
-            </p>
-
-            <p>
-                Market prices reflect the behaviour of participants within a
-                play-money simulation and are not intended to represent
-                authoritative predictions about real-world events.
-            </p>
-
-            <h4>No reliance</h4>
-            <p>
-                Information presented on Predimarkt, including market prices,
-                probabilities, comments, and discussions, reflects the activity
-                and opinions of users.
-            </p>
-
-            <p>
-                Such information should not be interpreted as factual statements,
-                professional advice, or reliable forecasts. Users should not rely
-                on the platform when making financial, legal, political, or other
-                real-world decisions.
-            </p>
-
-            <h4>Accounts and authentication</h4>
-            <p>
-                Accounts are accessed using passkey-based
-                authentication. Users are responsible for maintaining
-                control of their authentication devices and passkeys.
-            </p>
-
-            <p>
-                If access credentials are lost, account recovery may
-                not be possible. Users should ensure they maintain
-                secure access to their authentication methods.
-            </p>
-
-            <h4>Account access responsibility</h4>
-            <p>
-                Accounts are accessed using passkey authentication controlled
-                by the user.
-            </p>
-
-            <p>
-                If a user loses access to their authentication credentials,
-                account recovery may not be possible. The platform does not
-                guarantee the ability to restore lost accounts.
-            </p>
-
-            <h4>User content</h4>
-            <p>
-                Users may create markets and post public messages.
-                You remain responsible for the legality and accuracy
-                of the content you publish.
-            </p>
-
-            <h4>Market resolution</h4>
-            <p>
-                Market creators are responsible for resolving their
-                markets fairly and according to the stated rules.
-                The platform operator may close, refund, or remove
-                markets where necessary to maintain platform
-                integrity.
-            </p>
-
-            <h4>Resolution sources</h4>
-            <p>
-                Where possible, market resolution should rely on publicly
-                available and verifiable information sources.
-            </p>
-
-            <p>
-                The platform operator does not independently verify all
-                resolution decisions and cannot guarantee the accuracy of
-                information used by market creators.
-            </p>
-
-            <h4>User responsibility for markets</h4>
-            <p>
-                Users who create markets are responsible for defining the
-                resolution criteria and resolving their markets in good faith.
-            </p>
-
-            <p>
-                The platform operator may intervene to close, refund, or
-                remove markets where necessary, but does not guarantee
-                the correctness of user-generated markets.
-            </p>
-
-            <h4>Prohibited conduct</h4>
-            <ul>
-                <li>Violent, threatening, or abusive content.</li>
-                <li>Fraudulent or unlawful activity.</li>
-                <li>Harassment or privacy violations.</li>
-                <li>Manipulation of markets or platform systems.</li>
-            </ul>
-
-            <h4>Service availability</h4>
-            <p>
-                The service is provided on an “as is” and “as available”
-                basis. Availability and correctness are not guaranteed.
-            </p>
-
-            <h4>Limitation of liability</h4>
-            <p>
-                To the fullest extent permitted by applicable law,
-                the operator shall not be liable for indirect,
-                incidental, or consequential damages arising from
-                use of the service.
-            </p>
-
-            <h4>Governing law</h4>
-            <p>
-                These Terms are governed by the laws of Lithuania,
-                subject to mandatory rights under European Union law.
-            </p>
-            {lastUpdated}
-        |]
-
-instance View PrivacyPolicyView where
-    html PrivacyPolicyView = contentPageLayout "Privacy Policy"
-        "Predimarkt is designed to collect and retain as little personal data as reasonably possible."
-        [hsx|
-            <h4>Privacy-first design</h4>
-            <p>
-                Predimarkt is intentionally designed to minimise
-                personal data collection. The service does not require
-                email addresses and does not use advertising trackers
-                or behavioural analytics.
-            </p>
-
-            <h4>Data stored by the application</h4>
-            <ul>
-                <li>Passkey authentication records.</li>
-                <li>Your chosen nickname.</li>
-                <li>Markets you create.</li>
-                <li>Play-money trades and transaction history.</li>
-                <li>Public comments posted by your account.</li>
-                <li>Operational timestamps required for platform operation.</li>
-            </ul>
-
-            <h4>Data not intentionally collected</h4>
-            <p>
-                Predimarkt does not require email addresses, real
-                names, or other identifying personal information for
-                normal account use.
-            </p>
-
-            <p>
-                The service does not sell personal data and does not
-                operate advertising or behavioural profiling systems.
-            </p>
-
-            <h4>Infrastructure and technical processing</h4>
-            <p>
-                Like most websites, limited technical information
-                such as IP addresses may be processed by hosting
-                providers or content delivery networks in order to
-                deliver the website securely.
-            </p>
-
-            <p>
-                Predimarkt is currently hosted in the European Union
-                using infrastructure providers such as Hetzner. Some
-                frontend assets may be delivered through third-party
-                content delivery networks.
-            </p>
-
-            <h4>Legal basis</h4>
-            <p>
-                Where the General Data Protection Regulation (GDPR)
-                applies, processing is based on the legitimate
-                interest of operating and securing the platform and
-                on providing the service requested by the user.
-            </p>
-
-            <h4>Account deletion</h4>
-            <p>
-                Users may delete their accounts at any time. Account
-                deletion removes associated trades, comments, and
-                leaderboard records from the platform.
-            </p>
-
-            <p>
-                Some market records may remain where necessary to
-                preserve the integrity and continuity of existing
-                markets.
-            </p>
-
-            <h4>Your rights</h4>
-            <p>
-                Depending on your jurisdiction, you may have rights
-                under data protection law including access,
-                rectification, erasure, restriction, and the right
-                to lodge a complaint with a supervisory authority.
-            </p>
-
-            <h4>Contact</h4>
-            <p>
-                Privacy inquiries may be sent to
-                <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>.
-            </p>
-            {lastUpdated}
-        |]
-
-instance View CookiePolicyView where
-    html CookiePolicyView = contentPageLayout "Cookie Policy"
-        "Predimarkt aims to use only technically necessary cookies and minimal browser storage required for core functionality."
-        [hsx|
-            <h4>Overview</h4>
-            <p>
-                Predimarkt is designed to minimise tracking and data
-                collection. The platform does not use advertising
-                cookies, behavioural tracking, or analytics systems.
-            </p>
-
-            <p>
-                Only limited technical mechanisms required for the
-                operation of the website may be used, such as session
-                cookies and browser storage for interface preferences.
-            </p>
-
-            <h4>Technically necessary cookies</h4>
-            <p>
-                Predimarkt may use a session cookie or equivalent
-                session mechanism required for authentication,
-                passkey login flows, and other essential site
-                functionality.
-            </p>
-
-            <p>
-                These cookies are considered technically necessary
-                for the operation of the service and therefore do not
-                require user consent under applicable European
-                ePrivacy rules.
-            </p>
-
-            <h4>Browser storage</h4>
-            <p>
-                Some features may use browser storage that remains
-                on the user's device.
-            </p>
+            <h5>Prohibited markets</h5>
 
             <ul>
                 <li>
-                    <strong>Local storage</strong> may be used to
-                    remember interface preferences such as the
-                    selected light or dark theme.
+                    Markets promoting or celebrating violence, physical harm, or criminal activity
+                    are strictly prohibited. This includes assassination, death speculation,
+                    violent acts, or similar harmful scenarios.
                 </li>
                 <li>
-                    <strong>Session storage</strong> may be used for
-                    temporary interface state, for example message
-                    composer drafts or scroll position in market
-                    discussions.
+                    Markets concerning private individuals, personal health, death, criminal
+                    accusations, or other sensitive personal matters may be removed.
+                </li>
+                <li>
+                    Markets about public figures or public events are allowed only when framed
+                    responsibly and without abusive targeting.
                 </li>
             </ul>
 
-            <p>
-                These storage mechanisms are controlled by the
-                user's browser and are not used for cross-site
-                tracking.
-            </p>
-
-            <h4>No analytics or marketing cookies</h4>
-            <p>
-                Predimarkt does not intentionally use analytics
-                cookies, advertising technologies, marketing
-                trackers, or user profiling systems.
-            </p>
-
-            <h4>No consent banner</h4>
-            <p>
-                Because Predimarkt currently uses only technically
-                necessary cookies and limited browser storage for
-                core functionality, the site does not display a
-                cookie consent banner.
-            </p>
+            <h5>Responsible forecasting</h5>
 
             <p>
-                If non-essential cookies or tracking technologies
-                are introduced in the future, this policy and any
-                required consent mechanisms will be updated.
+                Markets about public events, politics, economics, science, or culture are welcome
+                when presented responsibly. Participants should avoid creating or supporting
+                markets designed to manipulate play money outcomes or exploit other users,
+                including coordinated trades to take advantage of improperly set initial
+                probabilities.
             </p>
 
-            <h4>Third-party technical requests</h4>
-            <p>
-                Some frontend assets may be delivered through
-                third-party content delivery networks such as
-                JSDelivr or unpkg. These requests are a normal
-                part of web delivery and may involve the
-                transmission of technical connection data such
-                as IP addresses to those providers.
-            </p>
-
-            <h4>Managing cookies</h4>
-            <p>
-                Most web browsers allow users to control or disable
-                cookies through browser settings. Please note that
-                disabling cookies or browser storage may affect the
-                ability of Predimarkt to provide login and other
-                core functionality.
-            </p>
-            {lastUpdated}
-        |]
-
-instance View LegalNoticeView where
-    html LegalNoticeView = contentPageLayout "Legal Notice"
-        "Operator and contact information for Predimarkt."
-        [hsx|
-            <h4>Operator</h4>
-            <p>
-                Predimarkt is operated by:<br/>
-                Alvydas Vitkauskas<br/>
-                Vilnius, Lithuania
-            </p>
+            <h5>Market creation and trading ethics</h5>
 
             <p>
-                Contact:
-                <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>
+                Market creators should set clear, accurate initial probabilities and avoid
+                immediately taking large positions in their own markets. Users should not
+                cooperate to exploit new markets for initial gains — the goal is to learn about
+                the event, not to earn more play money. Good-faith participation and accurate
+                initial settings help maintain fairness and educational value for all users.
             </p>
 
-            <h4>Project character</h4>
+            <h5>No unlawful or abusive use</h5>
+
+            <ul>
+                <li>No fraudulent or deceptive activity</li>
+                <li>No impersonation or privacy violations</li>
+                <li>No spam, market manipulation, or artificial trading activity</li>
+                <li>No content that violates applicable laws</li>
+            </ul>
+
+            <h5>Good-faith interpretation of markets</h5>
+
             <p>
-                Predimarkt is a private, non-commercial project
-                intended for educational exploration of forecasting
-                and prediction markets.
+                Market questions should be interpreted in good faith, according to their stated
+                description, the context of creation, and the reasonable expectations of
+                participants. When ambiguity exists, interpretation may consider the intent of the
+                market creator and what a reasonable participant would have understood while the
+                market was active.
             </p>
 
-            <h4>Third-party components</h4>
+            <h5>Abandoned markets</h5>
+
             <p>
-                Predimarkt uses TradingViews Lightweight Charts™ for market visualisation.
-                <br/>Predimarkt is not affiliated with or endorsed by TradingView.
+                If a market creator becomes inactive or deletes their account before resolving a
+                market, the platform operator may resolve, close, or refund the market to protect
+                participants.
             </p>
-            {lastUpdated}
+
+            <h5>Platform intervention and market integrity</h5>
+
+            <p>
+                To maintain fairness and the educational purpose of Predimarkt, the operator may
+                intervene when necessary. This may include:
+            </p>
+
+            <ul>
+                <li>Closing markets</li>
+                <li>Refunding trades</li>
+                <li>Removing markets</li>
+                <li>Restricting participation</li>
+                <li>Suspending accounts involved in abuse</li>
+            </ul>
+
+            <p>
+                Intervention decisions are made in good faith to preserve the integrity,
+                reliability, and learning focus of the platform.
+            </p>
+
+            <h5>Moderation</h5>
+
+            <p>
+                Predimarkt may remove content, close markets, limit functionality, or suspend
+                accounts when necessary to maintain the safety and fairness of the community.
+            </p>
         |]
 
 instance View ModerationPolicyView where
-    html ModerationPolicyView = contentPageLayout "Content Moderation & Complaints"
-        "How Predimarkt handles content moderation and user reports."
-        [hsx|
-            <h4>Purpose</h4>
-            <p>
-                Predimarkt allows users to create markets and post
-                public discussion messages. In order to maintain a
-                constructive and safe environment, certain forms of
-                content may be moderated or removed.
-            </p>
+    html ModerationPolicyView =
+        contentPageLayout
+            "Content Moderation & Complaints"
+            "How Predimarkt handles content moderation and user reports."
+            [hsx|
+            <h5>Purpose</h5>
 
             <p>
-                This page explains how content moderation and
-                complaints are handled on the platform.
+                Our goal is to maintain a safe, constructive, and educational environment while
+                allowing users to create markets and engage in public discussion. Predimarkt
+                allows users to create markets and post discussion messages. To ensure the
+                platform remains productive and safe for all participants, certain types of
+                content may be moderated or removed. Moderation is designed to protect users,
+                maintain fairness, and support the educational focus of the platform.
             </p>
 
-            <h4>Types of content on the platform</h4>
+            <h5>Types of content on the platform</h5>
+
             <p>
-                Most content on Predimarkt is created directly by
-                users. This includes:
+                Most content on Predimarkt is created directly by users. This includes:
             </p>
 
             <ul>
                 <li>Prediction market questions and descriptions</li>
                 <li>Play-money trading activity</li>
-                <li>Public comments or discussion messages</li>
+                <li>Public comments and discussion messages</li>
             </ul>
 
             <p>
-                Users are responsible for the content they publish
-                and are expected to follow the Community Rules.
+                Users are responsible for the content they publish and are expected to follow the
+                Community Rules. All content should support respectful discussion and constructive
+                forecasting.
             </p>
 
-            <h4>Content that may be moderated</h4>
+            <h5>Content that may be moderated</h5>
+
             <p>
-                The platform may remove or restrict content that
-                violates the Community Rules or applicable law.
-                This may include content that:
+                The platform may remove or restrict content that violates Community Rules or
+                applicable law. Examples include content that:
             </p>
 
             <ul>
-                <li>Promotes or celebrates violence or harm</li>
-                <li>Contains harassment, hate, or intimidation</li>
-                <li>Invades privacy or impersonates others</li>
-                <li>Is fraudulent, deceptive, or unlawful</li>
+                <li>Promotes or celebrates violence, harm, or illegal activity</li>
+                <li>Contains harassment, intimidation, or hate speech</li>
+                <li>Invades privacy, impersonates others, or misrepresents identity</li>
+                <li>Is fraudulent, deceptive, or otherwise unlawful</li>
                 <li>Disrupts the intended educational purpose of the platform</li>
             </ul>
 
-            <h4>Moderation actions</h4>
+            <h5>Moderation actions</h5>
+
             <p>
-                When necessary to maintain the integrity of the
-                platform, the operator may take actions such as:
+                To maintain fairness and integrity, the operator may take the following actions:
             </p>
 
             <ul>
-                <li>Removing comments or markets</li>
-                <li>Closing or refunding markets</li>
-                <li>Restricting user participation</li>
-                <li>Suspending or terminating accounts</li>
+                <li>Removing or editing comments, posts, or market descriptions</li>
+                <li>Closing or refunding markets that violate rules or cannot be resolved
+                    fairly</li>
+                <li>Restricting participation in certain markets or platform features</li>
+                <li>Suspending or terminating accounts that repeatedly violate rules or abuse
+                    the system</li>
             </ul>
 
             <p>
-                Moderation decisions are made in good faith based on
-                the available information and the goals of the
-                platform.
+                All moderation decisions are made in good faith based on the available information
+                and the goals of the platform.
             </p>
 
-            <h4>Reporting content</h4>
-            <p>
-                If you believe that content on Predimarkt violates
-                the Community Rules or applicable law, you may report
-                it by contacting the operator.
-            </p>
+            <h5>Reporting content</h5>
 
             <p>
-                Reports should include a link to the relevant market
-                or comment and a short explanation of the issue.
+                Users who believe content violates Community Rules or applicable law may report it
+                to the operator. Reports should include:
             </p>
+
+            <ul>
+                <li>A link to the relevant market, comment, or post</li>
+                <li>A brief explanation of the issue</li>
+            </ul>
 
             <p>
                 Reports may be sent to:
-                <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>
+                <a href="mailto:info@predimarkt.eu">
+                    info@predimarkt.eu
+                </a>
             </p>
 
-            <h4>Complaints and questions</h4>
+            <h5>Complaints and questions</h5>
+
             <p>
-                If you believe moderation action has been taken in
-                error, you may contact the operator using the same
-                address. The platform will review reasonable
-                requests where possible.
+                If you believe a moderation action has been taken in error, you may contact the
+                operator using the same address. The platform will review reasonable requests and
+                provide a response when possible.
             </p>
 
-            <h4>Project scale</h4>
+            <h5>Project scale</h5>
+
             <p>
-                Predimarkt is operated as a small independent
-                project. Moderation is performed manually by the
-                operator and response times may vary.
+                Predimarkt is a small, independent project. Moderation is performed manually by the
+                operator, and response times may vary. Participants are asked to be patient and
+                considerate of the limitations of a small team.
             </p>
+        |]
+
+instance View LegalNoticeView where
+    html LegalNoticeView =
+        contentPageLayout
+            "Legal Notice"
+            "Operator and contact information for Predimarkt."
+            [hsx|
+            <h5>Operator</h5>
+
+            <p>
+                Predimarkt is operated by Alvydas Vitkauskas, based in Vilnius, Lithuania.<br/>
+                Contact: <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>
+            </p>
+
+            <h5>Project Character</h5>
+
+            <p>
+                Predimarkt is a private, non-commercial project designed for educational purposes,
+                focused on the exploration of forecasting and prediction markets. The platform is
+                provided "as is" for learning and informational use only.
+            </p>
+
+            <h5>Third-Party Components</h5>
+
+            <p>
+                Predimarkt uses TradingView's Lightweight Charts™ for market visualization. The
+                platform is not affiliated with, endorsed by, or officially connected to
+                TradingView.
+            </p>
+        |]
+
+instance View TermsView where
+    html TermsView =
+        contentPageLayout
+            "Terms of Service"
+            "By using the platform, you agree to comply with these Terms."
+            [hsx|
+            <h5>Eligibility</h5>
+
+            <p>
+                Predimarkt is intended for individuals aged 18 years or older. The platform does
+                not verify age, but by using the service, you represent that you meet this
+                requirement.
+            </p>
+
+            <h5>Nature of the service</h5>
+
+            <p>
+                Predimarkt is a play-money forecasting platform provided for educational,
+                informational, and entertainment purposes only. The platform does not provide
+                financial services, brokerage services, gambling payouts, or investment advice. No
+                real-money transactions are supported.
+            </p>
+
+            <h5>Educational and experimental environment</h5>
+
+            <p>
+                Predimarkt is an experimental environment for exploring forecasting and
+                probabilistic reasoning. Market prices reflect the behavior of participants within
+                a play-money simulation and are not authoritative predictions about real-world
+                events.
+            </p>
+
+            <h5>No reliance</h5>
+
+            <p>
+                Information on Predimarkt, including market prices, probabilities, comments, and
+                discussions, reflects the activity and opinions of users. Such information should
+                not be interpreted as factual statements, professional advice, or reliable
+                forecasts. Users should not rely on the platform for financial, legal, political,
+                or other real-world decisions.
+            </p>
+
+            <h5>Accounts and authentication</h5>
+
+            <p>
+                Accounts are accessed using passkey-based authentication. Users are responsible for
+                maintaining secure control of their authentication devices and passkeys. If
+                credentials are lost, account recovery may not be possible.
+            </p>
+
+            <h5>User content</h5>
+
+            <p>
+                Users may create markets and post public messages. You remain responsible for the
+                legality and accuracy of the content you publish.
+            </p>
+
+            <h5>Market resolution</h5>
+
+            <p>
+                Market creators are responsible for resolving markets fairly and according to the
+                stated rules. Where possible, resolutions should rely on publicly available and
+                verifiable information. The platform operator does not independently verify all
+                resolutions and cannot guarantee the accuracy of user-provided information.
+            </p>
+
+            <p>
+                The operator may intervene to close, refund, or remove markets to maintain
+                platform integrity, but does not guarantee the correctness of user-generated
+                markets.
+            </p>
+
+            <h5>Prohibited conduct</h5>
+
+            <ul>
+                <li>Violent, threatening, or abusive content</li>
+                <li>Fraudulent or unlawful activity</li>
+                <li>Harassment or privacy violations</li>
+                <li>Manipulation of markets or platform systems</li>
+            </ul>
+
+            <h5>Service availability</h5>
+
+            <p>
+                The service is provided on an "as is" and "as available" basis. Availability,
+                correctness, and uninterrupted access are not guaranteed.
+            </p>
+
+            <h5>Limitation of liability</h5>
+
+            <p>
+                To the fullest extent permitted by applicable law, the operator shall not be liable
+                for indirect, incidental, or consequential damages arising from the use of the
+                service.
+            </p>
+
+            <h5>Governing law</h5>
+
+            <p>
+                These Terms are governed by the laws of Lithuania, subject to mandatory rights
+                under European Union law.
+            </p>
+
+            {lastUpdated}
+        |]
+
+instance View PrivacyPolicyView where
+    html PrivacyPolicyView =
+        contentPageLayout
+            "Privacy Policy"
+            "This policy explains what information is collected, how it is used, and your rights as a user."
+            [hsx|
+            <h5>Privacy-first design</h5>
+
+            <p>
+                Predimarkt is intentionally designed to minimize personal data collection. The
+                platform does not require email addresses and does not use advertising trackers or
+                behavioral analytics.
+            </p>
+
+            <h5>Data stored by the application</h5>
+
+            <ul>
+                <li>Passkey authentication records</li>
+                <li>Your chosen nickname</li>
+                <li>Markets you create</li>
+                <li>Play-money trades and transaction history</li>
+                <li>Public comments posted by your account</li>
+                <li>Operational timestamps required for platform operation</li>
+            </ul>
+
+            <h5>Data not intentionally collected</h5>
+
+            <p>
+                Predimarkt does not require email addresses, real names, or other identifying
+                personal information for normal account use. The platform does not sell personal
+                data and does not operate advertising or behavioral profiling systems.
+            </p>
+
+            <h5>Infrastructure and technical processing</h5>
+
+            <p>
+                Like most websites, limited technical information such as IP addresses may be
+                processed by hosting providers or content delivery networks to deliver the website
+                securely. Predimarkt is hosted in the European Union using providers such as
+                Hetzner.
+            </p>
+
+            <h5>Legal basis</h5>
+
+            <p>
+                Where the General Data Protection Regulation (GDPR) applies, processing is based on
+                the legitimate interest of operating and securing the platform, and on fulfilling
+                the service requested by the user.
+            </p>
+
+            <h5>Account deletion</h5>
+
+            <p>
+                Users may delete their accounts at any time. Account deletion removes associated
+                trades, comments, and leaderboard records. Some market records may remain when
+                necessary to preserve the integrity and continuity of existing markets.
+            </p>
+
+            <h5>Your rights</h5>
+
+            <p>
+                Depending on your jurisdiction, you may have rights under applicable data
+                protection law, including access, rectification, erasure, restriction, and the
+                right to lodge a complaint with a supervisory authority.
+            </p>
+
+            <h5>Contact</h5>
+
+            <p>
+                Privacy inquiries may be sent to
+                <a href="mailto:info@predimarkt.eu">info@predimarkt.eu</a>.
+            </p>
+
+            {lastUpdated}
+        |]
+
+instance View CookiePolicyView where
+    html CookiePolicyView =
+        contentPageLayout
+            "Cookie Policy"
+            "This policy explains how cookies and browser storage are used and how you can manage them."
+            [hsx|
+            <h5>Overview</h5>
+
+            <p>
+                Predimarkt aims to use only technically necessary cookies and minimal browser
+                storage required for core functionality. Predimarkt is designed to minimize
+                tracking and data collection. The platform does not use advertising cookies,
+                behavioral tracking, or analytics systems. Only limited technical mechanisms
+                required for the operation of the website may be used, such as session cookies and
+                browser storage for interface preferences.
+            </p>
+
+            <h5>Technically necessary cookies</h5>
+
+            <p>
+                Predimarkt may use session cookies or equivalent mechanisms required for
+                authentication, passkey login flows, and other essential site functionality. These
+                cookies are considered technically necessary and do not require user consent under
+                applicable European ePrivacy rules.
+            </p>
+
+            <h5>Browser storage</h5>
+
+            <p>
+                Some features may use browser storage that remains on your device:
+            </p>
+
+            <ul>
+                <li>Local storage may remember interface preferences such as the selected light or
+                    dark theme</li>
+                <li>Session storage may temporarily store interface state, for example message
+                    drafts or scroll position in market discussions</li>
+            </ul>
+
+            <p>
+                These storage mechanisms are controlled by your browser and are not used for
+                cross-site tracking.
+            </p>
+
+            <h5>No analytics or marketing cookies</h5>
+
+            <p>
+                Predimarkt does not intentionally use analytics cookies, advertising technologies,
+                marketing trackers, or user profiling systems.
+            </p>
+
+            <h5>No consent banner</h5>
+
+            <p>
+                Because Predimarkt currently uses only technically necessary cookies and limited
+                browser storage for core functionality, the site does not display a cookie consent
+                banner. If non-essential cookies or tracking technologies are introduced in the
+                future, this policy and any required consent mechanisms will be updated.
+            </p>
+
+            <h5>Third-party technical requests</h5>
+
+            <p>
+                Some frontend assets may be delivered through third-party content delivery networks
+                such as JSDelivr or unpkg. These requests are part of normal web delivery and may
+                involve transmission of technical connection data, such as IP addresses, to those
+                providers.
+            </p>
+
+            <h5>Managing cookies</h5>
+
+            <p>
+                Most web browsers allow users to control or disable cookies through browser
+                settings. Please note that disabling cookies or browser storage may affect
+                Predimarkt's ability to provide login and other core functionality.
+            </p>
+
             {lastUpdated}
         |]
