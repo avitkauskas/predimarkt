@@ -72,6 +72,7 @@ renderForm market assets categories = formFor market [hsx|
         <div class="mt-2">
             <a href="#"
                class="btn btn-outline-primary btn-sm"
+               style="--bs-btn-padding-x: 1.8rem;"
                hx-get={NewAssetAction}
                hx-target="#assets-list"
                hx-swap="beforeend">
@@ -79,7 +80,7 @@ renderForm market assets categories = formFor market [hsx|
             </a>
         </div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-3">
         {submitButton}
         <a href={DashboardMarketsAction (Just MarketStatusDraft) Nothing Nothing}
            class="btn btn-outline-secondary">

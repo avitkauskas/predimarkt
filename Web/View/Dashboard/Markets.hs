@@ -36,15 +36,28 @@ instance View MarketsView where
 
 renderMarket :: (?context :: ControllerContext) => Text -> Int -> Maybe Text -> Market -> Html
 renderMarket backToPath currentPage searchFilter market = [hsx|
-    <tr>
+    <tr class="d-none d-sm-table-row">
         <td class="align-middle">
-            <a class="text-decoration-none"
+            <a class="text-decoration-none text-body"
                href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}>
                 {market.title}
             </a>
         </td>
         <td class="text-end">
             {renderActions market currentPage searchFilter backToPath}
+        </td>
+    </tr>
+    <tr class="d-table-row d-sm-none">
+        <td class="align-middle">
+            <div class="d-flex flex-column gap-2 py-1">
+                <a class="text-decoration-none text-body"
+                   href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}>
+                    {market.title}
+                </a>
+                <div class="overflow-auto">
+                    {renderActions market currentPage searchFilter backToPath}
+                </div>
+            </div>
         </td>
     </tr>
 |]
@@ -76,27 +89,35 @@ renderTabs activeStatus searchFilter = [hsx|
 renderActions :: (?context :: ControllerContext) => Market -> Int -> Maybe Text -> Text -> Html
 renderActions market currentPage searchFilter backToPath =
     let pageValue = if currentPage > 1 then Just currentPage else Nothing
+        actionClasses :: Text
+        actionClasses = "btn btn-sm text-nowrap"
     in case market.status of
         MarketStatusDraft -> [hsx|
-            <a href={EditMarketAction market.id (Just currentPage) searchFilter} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
-            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
-            </form>
-            <a href={DeleteMarketAction market.id pageValue searchFilter} class="btn btn-sm btn-outline-danger js-delete" data-confirm="Are you sure?">Delete</a>
+            <div class="d-inline-flex flex-nowrap align-items-center gap-2">
+                <a href={EditMarketAction market.id (Just currentPage) searchFilter} class={actionClasses <> " btn-outline-secondary"}>Edit</a>
+                <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter} class="d-inline-flex flex-shrink-0">
+                    <button type="submit" class={actionClasses <> " btn-outline-primary"}>Open</button>
+                </form>
+                <a href={DeleteMarketAction market.id pageValue searchFilter} class={actionClasses <> " btn-outline-danger js-delete"} data-confirm="Are you sure?">Delete</a>
+            </div>
         |]
         MarketStatusOpen -> [hsx|
-            <a href={EditMarketAction market.id (Just currentPage) searchFilter} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
-            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed) pageValue searchFilter} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Close</button>
-            </form>
+            <div class="d-inline-flex flex-nowrap align-items-center gap-2">
+                <a href={EditMarketAction market.id (Just currentPage) searchFilter} class={actionClasses <> " btn-outline-secondary"}>Edit</a>
+                <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed) pageValue searchFilter} class="d-inline-flex flex-shrink-0">
+                    <button type="submit" class={actionClasses <> " btn-outline-primary"}>Close</button>
+                </form>
+            </div>
         |]
         MarketStatusClosed -> [hsx|
-            <a href={EditMarketAction market.id (Just currentPage) searchFilter} class="btn btn-sm btn-outline-secondary me-2">Edit</a>
-            <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter} class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Open</button>
-            </form>
-            <a href={SetResolveAssetAction market.id} class="btn btn-sm btn-outline-success me-2">Resolve</a>
-            <a href={ConfirmRefundMarketAction market.id} class="btn btn-sm btn-outline-danger">Refund</a>
+            <div class="d-inline-flex flex-nowrap align-items-center gap-2">
+                <a href={EditMarketAction market.id (Just currentPage) searchFilter} class={actionClasses <> " btn-outline-secondary"}>Edit</a>
+                <form method="POST" action={ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter} class="d-inline-flex flex-shrink-0">
+                    <button type="submit" class={actionClasses <> " btn-outline-primary"}>Open</button>
+                </form>
+                <a href={SetResolveAssetAction market.id} class={actionClasses <> " btn-outline-success"}>Resolve</a>
+                <a href={ConfirmRefundMarketAction market.id} class={actionClasses <> " btn-outline-danger"}>Refund</a>
+            </div>
         |]
         MarketStatusRefunded -> mempty
         MarketStatusResolved -> mempty

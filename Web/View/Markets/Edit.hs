@@ -64,7 +64,7 @@ renderForm market marketAssets categories returnPage searchFilter editMode =
                 </div>
             </div>
             {renderAssets market marketAssets}
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-3 mt-4">
                 {submitButton}
                 <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
                     Cancel
@@ -84,7 +84,7 @@ renderForm market marketAssets categories returnPage searchFilter editMode =
                     {(selectField #categoryId categories)}
                 </div>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-3 mt-4">
                 {submitButton}
                 <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
                     Cancel
