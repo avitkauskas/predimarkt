@@ -77,7 +77,7 @@ renderForm market marketAssets categories returnPage searchFilter editMode =
             {(textField #title)}
             {(textareaField #description) {
                 fieldLabel = "Rules & Description",
-                additionalAttributes = [("rows", "3")]
+                additionalAttributes = [("rows", "6")]
             }}
             <div class="row">
                 <div class="col-12 col-md-6">
@@ -106,8 +106,11 @@ renderAssets market marketAssets = [hsx|
                 <div class="col form-label text-center" style="max-width: 80px">
                     Prob
                 </div>
-                <div class="col form-label" style="max-width: 120px">
-                    Quantity
+                <div class="col form-label d-flex align-items-center" style="max-width: 160px">
+                    <span>Adjust</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none ms-auto" onclick="resetAssetQuantities()">
+                        Reset
+                    </button>
                 </div>
                 <div class="col" style="max-width: 40px">
                 </div>
@@ -119,6 +122,7 @@ renderAssets market marketAssets = [hsx|
         <div class="mt-2">
             <a href="#"
                class="btn btn-outline-primary btn-sm"
+               style="--bs-btn-padding-x: 1.5rem;"
                hx-get={NewAssetAction}
                hx-target="#assets-list"
                hx-swap="beforeend">

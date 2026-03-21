@@ -495,6 +495,17 @@ window.deleteAssetRow = function (element) {
     }
 };
 
+window.resetAssetQuantities = function () {
+    const assetsList = document.getElementById('assets-list');
+    if (!assetsList) return;
+
+    assetsList.querySelectorAll('.asset-quantity').forEach(input => {
+        input.value = '0';
+    });
+
+    updateAssetPercentages();
+};
+
 function initAssetPercentageCalculations() {
     const assetsList = document.getElementById('assets-list');
     if (!assetsList) return;

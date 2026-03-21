@@ -24,17 +24,18 @@ renderAssetRow asset beta = [hsx|
                 onkeydown="if(event.key === 'Enter') { event.target.form?.elements[event.target.tabIndex]?.focus(); }"
             />
         </div>
-        <div class="col" style="max-width: 80px">
+        <div class="col d-flex justify-content-center" style="max-width: 80px">
             <span class="form-control-plaintext text-center asset-percentage text-muted">--</span>
         </div>
-        <div class="col" style="max-width: 120px">
-             <input
-                type="number"
+        <div class="col d-flex align-items-center" style="max-width: 160px">
+            <input
+                type="range"
                 name="asset_quantity"
                 value={show asset.quantity}
-                class="form-control asset-quantity"
+                class="form-range asset-quantity mb-0"
+                min="-1000"
+                max="1000"
                 step="10"
-                onkeydown="if(event.key === 'Enter') { event.target.form?.elements[event.target.tabIndex]?.focus(); }"
             />
         </div>
         <div class="col d-flex align-items-center justify-content-end" style="max-width: 40px">

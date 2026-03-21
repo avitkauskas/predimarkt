@@ -64,9 +64,11 @@ renderMarket backToPath currentPage searchFilter market = [hsx|
 
 renderTabs :: MarketStatus -> Maybe Text -> Html
 renderTabs activeStatus searchFilter = [hsx|
-    <ul class="nav nav-tabs mb-2 dashboard-tabs">
-        {forEach statuses (renderTab searchFilter)}
-    </ul>
+    <div class="overflow-x-auto scroll-no-bar mb-2">
+        <ul class="nav nav-tabs dashboard-tabs flex-nowrap text-nowrap">
+            {forEach statuses (renderTab searchFilter)}
+        </ul>
+    </div>
 |]
     where
         statuses = [MarketStatusDraft, MarketStatusOpen, MarketStatusClosed, MarketStatusResolved, MarketStatusRefunded]

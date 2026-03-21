@@ -59,8 +59,11 @@ renderForm market assets categories = formFor market [hsx|
                 <div class="col form-label text-center" style="max-width: 80px">
                     Prob
                 </div>
-                <div class="col form-label" style="max-width: 120px">
-                    Quantity
+                <div class="col form-label d-flex align-items-center" style="max-width: 160px">
+                    <span>Adjust</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none ms-auto" onclick="resetAssetQuantities()">
+                        Reset
+                    </button>
                 </div>
                 <div class="col" style="max-width: 40px">
                 </div>
