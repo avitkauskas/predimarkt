@@ -65,9 +65,9 @@ renderPasskeyTable passkeys = [hsx|
         <table class="table table-sm align-middle mb-0">
             <thead>
                 <tr>
-                    <th class="fw-normal text-muted small ps-0">Name</th>
+                    <th class="fw-normal text-muted small ps-4">Name</th>
                     <th class="fw-normal text-muted small">Created</th>
-                    <th class="fw-normal text-muted small">Last used</th>
+                    <th class="fw-normal text-muted small text-nowrap">Last used</th>
                     <th></th>
                 </tr>
             </thead>
@@ -99,8 +99,8 @@ renderPasskeyRow isOnly passkey = [hsx|
                        aria-label="Passkey name" />
             </div>
         </td>
-        <td class="text-muted small">{renderTime passkey.createdAt}</td>
-        <td class="text-muted small">{timeAgo passkey.lastUsedAt}</td>
+        <td class="text-muted small text-nowrap">{renderTime passkey.createdAt}</td>
+        <td class="text-muted small text-nowrap">{timeAgo passkey.lastUsedAt}</td>
         <td class="text-end">
             {renderDeleteButton isOnly passkey}
         </td>
