@@ -581,7 +581,7 @@ function initPasskeyNameEditing() {
         function enterEditMode() {
             input.removeAttribute('readonly')
             input.style.cursor = 'text'
-            row.classList.add('border', 'border-primary', 'rounded', 'px-1')
+            row.style.setProperty('border-color', 'var(--bs-primary)', 'important')
             editBtn.querySelector('i').className = 'bi bi-check-lg'
             editBtn.classList.replace('text-muted', 'text-primary')
             editBtn.title = 'Save'
@@ -592,10 +592,15 @@ function initPasskeyNameEditing() {
         function exitEditMode() {
             input.setAttribute('readonly', '')
             input.style.cursor = 'default'
-            row.classList.remove('border', 'border-primary', 'rounded', 'px-1')
+            row.style.setProperty('border-color', 'transparent', 'important')
             editBtn.querySelector('i').className = 'bi bi-pencil'
             editBtn.classList.replace('text-primary', 'text-muted')
             editBtn.title = 'Rename'
+
+            if (document.activeElement === input) {
+                const caretPosition = input.value.length
+                input.setSelectionRange(caretPosition, caretPosition)
+            }
         }
 
         function save() {
@@ -609,11 +614,17 @@ function initPasskeyNameEditing() {
                 exitEditMode()
                 return
             }
-            // Send as JSON — bypasses CSRF (same as WebAuthn endpoints), no lazy-param issues
+            const body = new URLSearchParams()
+            body.set('name', name)
+
             fetch(input.dataset.updateUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name })
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                },
+                body: body.toString()
             })
                 .then(r => {
                     if (r.ok) {

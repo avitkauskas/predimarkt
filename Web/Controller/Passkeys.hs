@@ -1,40 +1,28 @@
 module Web.Controller.Passkeys where
 
 import qualified Data.Aeson as Aeson
-import Data.Aeson.Types (parseMaybe)
+import qualified Data.Text as Text
 import IHP.ControllerPrelude
-import Network.HTTP.Types (status200)
-import Network.Wai (responseLBS)
 import Web.Controller.Prelude
 
 instance Controller PasskeysController where
     beforeAction = ensureIsUser
 
     action UpdatePasskeyNameAction { passkeyId } = do
-        passkey <- fetch passkeyId
-        putStrLn "DEBUG 1: passkey fetched"
+        let resolvedPasskeyId = if passkeyId == def then param @(Id Passkey) "passkeyId" else passkeyId
+        passkey <- fetch resolvedPasskeyId
         accessDeniedUnless (passkey.userId == currentUserId)
-        putStrLn "DEBUG 2: access check passed"
-        rawBody <- getRequestBody
-        putStrLn $ "DEBUG 3: rawBody = " <> show rawBody
-        let decoded = Aeson.decode rawBody :: Maybe Aeson.Value
-        putStrLn $ "DEBUG 4: decoded = " <> show decoded
-        let newNameMaybe = case decoded of
-                Just (Aeson.Object obj) -> parseMaybe (Aeson..: "name") obj
-                _                       -> Nothing
-        putStrLn $ "DEBUG 5: newNameMaybe = " <> show (newNameMaybe :: Maybe Text)
-        case newNameMaybe of
-            Just newName -> do
-                putStrLn $ "DEBUG 6: updating name to " <> show newName
-                updateRecordDiscardResult (passkey |> set #name newName)
-                putStrLn "DEBUG 7: update done"
-            Nothing -> putStrLn "DEBUG 6b: skipping update"
-        putStrLn "DEBUG 8: about to respondAndExit"
-        respondAndExit $ responseLBS status200
-            [("Content-Type", "application/json")] (Aeson.encode (Aeson.object ["ok" Aeson..= True]))
+        let newName = Text.strip (param @Text "name")
+
+        passkey
+            |> set #name newName
+            |> updateRecord
+
+        renderJson (Aeson.object ["ok" Aeson..= True, "name" Aeson..= newName])
 
     action DeletePasskeyAction { passkeyId } = do
-        passkey <- fetch passkeyId
+        let resolvedPasskeyId = if passkeyId == def then param @(Id Passkey) "passkeyId" else passkeyId
+        passkey <- fetch resolvedPasskeyId
         accessDeniedUnless (passkey.userId == currentUserId)
         passkeyCount <- fetchPasskeyCount currentUserId
         if passkeyCount <= 1
@@ -45,4 +33,3 @@ instance Controller PasskeysController where
                 deleteRecord passkey
                 setSuccessMessage "Passkey removed."
                 redirectTo EditUserAction { userId = currentUserId }
-

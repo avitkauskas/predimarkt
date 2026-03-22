@@ -82,7 +82,8 @@ renderPasskeyRow :: Bool -> Passkey -> Html
 renderPasskeyRow isOnly passkey = [hsx|
     <tr>
         <td class="ps-0" style="min-width: 160px;">
-            <div class="d-flex align-items-center passkey-name-row">
+            <div class="d-flex align-items-center passkey-name-row border rounded px-1"
+                 style="border-color: transparent !important;">
                 <button type="button"
                         class="passkey-edit-btn btn btn-link p-0 me-1 text-muted"
                         style="font-size: 0.75rem; line-height: 1;"
