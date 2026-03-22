@@ -35,7 +35,8 @@
     document.addEventListener('htmx:after:swap', syncUI)
     document.addEventListener('turbolinks:before-render', (event) => {
         const theme = document.documentElement.getAttribute('data-bs-theme') || getPreferredTheme()
-        const newBody = event.data.newBody
+        const newBody = event.data?.newBody || event.detail?.newBody
+        if (!newBody) return
         const icons = newBody.querySelectorAll('[data-theme-icon]')
         icons.forEach(el => {
             el.textContent = theme === 'dark' ? '☀︎' : '☾'
