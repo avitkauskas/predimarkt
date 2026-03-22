@@ -604,6 +604,7 @@ function initPasskeyNameEditing() {
         }
 
         function save() {
+            if (row.dataset.saving === 'true') return
             const name = input.value.trim()
             if (!name) {
                 input.value = input.dataset.savedValue
@@ -614,6 +615,7 @@ function initPasskeyNameEditing() {
                 exitEditMode()
                 return
             }
+            row.dataset.saving = 'true'
             const body = new URLSearchParams()
             body.set('name', name)
 
@@ -635,7 +637,10 @@ function initPasskeyNameEditing() {
                     }
                 })
                 .catch(() => { input.value = input.dataset.savedValue })
-                .finally(() => exitEditMode())
+                .finally(() => {
+                    row.dataset.saving = 'false'
+                    exitEditMode()
+                })
         }
 
         // Pencil click: enter edit mode. Check-mark click (while editing): save.

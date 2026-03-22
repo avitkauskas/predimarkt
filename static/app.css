@@ -53,8 +53,12 @@
 }
 
 /* Market card title: always 2 lines tall, wraps, scrolls vertically without a scrollbar */
+.market-card-title {
+    line-height: 1.32em;
+}
+
 .market-title-container {
-    height: 2.5em; /* 2 lines tall */
+    height: 2.64em; /* 2 lines at the market-card-title line-height */
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
