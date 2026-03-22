@@ -48,6 +48,11 @@ data UsersController
     | DeleteUserAction {userId :: !(Id User)}
     deriving (Eq, Show, Data)
 
+data PasskeysController
+    = UpdatePasskeyNameAction {passkeyId :: !(Id Passkey)}
+    | DeletePasskeyAction {passkeyId :: !(Id Passkey)}
+    deriving (Eq, Show, Data)
+
 data CategoriesController
     = CategoriesAction
     | NewCategoryAction

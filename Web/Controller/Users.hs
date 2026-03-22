@@ -9,7 +9,7 @@ instance Controller UsersController where
         accessDeniedUnless (userId == currentUserId)
 
         user <- fetch userId
-        passkeyCount <- fetchPasskeyCount user.id
+        passkeys <- fetchUserPasskeys user.id
         render EditView{..}
 
     action UpdateUserAction{userId} = do
@@ -17,7 +17,7 @@ instance Controller UsersController where
         accessDeniedUnless (userId == currentUserId)
 
         user <- fetch userId
-        passkeyCount <- fetchPasskeyCount user.id
+        passkeys <- fetchUserPasskeys user.id
         user
             |> fill @'["nickname"]
             |> validateIsUniqueCaseInsensitive #nickname
@@ -38,8 +38,9 @@ instance Controller UsersController where
         setSuccessMessage "Your account has been deleted"
         redirectToPath "/"
 
-fetchPasskeyCount :: (?modelContext :: ModelContext) => Id User -> IO Int
-fetchPasskeyCount userId =
+fetchUserPasskeys :: (?modelContext :: ModelContext) => Id User -> IO [Passkey]
+fetchUserPasskeys userId =
     query @Passkey
         |> filterWhere (#userId, userId)
-        |> fetchCount
+        |> orderBy #createdAt
+        |> fetch

@@ -245,9 +245,23 @@ instance View HowItWorksView where
                 <li>Write a clear title</li>
                 <li>Provide rules and description, including definitions and resolution criteria</li>
                 <li>Optionally include references to sources</li>
+                <li>Set the intended market closing date and time (in your local time)</li>
                 <li>Define the possible outcomes (assets)</li>
                 <li>Assign short, unique symbols for each outcome (used in charts)</li>
                 <li>Set initial probabilities to reflect your best estimate at the time</li>
+            </ul>
+
+            <p>
+                The closing time determines when trading will stop. Markets are automatically closed at the
+                scheduled time, but the creator may close a market earlier if necessary (for example, if the
+                outcome becomes known sooner than expected).
+                Once closed, a market can be:
+            </p>
+
+            <ul>
+                <li>resolved (when the outcome is known)</li>
+                <li>refunded (if the market cannot be fairly resolved)</li>
+                <li>re-opened with a new closing date and time</li>
             </ul>
 
             <p>
@@ -269,27 +283,53 @@ instance View HowItWorksView where
                 <li>Monitor the event and resolve the market promptly once the outcome is known</li>
             </ul>
 
+            <h5>Market Resolution</h5>
+
             <p>
-                Resolution is simple but critical:
+                A market should be resolved when the outcome can be clearly
+                determined based on the rules and description provided at creation.
             </p>
 
             <ul>
-                <li>You select the winning outcome</li>
-                <li>All payouts are handled automatically</li>
+                <li>The selected outcome must match the predefined resolution criteria</li>
+                <li>Resolution should be based on reliable, publicly verifiable information whenever possible</li>
+                <li>The creator should act in good faith and follow the stated rules</li>
             </ul>
 
             <p>
-                This action is final and cannot be reversed, so it must be done carefully. Always
-                verify the result before resolving.
+                Once resolved, the market is final and cannot be changed.
             </p>
 
-            <h5>Refunds</h5>
+            <h5>Market Refunds</h5>
 
             <p>
-                If a market cannot be resolved fairly — due to ambiguity, missing information, or
-                unforeseen circumstances — it should be refunded. Refunding returns all invested
-                funds to participants and is handled automatically by the system. Refunds should be
-                used only as a last resort, when proper resolution is not possible.
+                A market should be refunded if it cannot be resolved fairly or unambiguously.
+            </p>
+
+            <p>
+                This may happen, for example, if:
+            </p>
+
+            <ul>
+                <li>The question was unclear or poorly defined</li>
+                <li>The resolution criteria were missing, incomplete, or contradictory</li>
+                <li>The outcome cannot be determined with reasonable certainty</li>
+                <li>The underlying event did not occur or became irrelevant</li>
+            </ul>
+
+            <p>
+                When a market is refunded, all participants receive their funds back as if no
+                trades had taken place.
+            </p>
+
+            <h5>Re-opening a market</h5>
+
+            <p>
+                If a market was closed too early or needs more time, it can be re-opened
+                by setting a new closing date. Trading will resume, and the market can
+                later be closed and resolved as usual.
+                Creators are expected to use this option responsibly and avoid changing
+                timelines in a way that could disadvantage participants.
             </p>
 
             <h5>Leaderboard and goals</h5>

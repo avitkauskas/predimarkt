@@ -3,6 +3,12 @@ module Application.Helper.Controller where
 import Generated.Types
 import IHP.ControllerPrelude
 
+fetchPasskeyCount :: (?modelContext :: ModelContext) => Id User -> IO Int
+fetchPasskeyCount userId =
+    query @Passkey
+        |> filterWhere (#userId, userId)
+        |> fetchCount
+
 constructUniqueSlug :: (?modelContext :: ModelContext) => Id Category -> Text -> Maybe (Id Market) -> IO Text
 constructUniqueSlug categoryId baseSlug maybeExcludeId = loop 0
     where

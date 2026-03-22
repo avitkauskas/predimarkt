@@ -9,6 +9,7 @@ $(document).on('ready turbolinks:load', function () {
 
     // Localize any times on the page
     localizeTimes()
+    initPasskeyNameEditing()
 
     // Initialize asset percentage calculations for market forms
     initAssetPercentageCalculations()
@@ -565,6 +566,95 @@ document.addEventListener('htmx:after:settle', function (e) {
         setTimeout(updateAssetPercentages, 50)
     }
 })
+
+function initPasskeyNameEditing() {
+    document.querySelectorAll('.passkey-name-row').forEach(row => {
+        if (row.dataset.nameEditInit) return
+        row.dataset.nameEditInit = 'true'
+
+        const input = row.querySelector('.passkey-name-input')
+        const editBtn = row.querySelector('.passkey-edit-btn')
+        if (!input || !editBtn) return
+
+        input.dataset.savedValue = input.value
+
+        function enterEditMode() {
+            input.removeAttribute('readonly')
+            input.style.cursor = 'text'
+            row.classList.add('border', 'border-primary', 'rounded', 'px-1')
+            editBtn.querySelector('i').className = 'bi bi-check-lg'
+            editBtn.classList.replace('text-muted', 'text-primary')
+            editBtn.title = 'Save'
+            input.focus()
+            input.select()
+        }
+
+        function exitEditMode() {
+            input.setAttribute('readonly', '')
+            input.style.cursor = 'default'
+            row.classList.remove('border', 'border-primary', 'rounded', 'px-1')
+            editBtn.querySelector('i').className = 'bi bi-pencil'
+            editBtn.classList.replace('text-primary', 'text-muted')
+            editBtn.title = 'Rename'
+        }
+
+        function save() {
+            const name = input.value.trim()
+            if (!name) {
+                input.value = input.dataset.savedValue
+                exitEditMode()
+                return
+            }
+            if (name === input.dataset.savedValue) {
+                exitEditMode()
+                return
+            }
+            // Send as JSON — bypasses CSRF (same as WebAuthn endpoints), no lazy-param issues
+            fetch(input.dataset.updateUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            })
+                .then(r => {
+                    if (r.ok) {
+                        input.dataset.savedValue = name
+                        input.value = name
+                    } else {
+                        input.value = input.dataset.savedValue
+                    }
+                })
+                .catch(() => { input.value = input.dataset.savedValue })
+                .finally(() => exitEditMode())
+        }
+
+        // Pencil click: enter edit mode. Check-mark click (while editing): save.
+        editBtn.addEventListener('click', () => {
+            if (input.hasAttribute('readonly')) {
+                enterEditMode()
+            } else {
+                save()
+            }
+        })
+
+        // Blur: save unless focus moved to the edit button itself (it will handle save via click).
+        input.addEventListener('blur', e => {
+            if (input.hasAttribute('readonly')) return
+            if (e.relatedTarget === editBtn) return
+            save()
+        })
+
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                save()
+            } else if (e.key === 'Escape') {
+                input.value = input.dataset.savedValue
+                exitEditMode()
+                input.blur()
+            }
+        })
+    })
+}
 
 function initPasskeyAuth() {
     document.querySelectorAll('.js-passkey-login').forEach(container => {

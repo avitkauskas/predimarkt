@@ -13,6 +13,7 @@ import Web.Controller.Auth
 import Web.Controller.Dashboard
 import Web.Controller.Leaderboard
 import Web.Controller.Markets
+import Web.Controller.Passkeys
 import Web.Controller.Static
 import Web.Controller.Trades
 import Web.Controller.Users
@@ -34,6 +35,7 @@ instance FrontController WebApplication where
         , parseRoute @MarketsController
         , parseRoute @TradesController
         , parseRoute @UsersController
+        , parseRoute @PasskeysController
         ]
 
 instance InitControllerContext WebApplication where

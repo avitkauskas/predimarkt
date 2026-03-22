@@ -15,6 +15,18 @@ import Web.Types
 -- Generator Marker
 instance AutoRoute SessionsController
 instance AutoRoute UsersController
+
+instance HasPath PasskeysController where
+    pathTo UpdatePasskeyNameAction { passkeyId } =
+        "/UpdatePasskeyName?passkeyId=" <> inputValue passkeyId
+    pathTo DeletePasskeyAction { passkeyId } =
+        "/DeletePasskey?passkeyId=" <> inputValue passkeyId
+
+instance CanRoute PasskeysController where
+    parseRoute' =
+        (string "/UpdatePasskeyName" >> onlyAllowMethods [POST] >> pure (UpdatePasskeyNameAction def))
+        <|> (string "/DeletePasskey" >> onlyAllowMethods [POST] >> pure (DeletePasskeyAction def))
+
 instance AutoRoute CategoriesController
 instance AutoRoute AssetsController
 instance AutoRoute TradesController

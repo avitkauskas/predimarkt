@@ -21,7 +21,10 @@ CREATE TABLE passkeys (
     user_id UUID NOT NULL,
     credential_id BYTEA NOT NULL UNIQUE,
     public_key BYTEA NOT NULL,
-    sign_count BIGINT NOT NULL
+    sign_count BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    name TEXT DEFAULT 'not named' NOT NULL
 );
 CREATE INDEX passkeys_user_id_index ON passkeys (user_id);
 CREATE TABLE admins (
