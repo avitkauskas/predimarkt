@@ -10,7 +10,6 @@ import Application.Domain.Types
 import Application.Market.State (parseMarketState)
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import Data.Time (Day, addDays, utctDay)
 import Data.Time.Clock (UTCTime (..), getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -43,41 +42,40 @@ fetchChartData market assets beta = do
     now <- getCurrentTime
     let today = utctDay now
     let maxEndDay = min (utctDay market.closedAt) today
+    let startDay = utctDay (fromMaybe market.createdAt market.openedAt)
 
     transactions <- query @Transaction
         |> filterWhere (#marketId, get #id market)
         |> orderByAsc #createdAt
         |> fetch
 
-    pure $ buildChartData maxEndDay assets beta transactions
+    pure $ buildChartData startDay maxEndDay assets beta transactions
 
 buildChartData
     :: Day
+    -> Day
     -> [Asset]
     -> Integer
     -> [Transaction]
     -> [AssetChartData]
-buildChartData maxEndDay assets beta transactions =
+buildChartData startDay maxEndDay assets beta transactions =
     let currentQtyMap = M.fromList [(get #id a, Quantity (get #quantity a)) | a <- assets]
         currentPrices = allAssetPrices (Beta beta) currentQtyMap
         topAssets = take 6 $ sortBy (\a1 a2 ->
             let p1 = fromMaybe 0.0 (M.lookup (get #id a1) currentPrices)
                 p2 = fromMaybe 0.0 (M.lookup (get #id a2) currentPrices)
              in compare p2 p1) assets
-        topAssetIds = S.fromList (map (get #id) topAssets)
-        validTransactions = filter (\t -> get #assetId t `S.member` topAssetIds) transactions
-    in if null validTransactions
-        then map (buildFlatAssetChart assets [] currentPrices) topAssets
+        dayRange = generateDayRange startDay maxEndDay
+    in if null transactions
+        then map (buildFlatAssetChart assets dayRange currentPrices) topAssets
         else
-            let txnDays = map (utctDay . get #createdAt) validTransactions
-                startDay = minimum txnDays
-                lastTxnDay = maximum txnDays
-                endDay = min maxEndDay lastTxnDay
-                filteredTxns = filter (\t -> utctDay (get #createdAt t) <= endDay) validTransactions
+            let txnDays = map (utctDay . get #createdAt) transactions
+                chartStartDay = min startDay (minimum txnDays)
+                filteredTxns = filter (\t -> utctDay (get #createdAt t) <= maxEndDay) transactions
                 lastTxnPerDay = getLastTxnPerDay filteredTxns
-                dayRange = generateDayRange startDay endDay
+                chartDays = generateDayRange chartStartDay maxEndDay
                 pricesPerDay = computePricesFromLastTxn beta lastTxnPerDay
-                filledData = fillMissingDays dayRange pricesPerDay currentPrices
+                filledData = fillMissingDays chartDays pricesPerDay currentPrices
             in map (buildAssetChartData assets filledData) topAssets
   where
     getLastTxnPerDay :: [Transaction] -> M.Map Day Transaction
@@ -88,7 +86,9 @@ buildChartData maxEndDay assets beta transactions =
         in M.fromList [(utctDay (get #createdAt t), t) | t <- lastPerDay]
 
     generateDayRange :: Day -> Day -> [Day]
-    generateDayRange start end = takeWhile (<= end) (iterate (addDays 1) start)
+    generateDayRange start end
+        | start > end = [end]
+        | otherwise = takeWhile (<= end) (iterate (addDays 1) start)
 
     computePricesFromLastTxn
         :: Integer
