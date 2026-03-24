@@ -252,6 +252,17 @@
     color: var(--bs-secondary-color);
 }
 
+.tooltip {
+    --bs-tooltip-max-width: min(400px, 90vw);
+}
+
+.tooltip .tooltip-inner {
+    max-width: min(400px, 90vw);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Remove focus outline from trade form inputs */
 #buy-form input[type="number"]:focus,
 #sell-form input[type="number"]:focus,

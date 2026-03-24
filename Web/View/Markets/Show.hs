@@ -113,7 +113,7 @@ instance View ShowView where
                         <span>{marketStatusLabel market.status}</span>
                     |]
                     else [hsx|
-                        <span data-bs-toggle="tooltip" data-bs-title="Market closing time" style="font-size: 0.85rem;">
+                        <span data-bs-toggle="tooltip" data-bs-title="market closing time" style="font-size: 0.85rem;">
                             <i class="bi bi-alarm"></i>
                             {renderTime market.closedAt}
                         </span>
@@ -125,13 +125,13 @@ instance View ShowView where
             renderOwnerAndDates :: Html
             renderOwnerAndDates = [hsx|
                 <div class="small text-muted my-3">
-                    <span class="text-nowrap me-4 fs-6" data-bs-toggle="tooltip" data-bs-title="Market creator">
+                    <span class="text-nowrap me-4 fs-6" data-bs-toggle="tooltip" data-bs-title="market creator">
                         <i class="bi bi-person-gear fs-6"></i> {fromMaybe "admin" $ fmap (.nickname) owner}
                     </span>
-                    <span class="text-nowrap me-4" data-bs-toggle="tooltip" data-bs-title="Market opened at">
+                    <span class="text-nowrap me-4" data-bs-toggle="tooltip" data-bs-title="market opened at">
                         <i class="bi bi-clock"></i> {renderTime $ fromMaybe market.createdAt market.openedAt}
                     </span>
-                    <span class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="Market closing time">
+                    <span class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="market closing time">
                         <i class="bi bi-alarm"></i> {renderTime market.closedAt}
                     </span>
                 </div>
@@ -453,7 +453,7 @@ instance View ShowView where
                                 if authorId == get #id currentUser
                                     then [hsx|
                                         <form method="POST" action={pathTo (deleteChatMessageAction msgId)} class="d-inline">
-                                            <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="tooltip" data-bs-title="Delete">
+                                            <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="tooltip" data-bs-title="delete">
                                                 <i class="bi bi-x-lg text-danger"></i>
                                             </button>
                                         </form>
