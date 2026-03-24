@@ -218,7 +218,7 @@ instance Controller DashboardController where
         let marketWithStatus = market |> set #status st
 
         let marketWithTimestamps = case st of
-                MarketStatusOpen -> marketWithStatus |> set #openedAt (Just now)
+                MarketStatusOpen -> marketWithStatus |> set #openedAt (market.openedAt <|> Just now)
                 MarketStatusResolved -> marketWithStatus |> set #resolvedAt (Just now)
                 MarketStatusRefunded -> marketWithStatus |> set #refundedAt (Just now)
                 MarketStatusClosed -> marketWithStatus |> set #closedAt now
@@ -275,7 +275,7 @@ instance Controller DashboardController where
                         market
                             |> set #closedAt closedAtVal
                             |> set #status MarketStatusOpen
-                            |> set #openedAt (Just now)
+                            |> set #openedAt (market.openedAt <|> Just now)
                             |> updateRecord
 
                         existingJobs <- query @CloseMarketJob
