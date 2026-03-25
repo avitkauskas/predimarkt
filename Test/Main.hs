@@ -519,7 +519,7 @@ main = hspec do
                         (M.fromList [(fromJust expectedAssetId, NewDomain.Quantity 9)])
 
         describe "Chart data helpers" do
-            it "returns only the top 6 assets with empty history when there are no transactions" do
+            it "returns only the top 6 assets with a flat series when there are no transactions" do
                 let assets =
                         [ mkUuidAsset "A1" "A1" 100 "11111111-1111-1111-1111-111111111111"
                         , mkUuidAsset "A2" "A2" 90 "22222222-2222-2222-2222-222222222222"
@@ -529,9 +529,14 @@ main = hspec do
                         , mkUuidAsset "A6" "A6" 50 "66666666-6666-6666-6666-666666666666"
                         , mkUuidAsset "A7" "A7" 40 "77777777-7777-7777-7777-777777777777"
                         ]
-                    builtChartData = buildChartData (fromGregorian 2026 1 10) assets 300 []
+                    builtChartData = buildChartData
+                        (fromGregorian 2026 1 10)
+                        (fromGregorian 2026 1 10)
+                        assets
+                        300
+                        []
                 fmap chartAssetName builtChartData `shouldBe` ["A1", "A2", "A3", "A4", "A5", "A6"]
-                fmap chartData builtChartData `shouldBe` replicate 6 []
+                fmap (length . chartData) builtChartData `shouldBe` replicate 6 1
 
             it "fills missing days from the last known prices and clamps to the end day" do
                 let assetA = mkUuidAsset "Alpha" "ALP" 100 "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
@@ -555,7 +560,12 @@ main = hspec do
                             (UTCTime (fromGregorian 2026 1 4) 0)
                             (Aeson.toJSON (buildMarketState stateDay4))
                         ]
-                    built = buildChartData (fromGregorian 2026 1 3) assets 300 txns
+                    built = buildChartData
+                        (fromGregorian 2026 1 3)
+                        (fromGregorian 2026 1 3)
+                        assets
+                        300
+                        txns
                     alphaSeries =
                         chartData (fromJust (head (filter (\entry -> chartAssetName entry == "Alpha") built)))
                     alphaPrices = fmap priceValue alphaSeries
@@ -578,7 +588,12 @@ main = hspec do
                             (UTCTime (fromGregorian 2026 1 1) 0)
                             (Aeson.toJSON ["invalid" :: Text])
                         ]
-                    built = buildChartData (fromGregorian 2026 1 1) assets 300 txns
+                    built = buildChartData
+                        (fromGregorian 2026 1 1)
+                        (fromGregorian 2026 1 1)
+                        assets
+                        300
+                        txns
                     alphaSeries =
                         chartData (fromJust (head (filter (\entry -> chartAssetName entry == "Alpha") built)))
                 fmap priceValue alphaSeries
