@@ -65,19 +65,24 @@ instance Controller MarketsController where
                     Just marketIds -> queryBuilder |> filterWhereIn (#id, marketIds)
                     Nothing -> queryBuilder
 
+        let activeMarketsFilter queryBuilder =
+                queryBuilder
+                    |> filterWhereNot (#status, MarketStatusDraft)
+                    |> queryOr
+                        (filterWhere (#status, MarketStatusOpen))
+                        (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
+
         let applyStatusFilter queryBuilder =
                 case statusFilter of
-                    MarketIndexStatusOpenAndRecentOther ->
-                        queryBuilder
-                            |> filterWhereNot (#status, MarketStatusDraft)
-                            |> queryOr
-                                (filterWhere (#status, MarketStatusOpen))
-                                (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
-                    MarketIndexStatusAllClosed ->
+                    MarketIndexStatusPopular ->
+                        activeMarketsFilter queryBuilder
+                    MarketIndexStatusNewest ->
+                        activeMarketsFilter queryBuilder
+                    MarketIndexStatusClosed ->
                         queryBuilder |> filterWhere (#status, MarketStatusClosed)
-                    MarketIndexStatusAllResolved ->
+                    MarketIndexStatusResolved ->
                         queryBuilder |> filterWhere (#status, MarketStatusResolved)
-                    MarketIndexStatusAllRefunded ->
+                    MarketIndexStatusRefunded ->
                         queryBuilder |> filterWhere (#status, MarketStatusRefunded)
 
         (totalMarkets, markets') <- case matchingMarketIds of
@@ -90,8 +95,18 @@ instance Controller MarketsController where
                             |> applySearchFilter
 
                 totalMarkets <- filteredMarketsQuery |> fetchCount
+                let applyStatusOrdering queryBuilder =
+                        case statusFilter of
+                            MarketIndexStatusPopular ->
+                                queryBuilder
+                                    |> orderByDesc #trades
+                                    |> orderByDesc #openedAt
+                            _ ->
+                                queryBuilder
+                                    |> orderByDesc #openedAt
+
                 markets <- filteredMarketsQuery
-                    |> orderByDesc #openedAt
+                    |> applyStatusOrdering
                     |> limit visibleMarkets
                     |> fetch
                     >>= collectionFetchRelated #categoryId

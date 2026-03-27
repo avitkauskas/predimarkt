@@ -17,42 +17,47 @@ data IndexView = IndexView
     }
 
 data MarketIndexStatusFilter
-    = MarketIndexStatusOpenAndRecentOther
-    | MarketIndexStatusAllClosed
-    | MarketIndexStatusAllResolved
-    | MarketIndexStatusAllRefunded
+    = MarketIndexStatusPopular
+    | MarketIndexStatusNewest
+    | MarketIndexStatusClosed
+    | MarketIndexStatusResolved
+    | MarketIndexStatusRefunded
     deriving (Eq, Show)
 
 parseMarketIndexStatusFilter :: Maybe Text -> MarketIndexStatusFilter
 parseMarketIndexStatusFilter = \case
-    Just "closed" -> MarketIndexStatusAllClosed
-    Just "resolved" -> MarketIndexStatusAllResolved
-    Just "refunded" -> MarketIndexStatusAllRefunded
-    _ -> MarketIndexStatusOpenAndRecentOther
+    Just "newest" -> MarketIndexStatusNewest
+    Just "closed" -> MarketIndexStatusClosed
+    Just "resolved" -> MarketIndexStatusResolved
+    Just "refunded" -> MarketIndexStatusRefunded
+    _ -> MarketIndexStatusPopular
 
 marketIndexStatusFilterParamValue :: MarketIndexStatusFilter -> Maybe Text
 marketIndexStatusFilterParamValue = \case
-    MarketIndexStatusOpenAndRecentOther -> Nothing
-    MarketIndexStatusAllClosed -> Just "closed"
-    MarketIndexStatusAllResolved -> Just "resolved"
-    MarketIndexStatusAllRefunded -> Just "refunded"
+    MarketIndexStatusPopular -> Nothing
+    MarketIndexStatusNewest -> Just "newest"
+    MarketIndexStatusClosed -> Just "closed"
+    MarketIndexStatusResolved -> Just "resolved"
+    MarketIndexStatusRefunded -> Just "refunded"
 
 marketIndexStatusFilterFormValue :: MarketIndexStatusFilter -> Text
 marketIndexStatusFilterFormValue = fromMaybe "" . marketIndexStatusFilterParamValue
 
 marketIndexStatusFilterLabel :: MarketIndexStatusFilter -> Text
 marketIndexStatusFilterLabel = \case
-    MarketIndexStatusOpenAndRecentOther -> "Recent"
-    MarketIndexStatusAllClosed -> "Closed"
-    MarketIndexStatusAllResolved -> "Resolved"
-    MarketIndexStatusAllRefunded -> "Refunded"
+    MarketIndexStatusPopular -> "Popular"
+    MarketIndexStatusNewest -> "Newest"
+    MarketIndexStatusClosed -> "Closed"
+    MarketIndexStatusResolved -> "Resolved"
+    MarketIndexStatusRefunded -> "Refunded"
 
 marketIndexStatusFilterOptions :: [MarketIndexStatusFilter]
 marketIndexStatusFilterOptions =
-    [ MarketIndexStatusOpenAndRecentOther
-    , MarketIndexStatusAllClosed
-    , MarketIndexStatusAllResolved
-    , MarketIndexStatusAllRefunded
+    [ MarketIndexStatusPopular
+    , MarketIndexStatusNewest
+    , MarketIndexStatusClosed
+    , MarketIndexStatusResolved
+    , MarketIndexStatusRefunded
     ]
 
 instance View IndexView where
