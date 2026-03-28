@@ -6,7 +6,7 @@ import Web.View.Prelude
 
 renderPortfolioSummary :: Integer -> Integer -> Integer -> Html
 renderPortfolioSummary cashValue positionsValue totalValue = [hsx|
-    <div class="text-end me-1 overflow-x-auto scroll-no-bar">
+    <div class="text-end me-1 ps-1 overflow-x-auto scroll-no-bar" style="min-width: 0;">
         <div class="d-inline-flex gap-2">
             {renderSummaryItem "Cash" "C" cashValue}
             {renderSummaryItem "Positions" "P" positionsValue}

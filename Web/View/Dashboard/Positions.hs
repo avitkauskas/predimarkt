@@ -21,7 +21,7 @@ data PositionsView = PositionsView
 instance View PositionsView where
     html PositionsView { .. } = dashboardLayout [hsx|
         <div>
-            <div class="d-flex justify-content-between align-items-baseline mb-1">
+            <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
                 <h5>Positions</h5>
                 {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>

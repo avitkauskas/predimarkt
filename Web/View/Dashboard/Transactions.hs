@@ -30,7 +30,7 @@ data TransactionsView = TransactionsView
 instance View TransactionsView where
     html TransactionsView { .. } = dashboardLayout [hsx|
         <div>
-            <div class="d-flex justify-content-between align-items-baseline mb-1">
+            <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
                 <h5>Transactions</h5>
                 {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>

@@ -653,25 +653,27 @@ main = hspec do
                             <> map PageNumber [13 .. 20])
 
         describe "Market index status filters" do
-            it "defaults to open and recent other for missing or unknown params" do
+            it "defaults to popular for missing or unknown params" do
                 parseMarketIndexStatusFilter Nothing
-                    `shouldBe` MarketIndexStatusOpenAndRecentOther
+                    `shouldBe` MarketIndexStatusPopular
                 parseMarketIndexStatusFilter (Just "unexpected")
-                    `shouldBe` MarketIndexStatusOpenAndRecentOther
+                    `shouldBe` MarketIndexStatusPopular
 
             it "parses all explicit status filter options" do
+                parseMarketIndexStatusFilter (Just "newest")
+                    `shouldBe` MarketIndexStatusNewest
                 parseMarketIndexStatusFilter (Just "closed")
-                    `shouldBe` MarketIndexStatusAllClosed
+                    `shouldBe` MarketIndexStatusClosed
                 parseMarketIndexStatusFilter (Just "resolved")
-                    `shouldBe` MarketIndexStatusAllResolved
+                    `shouldBe` MarketIndexStatusResolved
                 parseMarketIndexStatusFilter (Just "refunded")
-                    `shouldBe` MarketIndexStatusAllRefunded
+                    `shouldBe` MarketIndexStatusRefunded
 
             it "builds market index paths with status, category, search, and page" do
                 let categoryId = unsafeCoerce ("test-category" :: Text) :: Id Category
                     path = buildMarketsPath
                         (Just categoryId)
-                        MarketIndexStatusAllResolved
+                        MarketIndexStatusResolved
                         (Just "inflation")
                         (Just 3)
                 path `shouldSatisfy` Text.isPrefixOf "/Markets?category="
@@ -681,7 +683,7 @@ main = hspec do
             it "omits the status param for the default filter" do
                 buildMarketsPath
                     Nothing
-                    MarketIndexStatusOpenAndRecentOther
+                    MarketIndexStatusPopular
                     Nothing
                     Nothing
                     `shouldBe` "/Markets"
