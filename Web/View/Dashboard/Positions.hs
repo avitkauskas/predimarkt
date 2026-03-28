@@ -5,6 +5,7 @@ module Web.View.Dashboard.Positions where
 
 import Application.Domain.Position (EnrichedPosition (..))
 import Application.Helper.QueryParams (normalizePageParam)
+import Web.View.Dashboard.PortfolioSummary
 import Web.View.Prelude
 
 data PositionsView = PositionsView
@@ -12,17 +13,17 @@ data PositionsView = PositionsView
     , currentPage        :: Int
     , totalPages         :: Int
     , wallet             :: Wallet
+    , positionsValue     :: Integer
+    , totalValue         :: Integer
     , searchFilter       :: Maybe Text
     }
 
 instance View PositionsView where
     html PositionsView { .. } = dashboardLayout [hsx|
         <div>
-            <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
                 <h5>Positions</h5>
-                <div class="text-end me-1">
-                    Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
-                </div>
+                {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>
             <div class="mb-3">
                 {renderSearchForm searchFilter}

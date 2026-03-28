@@ -16,6 +16,8 @@ data EnrichedPosition = EnrichedPosition
     , epAssetPrice   :: Maybe Double
     }
 
+type MarketPositionValueContext = M.Map (Id Market) (Beta, M.Map (Id Asset) Quantity)
+
 positionSide :: Integer -> Maybe Side
 positionSide qty
     | qty > 0   = Just Long
@@ -26,6 +28,27 @@ positionValue :: Id Asset -> Quantity -> Beta -> Map (Id Asset) Quantity -> Mone
 positionValue assetId (Quantity qty) beta qtyMap
     | qty == 0  = Money 0
     | otherwise = tradeValue assetId (Quantity (-qty)) beta qtyMap
+
+calculatePositionsValue
+    :: [Include' ["marketId", "assetId"] Position]
+    -> MarketPositionValueContext
+    -> Integer
+calculatePositionsValue positions marketContext =
+    sum $
+        map
+            ( \position ->
+                let asset = get #assetId position
+                    assetId = get #id asset
+                    market = get #marketId position
+                    marketId = get #id market
+                    qty = get #quantity position
+                 in case M.lookup marketId marketContext of
+                        Just (beta, assetMap) ->
+                            let Money value = positionValue assetId (Quantity qty) beta assetMap
+                             in value
+                        Nothing -> 0
+            )
+            positions
 
 currentPnL :: Money -> Money -> Money -> Money
 currentPnL currentValue invested received = currentValue - (invested - received)

@@ -108,28 +108,8 @@ instance Controller LeaderboardController where
                         flip map users $ \user ->
                             let cashAmount = fromMaybe 0 (M.lookup user.id walletAmountMap)
                                 userPos = fromMaybe [] (M.lookup user.id userPositions)
-                                positionsValue =
-                                    sum $
-                                        map
-                                            ( \position ->
-                                                let asset = get #assetId position
-                                                    assetId = get #id asset
-                                                    market = get #marketId position
-                                                    mId = get #id market
-                                                    qty = get #quantity position
-                                                 in case M.lookup mId marketAssetMap of
-                                                        Just (beta, assetMap) ->
-                                                            let Money v =
-                                                                    positionValue
-                                                                        assetId
-                                                                        (Quantity qty)
-                                                                        beta
-                                                                        assetMap
-                                                             in v
-                                                        Nothing -> 0
-                                            )
-                                            userPos
-                                totalValue = cashAmount + positionsValue
+                                positionsMarketValue = calculatePositionsValue userPos marketAssetMap
+                                totalValue = cashAmount + positionsMarketValue
                                 yearsActive = yearsSinceRegistration now user.createdAt
                                 returnValue = portfolioReturn totalValue
                                 annualReturnValue = annualRateOfReturn now user.createdAt totalValue
@@ -138,7 +118,7 @@ instance Controller LeaderboardController where
                              in UserSummary
                                 { nickname = user.nickname
                                 , cash = cashAmount
-                                , positionsValue = positionsValue
+                                , positionsValue = positionsMarketValue
                                 , totalValue = totalValue
                                 , yearsActive = yearsActive
                                 , totalReturn = returnValue

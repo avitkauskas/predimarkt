@@ -5,11 +5,12 @@ module Web.View.Dashboard.Transactions where
 
 import Admin.Controller.Prelude
 import Application.Domain.Types (Quantity (Quantity))
-import Application.Helper.Formatting (formatMoney, formatPricePercent)
+import Application.Helper.Formatting (formatPricePercent)
 import Application.Helper.QueryParams (normalizePageParam)
 import Data.Text (pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Text.Printf (printf)
+import Web.View.Dashboard.PortfolioSummary
 import Web.View.Prelude
 
 data TransactionWithDetails = TransactionWithDetails
@@ -21,17 +22,17 @@ data TransactionsView = TransactionsView
     , currentPage             :: Int
     , totalPages              :: Int
     , wallet                  :: Wallet
+    , positionsValue          :: Integer
+    , totalValue              :: Integer
     , searchFilter            :: Maybe Text
     }
 
 instance View TransactionsView where
     html TransactionsView { .. } = dashboardLayout [hsx|
         <div>
-            <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
                 <h5>Transactions</h5>
-                <div class="text-end me-1">
-                    Cash Balance: <span class="fw-bold">{formatMoney wallet.amount}</span>
-                </div>
+                {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>
             <div class="mb-3">
                 {renderSearchForm searchFilter}
@@ -127,7 +128,7 @@ renderTransactionCard backToPath twd =
                     <div class="overflow-x-auto scroll-no-bar">
                         <div class="d-flex justify-content-start align-items-end border-top gap-5 pt-2 flex-nowrap">
                             <div class="flex-shrink-0">
-                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Data & Time</div>
+                                <div class="text-muted text-nowrap" style="font-size: 0.7rem;">Date & Time</div>
                                 <div class="text-muted fw-medium text-nowrap" style="font-size: 0.9rem;">
                                     {renderTime txn.createdAt}
                                 </div>

@@ -122,11 +122,16 @@ instance Controller DashboardController where
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
 
+        totalPositionsValue <- fetchUserPositionsValue currentUserId
+        let totalValue = wallet.amount + totalPositionsValue
+
         render PositionsView
             { positionsWithValue = positionsWithValue
             , currentPage = validPage
             , totalPages = totalPages
             , wallet = wallet
+            , positionsValue = totalPositionsValue
+            , totalValue = totalValue
             , searchFilter = searchQuery
             }
 
@@ -321,10 +326,48 @@ instance Controller DashboardController where
             |> filterWhere (#userId, currentUserId)
             |> fetchOne
 
+        totalPositionsValue <- fetchUserPositionsValue currentUserId
+        let totalValue = wallet.amount + totalPositionsValue
+
         render TransactionsView
             { transactionsWithDetails = transactionsWithDetails
             , currentPage = validPage
             , totalPages = totalPages
             , wallet = wallet
+            , positionsValue = totalPositionsValue
+            , totalValue = totalValue
             , searchFilter = searchQuery
             }
+
+fetchUserPositionsValue :: (?modelContext :: ModelContext) => Id User -> IO Integer
+fetchUserPositionsValue userId = do
+    userPositions <- query @Position
+        |> filterWhere (#userId, userId)
+        |> filterWhereNot (#quantity, 0)
+        |> fetch
+        >>= collectionFetchRelated #assetId
+        >>= collectionFetchRelated #marketId
+
+    let marketsById =
+            M.fromList
+                [ (market.id, Beta market.beta)
+                | market <- map (get #marketId) userPositions
+                ]
+
+    let marketIds = M.keys marketsById
+    marketAssets <- forM marketIds $ \marketId -> do
+        assets <- query @Asset
+            |> filterWhere (#marketId, marketId)
+            |> fetch
+        let assetMap = M.fromList [(asset.id, Quantity asset.quantity) | asset <- assets]
+        pure (marketId, assetMap)
+
+    let marketAssetMap = M.fromList marketAssets
+    let marketContext =
+            M.fromList
+                [ (marketId, (beta, assetMap))
+                | (marketId, beta) <- M.toList marketsById
+                , Just assetMap <- [M.lookup marketId marketAssetMap]
+                ]
+
+    pure (calculatePositionsValue userPositions marketContext)
