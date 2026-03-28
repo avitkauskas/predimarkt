@@ -3,6 +3,20 @@ module Application.Helper.Controller where
 import Generated.Types
 import IHP.ControllerPrelude
 
+syncCloseMarketJob :: (?modelContext :: ModelContext) => Market -> IO ()
+syncCloseMarketJob market = do
+    existingJobs <- query @CloseMarketJob
+        |> filterWhere (#marketId, market.id)
+        |> fetch
+    deleteRecords existingJobs
+
+    when (market.status == MarketStatusOpen) $ do
+        newRecord @CloseMarketJob
+            |> set #marketId market.id
+            |> set #runAt market.closedAt
+            |> createRecord
+        pure ()
+
 fetchPasskeyCount :: (?modelContext :: ModelContext) => Id User -> IO Int
 fetchPasskeyCount userId =
     query @Passkey

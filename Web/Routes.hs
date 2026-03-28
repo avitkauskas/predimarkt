@@ -150,11 +150,6 @@ instance HasPath DashboardController where
             |> addQueryParam "status" (inputValue <$> status)
             |> addQueryParam "page" (inputValue <$> page)
             |> addQueryParam "search" searchFilter
-    pathTo OpenMarketAction { marketId, page, searchFilter } =
-        "/OpenMarket"
-            |> addQueryParam "marketId" (inputValue <$> marketId)
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
 
 instance CanRoute DashboardController where
     parseRoute' =
@@ -162,7 +157,6 @@ instance CanRoute DashboardController where
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing Nothing))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing Nothing Nothing))
-        <|> (string "/OpenMarket" >> pure (OpenMarketAction Nothing Nothing Nothing))
 
 addMarketFlag :: Text -> Maybe Bool -> Text -> Text
 addMarketFlag name mValue base =

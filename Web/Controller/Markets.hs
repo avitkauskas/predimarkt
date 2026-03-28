@@ -19,7 +19,6 @@ import qualified Generated.ActualTypes.Market as GeneratedMarket
 import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
-import Web.Job.CloseMarket
 import Web.Types
 import Web.View.Layout (withFooterLayout)
 import Web.View.Markets.Edit
@@ -399,15 +398,6 @@ instance Controller MarketsController where
                                                         then asset |> set #marketId market.id |> createRecord
                                                         else asset |> set #marketId market.id |> updateRecord
 
-                                                existingJobs <- query @CloseMarketJob
-                                                    |> filterWhere (#marketId, market.id)
-                                                    |> fetch
-                                                deleteRecords existingJobs
-                                                newRecord @CloseMarketJob
-                                                    |> set #marketId market.id
-                                                    |> set #runAt market.closedAt
-                                                    |> createRecord
-
                                             redirectToPath $ pathTo
                                                 DashboardMarketsAction
                                                     { statusFilter = Just MarketStatusDraft
@@ -472,11 +462,6 @@ instance Controller MarketsController where
 
                                     forM_ assets \asset -> do
                                         asset |> set #marketId market.id |> createRecord
-
-                                    newRecord @CloseMarketJob
-                                        |> set #marketId market.id
-                                        |> set #runAt market.closedAt
-                                        |> createRecord
 
                                 setSuccessMessage "Market created"
                                 redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing, searchFilter = Nothing }

@@ -20,7 +20,7 @@ instance View OpenMarketView where
         |]
         }
       where
-        renderForm = formFor' market (pathTo $ OpenMarketAction (Just market.id) page searchFilter) [hsx|
+        renderForm = formFor' market (pathTo $ ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) page searchFilter) [hsx|
             {(dateTimeField #closedAt) {
                 fieldLabel = "Closing time",
                 fieldValue = utcDateTimeInputValue (get #closedAt market),

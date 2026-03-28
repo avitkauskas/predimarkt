@@ -9,7 +9,6 @@ import qualified Data.Map as M
 import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
-import Web.Job.CloseMarket
 import Web.View.Dashboard.Markets
 import Web.View.Dashboard.OpenMarket
 import Web.View.Dashboard.Positions
@@ -203,6 +202,8 @@ instance Controller DashboardController where
         let st = fromMaybe (param @MarketStatus "status") status
         let mPage = page <|> paramOrNothing @Int "page"
         let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
+        let newClosedAt :: Maybe UTCTime
+            newClosedAt = paramOrNothing "closedAt"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
 
@@ -210,12 +211,23 @@ instance Controller DashboardController where
             accessDeniedUnless False
 
         now <- getCurrentTime
+        let marketWithClosedAt = maybe market (\closedAt -> market |> set #closedAt closedAt) newClosedAt
 
-        when (st == MarketStatusOpen && market.closedAt <= now) $ do
-            setModal OpenMarketView { market, page = mPage, searchFilter = mSearchFilter }
+        when (st == MarketStatusOpen && marketWithClosedAt.closedAt <= now) $ do
+            let modalMarket = case newClosedAt of
+                    Just _ ->
+                        marketWithClosedAt
+                            |> validateField #closedAt
+                                (const $ Failure "Closing time must be in the future.")
+                    Nothing -> marketWithClosedAt
+            setModal OpenMarketView
+                { market = modalMarket
+                , page = mPage
+                , searchFilter = mSearchFilter
+                }
             jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
 
-        let marketWithStatus = market |> set #status st
+        let marketWithStatus = marketWithClosedAt |> set #status st
 
         let marketWithTimestamps = case st of
                 MarketStatusOpen -> marketWithStatus |> set #openedAt (market.openedAt <|> Just now)
@@ -224,18 +236,8 @@ instance Controller DashboardController where
                 MarketStatusClosed -> marketWithStatus |> set #closedAt now
                 _ -> marketWithStatus
 
-        marketWithTimestamps |> updateRecord
-
-        when (st == MarketStatusOpen) $ do
-            existingJobs <- query @CloseMarketJob
-                |> filterWhere (#marketId, market.id)
-                |> fetch
-            deleteRecords existingJobs
-            _ <- newRecord @CloseMarketJob
-                |> set #marketId market.id
-                |> set #runAt market.closedAt
-                |> createRecord
-            pure ()
+        updatedMarket <- marketWithTimestamps |> updateRecord
+        syncCloseMarketJob updatedMarket
 
         let message = case st of
                 MarketStatusOpen     -> "Market opened successfully"
@@ -246,50 +248,6 @@ instance Controller DashboardController where
 
         setSuccessMessage message
         redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing, searchFilter = mSearchFilter }
-
-    action OpenMarketAction { marketId, page, searchFilter } = do
-        let mId = fromMaybe (param @(Id Market) "marketId") marketId
-        let mPage = page <|> paramOrNothing @Int "page"
-        let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
-        market <- fetch mId
-        accessDeniedUnless (market.userId == Just currentUserId)
-
-        let newClosedAt :: Maybe UTCTime = paramOrNothing "closedAt"
-        now <- getCurrentTime
-
-        case newClosedAt of
-            Nothing -> do
-                let marketWithError = market
-                        |> validateField #closedAt (const $ Failure "Please provide a closing time.")
-                setModal OpenMarketView { market = marketWithError, page = mPage, searchFilter = mSearchFilter }
-                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
-            Just closedAtVal ->
-                if closedAtVal <= now
-                    then do
-                        let marketWithError = market
-                                |> set #closedAt closedAtVal
-                                |> validateField #closedAt (const $ Failure "Closing time must be in the future.")
-                        setModal OpenMarketView { market = marketWithError, page = mPage, searchFilter = mSearchFilter }
-                        jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
-                    else do
-                        market
-                            |> set #closedAt closedAtVal
-                            |> set #status MarketStatusOpen
-                            |> set #openedAt (market.openedAt <|> Just now)
-                            |> updateRecord
-
-                        existingJobs <- query @CloseMarketJob
-                            |> filterWhere (#marketId, market.id)
-                            |> fetch
-                        deleteRecords existingJobs
-                        _ <- newRecord @CloseMarketJob
-                            |> set #marketId market.id
-                            |> set #runAt closedAtVal
-                            |> createRecord
-                        pure ()
-
-                        setSuccessMessage "Market opened successfully"
-                        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusOpen, page = Nothing, searchFilter = mSearchFilter }
 
     action DashboardTransactionsAction { page, searchFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")

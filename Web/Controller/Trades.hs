@@ -221,11 +221,13 @@ instance Controller TradesController where
         now <- getCurrentTime
 
         withTransaction $ do
-            market <- market
+            updatedMarket <- market
                 |> set #status MarketStatusResolved
                 |> set #resolvedAt (Just now)
                 |> set #outcomeAssetId (Just outcomeAssetId)
                 |> updateRecord
+
+            syncCloseMarketJob updatedMarket
 
             forM_ positions \position -> do
                 wallet <- query @Wallet
@@ -303,10 +305,12 @@ instance Controller TradesController where
         now <- getCurrentTime
 
         withTransaction $ do
-            market <- market
+            updatedMarket <- market
                 |> set #status MarketStatusRefunded
                 |> set #refundedAt (Just now)
                 |> updateRecord
+
+            syncCloseMarketJob updatedMarket
 
             forM_ positions \position -> do
                 wallet <- query @Wallet
