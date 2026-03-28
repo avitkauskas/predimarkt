@@ -1,5 +1,6 @@
 module Web.Controller.Users where
 
+import Data.Functor (void)
 import Web.Controller.Prelude
 import Web.View.Users.Edit
 
@@ -24,7 +25,7 @@ instance Controller UsersController where
             >>= ifValid \case
                 Left user -> render EditView{..}
                 Right user -> do
-                    _ <- user |> updateRecord
+                    void $ user |> updateRecord
                     setSuccessMessage "Profile updated"
                     redirectTo EditUserAction{..}
 

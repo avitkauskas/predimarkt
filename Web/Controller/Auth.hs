@@ -7,6 +7,7 @@ import Crypto.WebAuthn.Operation.Authentication
 import Crypto.WebAuthn.Operation.CredentialEntry (CredentialEntry (..))
 import Crypto.WebAuthn.Operation.Registration
 import qualified Data.Aeson as Aeson
+import Data.Functor (void)
 import Data.Hourglass (timeConvert)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
@@ -182,18 +183,17 @@ instance Controller AuthController where
             SignatureCounterPotentiallyCloned ->
                 jsonError status422 "This passkey could not be verified safely. Please use a different passkey."
             SignatureCounterUpdated newSignCount -> do
-                _ <- passkey
+                void $ passkey
                     |> set #signCount (fromIntegral (unSignatureCounter newSignCount))
                     |> updateRecord
-                pure ()
             SignatureCounterZero -> pure ()
 
         login user
         currentDateTime <- liftIO (timeConvert <$> getCurrentTime)
-        _ <- user
+        void $ user
             |> set #loggedInAt currentDateTime
             |> updateRecord
-        _ <- passkey
+        void $ passkey
             |> set #lastUsedAt currentDateTime
             |> updateRecord
         setSuccessMessage "Logged in successfully"
