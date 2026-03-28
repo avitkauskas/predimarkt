@@ -236,8 +236,10 @@ instance Controller DashboardController where
                 MarketStatusClosed -> marketWithStatus |> set #closedAt now
                 _ -> marketWithStatus
 
-        updatedMarket <- marketWithTimestamps |> updateRecord
-        syncCloseMarketJob updatedMarket
+        updatedMarket <- withTransaction do
+            updatedMarket <- marketWithTimestamps |> updateRecord
+            syncCloseMarketJob updatedMarket
+            pure updatedMarket
 
         let message = case st of
                 MarketStatusOpen     -> "Market opened successfully"
