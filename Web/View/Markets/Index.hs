@@ -297,7 +297,7 @@ renderMarket backToPath market = [hsx|
                         {formatMoney market.turnover}
                     </span>
                 </div>
-                <span title="Market closing time" style="font-size: 0.7rem;">
+                <span title="Market closing time" style="font-size: 0.74rem;">
                     <i class="bi bi-alarm"></i>
                     {renderTime market.closedAt}
                 </span>
