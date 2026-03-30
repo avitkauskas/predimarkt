@@ -83,9 +83,9 @@ instance HasPath MarketsController where
             |> addMarketFlag "showTradeHistory" showTradeHistory
             |> addQueryParam "activityPage" (inputValue <$> activityPage)
             |> addQueryParam "chatPage" (inputValue <$> chatPage)
-            |> addQueryParam "chatComposerRev" (encodeQueryValue <$> chatComposerRev)
+            |> addQueryParam "chatComposerRev" (inputValue <$> chatComposerRev)
             |> addQueryParam "tradeQuantity" (inputValue <$> tradeQuantity)
-            |> addQueryParam "backTo" (encodeQueryValue <$> backTo)
+            |> addQueryParam "backTo" backTo
     pathTo CreateMarketChatMessageAction { marketId } = "/CreateMarketChatMessage?marketId=" <> inputValue marketId
     pathTo DeleteMarketChatMessageAction { marketChatMessageId, marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
         "/DeleteMarketChatMessage"
@@ -99,9 +99,9 @@ instance HasPath MarketsController where
             |> addMarketFlag "showTradeHistory" showTradeHistory
             |> addQueryParam "activityPage" (inputValue <$> activityPage)
             |> addQueryParam "chatPage" (inputValue <$> chatPage)
-            |> addQueryParam "chatComposerRev" (encodeQueryValue <$> chatComposerRev)
+            |> addQueryParam "chatComposerRev" (inputValue <$> chatComposerRev)
             |> addQueryParam "tradeQuantity" (inputValue <$> tradeQuantity)
-            |> addQueryParam "backTo" (encodeQueryValue <$> backTo)
+            |> addQueryParam "backTo" backTo
     pathTo EditMarketAction { marketId, page, searchFilter } =
         "/EditMarket"
             |> addQueryParam "marketId" (Just $ inputValue marketId)
@@ -195,6 +195,6 @@ addQueryParam name mValue base =
     case mValue of
         Nothing -> base
         Just value | Text.null value -> base
-        Just value -> base <> separator <> name <> "=" <> value
+        Just value -> base <> separator <> name <> "=" <> encodeQueryValue value
   where
     separator = if Text.any (== '?') base then "&" else "?"

@@ -50,10 +50,14 @@ instance View ShowView where
             <div class="row g-4">
                 <div class="col-12 col-lg-8 order-1 order-lg-1">
                     <div class="card shadow-sm">
-                        <div class={classes ["card-header text-muted d-flex justify-content-between align-items-center py-2", (headerClass, True)]}>
-                            <span class="ms-2">{category.name}</span>
-                            <div class="me-2">
-                                {statusBadge}
+                        <div class={classes ["card-header text-muted py-2 overflow-x-auto scroll-no-bar", (headerClass, True)]}>
+                            <div class="d-flex justify-content-between align-items-center flex-nowrap gap-3"
+                                 style="min-width: max-content;">
+                                <span class="ms-2 text-nowrap">{category.name}</span>
+                                <div class="me-2 d-inline-flex align-items-center flex-nowrap gap-2">
+                                    {statusBadge}
+                                    {renderManageMarketButton}
+                                </div>
                             </div>
                         </div>
                         <div class="card-body p-4">
@@ -110,14 +114,38 @@ instance View ShowView where
             statusBadge =
                 if (market.status /= MarketStatusOpen)
                     then [hsx|
-                        <span>{marketStatusLabel market.status}</span>
+                        <span class="text-nowrap">{marketStatusLabel market.status}</span>
                     |]
                     else [hsx|
-                        <span data-bs-toggle="tooltip" data-bs-title="market closing time" style="font-size: 0.85rem;">
+                        <span class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="market closing time" style="font-size: 0.85rem;">
                             <i class="bi bi-alarm"></i>
                             {renderTime market.closedAt}
                         </span>
                     |]
+
+            renderManageMarketButton :: Html
+            renderManageMarketButton = case currentUserOrNothing :: Maybe User of
+                Just currentUser
+                    | shouldShowManageMarketButton currentUser -> [hsx|
+                        <a href={manageMarketAction}
+                           class="btn btn-sm btn-outline-primary text-nowrap"
+                           style="--bs-btn-padding-y: 0.10rem; --bs-btn-padding-x: 0.4rem; --bs-btn-font-size: 0.8rem;">
+                            Manage Market
+                        </a>
+                    |]
+                _ -> mempty
+
+            shouldShowManageMarketButton :: User -> Bool
+            shouldShowManageMarketButton currentUser =
+                market.userId == Just currentUser.id
+                    && market.status `elem` [MarketStatusOpen, MarketStatusClosed]
+
+            manageMarketAction :: DashboardController
+            manageMarketAction = DashboardMarketsAction
+                { statusFilter = Just market.status
+                , page = Nothing
+                , searchFilter = Just market.title
+                }
 
             lmsrState = let qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- assets]
                          in (qtyMap, Beta market.beta)
