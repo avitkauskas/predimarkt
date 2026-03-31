@@ -1,5 +1,6 @@
-{-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE QuasiQuotes    #-}
+{-# LANGUAGE BlockArguments   #-}
+{-# LANGUAGE QuasiQuotes      #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use void" #-}
 module Web.Controller.Markets where
@@ -213,6 +214,15 @@ instance Controller MarketsController where
 
         let hasOlderChatMessages = length chatMessages < chatMessagesCount
 
+        hasUserPositionsInMarket <- case currentUserOrNothing @User of
+            Just currentUser -> do
+                positionCount <- query @Position
+                    |> filterWhere (#userId, get #id currentUser)
+                    |> filterWhere (#marketId, mId)
+                    |> fetchCount
+                pure (positionCount > 0)
+            Nothing -> pure False
+
         render ShowView
             { market
             , owner
@@ -234,6 +244,7 @@ instance Controller MarketsController where
             , tradeQuantity = currentTradeQuantity
             , backTo = backToPath
             , chartData
+            , hasUserPositionsInMarket
             }
 
     action CreateMarketChatMessageAction { marketId } = do

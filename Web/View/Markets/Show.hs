@@ -22,26 +22,27 @@ data MarketChatEntry = MarketChatEntry
     }
 
 data ShowView = ShowView
-    { market               :: Market
-    , owner                :: Maybe User
-    , category             :: Category
-    , assets               :: [Asset]
-    , tradingAssetId       :: Maybe (Id Asset)
-    , tradingAction        :: Maybe Text
-    , showChart            :: Bool
-    , showDescription      :: Bool
-    , showAllAssets        :: Bool
-    , showTradeHistory     :: Bool
-    , activityTransactions :: [MarketActivityTransaction]
-    , activityCurrentPage  :: Int
-    , activityTotalPages   :: Int
-    , chatMessages         :: [MarketChatEntry]
-    , chatCurrentPage      :: Int
-    , hasOlderChatMessages :: Bool
-    , chatComposerRev      :: Maybe Text
-    , tradeQuantity        :: Maybe Int
-    , backTo               :: Maybe Text
-    , chartData            :: [AssetChartData]
+    { market                   :: Market
+    , owner                    :: Maybe User
+    , category                 :: Category
+    , assets                   :: [Asset]
+    , tradingAssetId           :: Maybe (Id Asset)
+    , tradingAction            :: Maybe Text
+    , showChart                :: Bool
+    , showDescription          :: Bool
+    , showAllAssets            :: Bool
+    , showTradeHistory         :: Bool
+    , activityTransactions     :: [MarketActivityTransaction]
+    , activityCurrentPage      :: Int
+    , activityTotalPages       :: Int
+    , chatMessages             :: [MarketChatEntry]
+    , chatCurrentPage          :: Int
+    , hasOlderChatMessages     :: Bool
+    , chatComposerRev          :: Maybe Text
+    , tradeQuantity            :: Maybe Int
+    , backTo                   :: Maybe Text
+    , chartData                :: [AssetChartData]
+    , hasUserPositionsInMarket :: Bool
     }
 
 instance View ShowView where
@@ -79,7 +80,7 @@ instance View ShowView where
                                 {forEach assets renderAsset}
                             </div>
 
-                            {toggleAssetsButton}
+                            {renderMarketLinksRow}
 
                             <div class="mt-3">
                                 {renderSectionToggle "Price Chart" showChart chartToggleAction}
@@ -260,16 +261,46 @@ instance View ShowView where
                 , backTo = backTo
                 }
 
-            toggleAssetsButton :: Html
-            toggleAssetsButton = if hasLeadingAssets
-                then [hsx|
-                    <div class="text-end mt-3">
-                        <a href={assetsToggleAction} class="text-decoration-none me-2">
-                            {if showAllAssets then "Show Only Leading Assets" else "Show All Assets" :: Text}
-                        </a>
-                    </div>
-                |]
-                else [hsx||]
+            positionsAction :: DashboardController
+            positionsAction = DashboardPositionsAction
+                { page = Nothing
+                , searchFilter = Just market.title
+                }
+
+            renderMarketLinksRow :: Html
+            renderMarketLinksRow =
+                if hasLeadingAssets || hasUserPositionsInMarket
+                    then [hsx|
+                        <div class="d-flex flex-column align-items-end text-end mt-3 me-0 me-sm-2">
+                            {renderAssetsToggleLink}
+                            {renderPositionsLink}
+                        </div>
+                    |]
+                    else [hsx||]
+
+            renderPositionsLink :: Html
+            renderPositionsLink =
+                if hasUserPositionsInMarket
+                    then [hsx|
+                        <div class={classes [("mt-1", hasLeadingAssets)]}>
+                            <a href={positionsAction} class="text-decoration-none">
+                                Your Positions in this Market
+                            </a>
+                        </div>
+                    |]
+                    else [hsx||]
+
+            renderAssetsToggleLink :: Html
+            renderAssetsToggleLink =
+                if hasLeadingAssets
+                    then [hsx|
+                        <div>
+                            <a href={assetsToggleAction} class="text-decoration-none">
+                                {if showAllAssets then "Show Only Leading Assets" else "Show All Assets" :: Text}
+                            </a>
+                        </div>
+                    |]
+                    else [hsx||]
 
             assetLayoutScript :: Html
             assetLayoutScript = [hsx|
