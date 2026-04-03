@@ -421,37 +421,7 @@ instance View ShowView where
                     </div>
                     <div class="card-body p-3 d-flex flex-column flex-grow-1" style="min-height: 420px;">
                         <div id={"market-chat-composer-" <> fromMaybe "stable" chatComposerRev} class="mb-3">
-                            <form id="market-chat-form" action={CreateMarketChatMessageAction market.id} method="POST">
-                                {renderTradingAssetIdInput}
-                                {renderTradingActionInput}
-                                <input type="hidden" name="showChart" value={boolText showChart} />
-                                <input type="hidden" name="showDescription" value={boolText showDescription} />
-                                <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
-                                {renderTradeHistoryToggleInput}
-                                {renderActivityPageInput}
-                                {renderChatPageInput}
-                                {renderChatComposerRevInput}
-                                {renderTradeQuantityInput}
-                                {renderBackToInput}
-                                <div class="input-group mt-2">
-                                    <input id={"market-chat-input-" <> fromMaybe "stable" chatComposerRev}
-                                           type="text"
-                                           name="body"
-                                           form="market-chat-form"
-                                           class="form-control"
-                                           maxlength="280"
-                                           placeholder="Type a message... (280 chars max)"
-                                           autocomplete="off" />
-                                    <button id="market-chat-submit"
-                                            class="btn btn-primary"
-                                            type="submit"
-                                            form="market-chat-form"
-                                            formmethod="post"
-                                            formaction={CreateMarketChatMessageAction market.id}>
-                                        Send
-                                    </button>
-                                </div>
-                            </form>
+                            {chatForm}
                         </div>
 
                         <div id="market-chat-messages"
@@ -467,6 +437,33 @@ instance View ShowView where
                 </div>
             |]
                 where
+                    chatForm = renderPostForm (pathTo (CreateMarketChatMessageAction market.id)) [("id", "market-chat-form")] [hsx|
+                        {renderTradingAssetIdInput}
+                        {renderTradingActionInput}
+                        <input type="hidden" name="showChart" value={boolText showChart} />
+                        <input type="hidden" name="showDescription" value={boolText showDescription} />
+                        <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                        {renderTradeHistoryToggleInput}
+                        {renderActivityPageInput}
+                        {renderChatPageInput}
+                        {renderChatComposerRevInput}
+                        {renderTradeQuantityInput}
+                        {renderBackToInput}
+                        <div class="input-group mt-2">
+                            <input id={"market-chat-input-" <> fromMaybe "stable" chatComposerRev}
+                                   type="text"
+                                   name="body"
+                                   class="form-control"
+                                   maxlength="280"
+                                   placeholder="Type a message... (280 chars max)"
+                                   autocomplete="off" />
+                            <button id="market-chat-submit"
+                                    class="btn btn-primary"
+                                    type="submit">
+                                Send
+                            </button>
+                        </div>
+                    |]
                     nextChatPageUrl = if hasOlderChatMessages
                         then pathTo (chatPageAction (chatCurrentPage + 1))
                         else ""
@@ -510,12 +507,10 @@ instance View ShowView where
                         case currentUserOrNothing :: Maybe User of
                             Just currentUser ->
                                 if authorId == get #id currentUser
-                                    then [hsx|
-                                        <form method="POST" action={pathTo (deleteChatMessageAction msgId)} class="d-inline">
-                                            <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="tooltip" data-bs-title="delete">
-                                                <i class="bi bi-x-lg text-danger"></i>
-                                            </button>
-                                        </form>
+                                    then renderPostForm (pathTo (deleteChatMessageAction msgId)) [("class", "d-inline")] [hsx|
+                                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="tooltip" data-bs-title="delete">
+                                            <i class="bi bi-x-lg text-danger"></i>
+                                        </button>
                                     |]
                                     else mempty
                             Nothing -> mempty
@@ -728,76 +723,78 @@ instance View ShowView where
                         </div>
                     |]
 
+                    renderCommonTradeInputs = [hsx|
+                        <input type="hidden" name="showChart" value={boolText showChart} />
+                        <input type="hidden" name="showDescription" value={boolText showDescription} />
+                        <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
+                        {renderTradeHistoryToggleInput}
+                        {renderActivityPageInput}
+                        {renderChatPageInput}
+                        {renderChatComposerRevInput}
+                        {renderBackToInput}
+                    |]
+
+                    buyForm = renderPostForm (pathTo (ExecuteTradeAction asset.id)) [] [hsx|
+                        <input type="hidden" name="type" value="buy" />
+                        {renderCommonTradeInputs}
+                        <div class="d-flex flex-column align-items-end gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="input-group" style="width: 160px">
+                                    <span class="input-group-text info-label"
+                                          style="font-size: 0.64rem;">
+                                          shares
+                                    </span>
+                                    <input type="number" name="quantity"
+                                           id={"trade-quantity-buy-" <> inputValue asset.id}
+                                           value={tradeQuantityValue isBuyFormOpen} step="1" min="0"
+                                           class="form-control"
+                                           autofocus={isBuyFormOpen}
+                                           oninput="updateBuyInfo(this)"
+                                           data-info-id={"buy-info-" <> show asset.id}
+                                           data-a={show assetPriceVal}
+                                           data-beta={show market.beta} />
+                                </div>
+                                <button type="submit" class="btn btn-primary fw-bold"
+                                        style="width: 140px">BUY</button>
+                            </div>
+                            {renderTradeInfoContainer ("buy-info-" <> show asset.id) "Invest" "Gain" "text-success"}
+                        </div>
+                    |]
+                    sellForm = renderPostForm (pathTo (ExecuteTradeAction asset.id)) [] [hsx|
+                        <input type="hidden" name="type" value="sell" />
+                        {renderCommonTradeInputs}
+                        <div class="d-flex flex-column align-items-end gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="input-group" style="width: 160px">
+                                    <span class="input-group-text info-label"
+                                          style="font-size: 0.64rem;">
+                                          shares
+                                    </span>
+                                    <input type="number" name="quantity"
+                                           id={"trade-quantity-sell-" <> inputValue asset.id}
+                                           value={tradeQuantityValue isSellFormOpen} step="1" min="0"
+                                           class="form-control"
+                                           autofocus={isSellFormOpen}
+                                           oninput="updateSellInfo(this)"
+                                           data-info-id={"sell-info-" <> show asset.id}
+                                           data-a={show assetPriceVal}
+                                           data-beta={show market.beta} />
+                                </div>
+                                <button type="submit" class="btn btn-primary fw-bold"
+                                        style="width: 140px">SELL</button>
+                            </div>
+                            {renderTradeInfoContainer ("sell-info-" <> show asset.id) "Receive" "Risk" "text-danger"}
+                        </div>
+                    |]
                     buySellForms = [hsx|
                         <div id={"buy-form-" <> show asset.id}
                              class={classes ["mt-3", ("d-none", not isBuyFormOpen)]}>
-                            <form action={ExecuteTradeAction asset.id} method="POST">
-                                <input type="hidden" name="type" value="buy" />
-                                <input type="hidden" name="showChart" value={boolText showChart} />
-                                <input type="hidden" name="showDescription" value={boolText showDescription} />
-                                <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
-                                {renderTradeHistoryToggleInput}
-                                {renderActivityPageInput}
-                                {renderChatPageInput}
-                                {renderChatComposerRevInput}
-                                {renderBackToInput}
-                                <div class="d-flex flex-column align-items-end gap-2">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="input-group" style="width: 160px">
-                                            <span class="input-group-text info-label"
-                                                  style="font-size: 0.64rem;">
-                                                  shares
-                                            </span>
-                                            <input type="number" name="quantity"
-                                                   id={"trade-quantity-buy-" <> inputValue asset.id}
-                                                   value={tradeQuantityValue isBuyFormOpen} step="1" min="0"
-                                                   class="form-control"
-                                                   autofocus={isBuyFormOpen}
-                                                   oninput="updateBuyInfo(this)"
-                                                   data-info-id={"buy-info-" <> show asset.id}
-                                                   data-a={show assetPriceVal}
-                                                   data-beta={show market.beta} />
-                                        </div>
-                                        <button type="submit" class="btn btn-primary fw-bold"
-                                                style="width: 140px">BUY</button>
-                                    </div>
-                                    {renderTradeInfoContainer ("buy-info-" <> show asset.id) "Invest" "Gain" "text-success"}
-                                </div>
-                            </form>
+                            {buyForm}
                         </div>
 
                         <div id={"sell-form-" <> show asset.id}
                              class={classes ["mt-3", ("d-none", not isSellFormOpen)]}>
-                            <form action={ExecuteTradeAction asset.id} method="POST">
-                                <input type="hidden" name="type" value="sell" />
-                                <input type="hidden" name="showChart" value={boolText showChart} />
-                                <input type="hidden" name="showDescription" value={boolText showDescription} />
-                                <input type="hidden" name="showAllAssets" value={boolText showAllAssets} />
-                                {renderTradeHistoryToggleInput}
-                                {renderActivityPageInput}
-                                {renderChatPageInput}
-                                {renderChatComposerRevInput}
-                                {renderBackToInput}
-                                <div class="d-flex flex-column align-items-end gap-2">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="input-group" style="width: 160px">
-                                            <span class="input-group-text info-label">shares</span>
-                                            <input type="number" name="quantity"
-                                                   id={"trade-quantity-sell-" <> inputValue asset.id}
-                                                   value={tradeQuantityValue isSellFormOpen} step="1" min="0"
-                                                   class="form-control"
-                                                   autofocus={isSellFormOpen}
-                                                   oninput="updateSellInfo(this)"
-                                                   data-info-id={"sell-info-" <> show asset.id}
-                                                   data-a={show assetPriceVal}
-                                                   data-beta={show market.beta} />
-                                        </div>
-                                        <button type="submit" class="btn btn-primary fw-bold"
-                                                style="width: 140px">SELL</button>
-                                    </div>
-                                    {renderTradeInfoContainer ("sell-info-" <> show asset.id) "Receive" "Risk" "text-danger"}
-                                </div>
-                            </form>
+                            {sellForm}
                         </div>
                     |]
 

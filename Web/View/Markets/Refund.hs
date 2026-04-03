@@ -28,12 +28,14 @@ instance View RefundView where
                     </div>
 
                     <div class="d-flex gap-2 ms-2">
-                        <form method="POST" action={RefundMarketAction market.id} class="d-inline">
-                            <button type="submit" class="btn btn-danger">Confirm Refund</button>
-                        </form>
+                        {refundForm}
                         <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </div>
             </div>
         </div>
     |]
+      where
+        refundForm = renderPostForm (pathTo (RefundMarketAction market.id)) [("class", "d-inline")] [hsx|
+            <button type="submit" class="btn btn-danger">Confirm Refund</button>
+        |]

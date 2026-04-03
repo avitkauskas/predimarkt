@@ -215,12 +215,11 @@ renderActionButton True isProfitable _ assetId _ _ =
     let (cls, txt) = if isProfitable
             then ("btn-success" :: Text, "Take Profit" :: Text)
             else ("btn-danger" :: Text, "Close Loss" :: Text)
-    in [hsx|
-        <form action={ClosePositionAction assetId} method="POST" class="d-inline">
+        closeButton = renderPostForm (pathTo (ClosePositionAction assetId)) [("class", "d-inline")] [hsx|
             <button type="submit" class={"btn btn-sm text-nowrap " <> cls}
                     style="width: 94px;">{txt}</button>
-        </form>
-    |]
+        |]
+    in closeButton
 -- For open markets with closed positions, show Make Trade
 renderActionButton False _ marketId _ _ backToPath =
     let link = ShowMarketAction marketId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)

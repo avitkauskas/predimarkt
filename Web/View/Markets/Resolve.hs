@@ -29,23 +29,25 @@ instance View ResolveView where
                         All user positions will be settled based on this selection.
                     </div>
 
-                    <form method="POST" action={ResolveMarketAction market.id} class="ms-2">
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Select Winning Asset</label>
-                            <div>
-                                {forEach assets renderAssetOption}
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Resolve Market</button>
-                            <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
-                        </div>
-                    </form>
+                    {resolveForm}
                 </div>
             </div>
         </div>
     |]
+      where
+        resolveForm = renderPostForm (pathTo (ResolveMarketAction market.id)) [("class", "ms-2")] [hsx|
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Select Winning Asset</label>
+                <div>
+                    {forEach assets renderAssetOption}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Resolve Market</button>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        |]
 
 renderAssetOption :: Asset -> Html
 renderAssetOption asset = [hsx|

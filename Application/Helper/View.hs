@@ -149,9 +149,7 @@ renderConfirmationModal title closeUrl confirmUrl confirmLabel confirmButtonClas
         , modalContent = [hsx|
             {body}
             <div class="mt-4">
-                <form method="POST" action={confirmUrl} class="d-inline">
-                    <button type="submit" class={confirmButtonClass}>{confirmLabel}</button>
-                </form>
+                {confirmButton}
                 <a href={closeUrl}
                    class="btn btn-outline-secondary ms-2"
                    onclick="document.getElementById('modal-backdrop').click(); return false">
@@ -160,3 +158,18 @@ renderConfirmationModal title closeUrl confirmUrl confirmLabel confirmButtonClas
             </div>
         |]
         }
+  where
+    confirmButton :: Html
+    confirmButton =
+        renderPostForm confirmUrl [("class", "d-inline")] [hsx|
+            <button type="submit" class={confirmButtonClass}>{confirmLabel}</button>
+        |]
+
+renderPostForm :: Text -> [(Text, Text)] -> Html -> Html
+renderPostForm action customAttributes inner = [hsx|
+    <form method="POST"
+          action={action}
+          {...customAttributes}>
+        {inner}
+    </form>
+|]
