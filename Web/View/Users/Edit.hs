@@ -119,10 +119,10 @@ renderDeleteButton True _ = [hsx|
 renderDeleteButton False passkey = [hsx|
     <form method="POST"
           action={pathTo (DeletePasskeyAction passkey.id)}
-          class="d-inline"
-          onsubmit="return confirm('Remove this passkey? You will need another passkey or a new registration to log in.')">
+          class="d-inline">
         <button type="submit"
                 class="btn btn-sm btn-link text-danger p-0"
+                onclick="return confirm('Remove this passkey? You will need another passkey or a new registration to log in.')"
                 title="Remove passkey">
             <i class="bi bi-trash"></i>
         </button>
