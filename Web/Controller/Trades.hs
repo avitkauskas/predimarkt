@@ -123,77 +123,78 @@ instance Controller TradesController where
 
         let currentQty = get #quantity dbPosition
 
-        when (currentQty == 0) $ do
-            setErrorMessage "No position to close"
-            redirectTo (DashboardPositionsAction Nothing Nothing)
+        if currentQty == 0
+            then do
+                setErrorMessage "No position to close"
+                redirectTo (DashboardPositionsAction Nothing Nothing)
+            else do
+                asset <- fetch assetId
+                market <- fetch asset.marketId
 
-        asset <- fetch assetId
-        market <- fetch asset.marketId
+                assets <- query @Asset
+                    |> filterWhere (#marketId, market.id)
+                    |> fetch
 
-        assets <- query @Asset
-            |> filterWhere (#marketId, market.id)
-            |> fetch
+                let qtyMap = foldl' (\m a -> M.insert a.id (Quantity (get #quantity a)) m) M.empty assets
 
-        let qtyMap = foldl' (\m a -> M.insert a.id (Quantity (get #quantity a)) m) M.empty assets
+                let beta = Beta market.beta
+                let currentPrice = assetPrice assetId beta qtyMap
 
-        let beta = Beta market.beta
-        let currentPrice = assetPrice assetId beta qtyMap
+                let deltaQty = -currentQty
+                let delta = Quantity deltaQty
+                let cashFlow = tradeValue assetId delta beta qtyMap
 
-        let deltaQty = -currentQty
-        let delta = Quantity deltaQty
-        let cashFlow = tradeValue assetId delta beta qtyMap
+                let Money cashFlowCents = cashFlow
+                let Money tradeAmountCents = abs cashFlow
 
-        let Money cashFlowCents = cashFlow
-        let Money tradeAmountCents = abs cashFlow
+                wallet <- query @Wallet
+                    |> filterWhere (#userId, currentUserId)
+                    |> fetchOne
 
-        wallet <- query @Wallet
-            |> filterWhere (#userId, currentUserId)
-            |> fetchOne
+                withTransaction $ do
+                    let newAssetQty = get #quantity asset + deltaQty
+                    asset
+                        |> set #quantity newAssetQty
+                        |> updateRecord
 
-        withTransaction $ do
-            let newAssetQty = get #quantity asset + deltaQty
-            asset
-                |> set #quantity newAssetQty
-                |> updateRecord
+                    let newQtyMap = M.insert assetId (Quantity newAssetQty) qtyMap
+                    let priceAfter = assetPrice assetId beta newQtyMap
 
-            let newQtyMap = M.insert assetId (Quantity newAssetQty) qtyMap
-            let priceAfter = assetPrice assetId beta newQtyMap
+                    market
+                        |> set #trades (market.trades + 1)
+                        |> set #volume (market.volume + abs currentQty)
+                        |> set #turnover (market.turnover + tradeAmountCents)
+                        |> updateRecord
 
-            market
-                |> set #trades (market.trades + 1)
-                |> set #volume (market.volume + abs currentQty)
-                |> set #turnover (market.turnover + tradeAmountCents)
-                |> updateRecord
+                    wallet
+                        |> set #amount (wallet.amount + cashFlowCents)
+                        |> updateRecord
 
-            wallet
-                |> set #amount (wallet.amount + cashFlowCents)
-                |> updateRecord
+                    _ <- newRecord @Transaction
+                        |> set #userId currentUserId
+                        |> set #assetId assetId
+                        |> set #marketId market.id
+                        |> set #quantity (-currentQty)
+                        |> set #cashFlow cashFlowCents
+                        |> set #priceBefore currentPrice
+                        |> set #priceAfter priceAfter
+                        |> set #marketState (Aeson.toJSON $ buildMarketState newQtyMap)
+                        |> createRecord
 
-            _ <- newRecord @Transaction
-                |> set #userId currentUserId
-                |> set #assetId assetId
-                |> set #marketId market.id
-                |> set #quantity (-currentQty)
-                |> set #cashFlow cashFlowCents
-                |> set #priceBefore currentPrice
-                |> set #priceAfter priceAfter
-                |> set #marketState (Aeson.toJSON $ buildMarketState newQtyMap)
-                |> createRecord
+                    let oldInvested = get #invested dbPosition
+                    let oldReceived = get #received dbPosition
+                    let newInvested = if cashFlowCents < 0 then oldInvested + cashFlowCents else oldInvested
+                    let newReceived = if cashFlowCents > 0 then oldReceived + cashFlowCents else oldReceived
+                    dbPosition
+                        |> set #invested newInvested
+                        |> set #received newReceived
+                        |> set #quantity 0
+                        |> updateRecord
 
-            let oldInvested = get #invested dbPosition
-            let oldReceived = get #received dbPosition
-            let newInvested = if cashFlowCents < 0 then oldInvested + cashFlowCents else oldInvested
-            let newReceived = if cashFlowCents > 0 then oldReceived + cashFlowCents else oldReceived
-            dbPosition
-                |> set #invested newInvested
-                |> set #received newReceived
-                |> set #quantity 0
-                |> updateRecord
+                let action = if currentQty > 0 then "selling" else "buying back"
+                setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show (abs currentQty) <> " shares for " <> formatMoney tradeAmountCents
 
-        let action = if currentQty > 0 then "selling" else "buying back"
-        setSuccessMessage $ "Successfully closed position by " <> action <> " " <> show (abs currentQty) <> " shares for " <> formatMoney tradeAmountCents
-
-        redirectTo (DashboardPositionsAction Nothing Nothing)
+                redirectTo (DashboardPositionsAction Nothing Nothing)
 
     action ResolveMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId

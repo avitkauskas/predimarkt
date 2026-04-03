@@ -22,10 +22,9 @@ import Web.View.Sessions.New
 
 instance Controller AuthController where
     action LoginAction = do
-        when (isJust (currentUserOrNothing @User)) do
-            redirectToPath "/"
-
-        render NewView { .. }
+        if isJust (currentUserOrNothing @User)
+            then redirectToPath "/"
+            else render NewView { .. }
 
     action BeginPasskeyRegistrationAction = do
         payloadResult <- parseJsonBody @BeginPasskeyRegistrationPayload
@@ -220,14 +219,14 @@ instance Aeson.FromJSON BeginPasskeyRegistrationPayload where
         nickname <- object Aeson..:? "nickname"
         pure BeginPasskeyRegistrationPayload { .. }
 
-parseJsonBody :: (?request :: Request, Aeson.FromJSON payload) => IO (Either Text payload)
+parseJsonBody :: (?request :: Request, ?respond :: Respond, Aeson.FromJSON payload) => IO (Either Text payload)
 parseJsonBody = do
     jsonValue <- requestBodyJSON
     pure $ case Aeson.fromJSON jsonValue of
         Aeson.Error errorMessage -> Left (cs errorMessage)
         Aeson.Success payload    -> Right payload
 
-requireAvailableNickname :: (?request :: Request, ?modelContext :: ModelContext) => Maybe Text -> IO Text
+requireAvailableNickname :: (?request :: Request, ?respond :: Respond, ?modelContext :: ModelContext) => Maybe Text -> IO Text
 requireAvailableNickname maybeNickname = do
     nickname <- case Text.strip <$> maybeNickname of
         Just nickname | not (Text.null nickname) -> pure nickname
@@ -246,21 +245,21 @@ nicknameAlreadyExists nickname = do
         |> validateIsUniqueCaseInsensitive #nickname
     pure (isJust (getValidationFailure #nickname checkedUser))
 
-sessionChallenge :: (?request :: Request) => ByteString -> IO Challenge
+sessionChallenge :: (?request :: Request, ?respond :: Respond) => ByteString -> IO Challenge
 sessionChallenge sessionKey = do
     maybeChallenge <- getSession @ByteString sessionKey
     case maybeChallenge of
         Just challenge -> pure (Challenge challenge)
         Nothing -> jsonError status422 "This passkey request has expired. Please try again."
 
-sessionText :: (?request :: Request) => ByteString -> IO Text
+sessionText :: (?request :: Request, ?respond :: Respond) => ByteString -> IO Text
 sessionText sessionKey = do
     maybeValue <- getSession @Text sessionKey
     case maybeValue of
         Just value -> pure value
         Nothing -> jsonError status422 "This passkey request has expired. Please try again."
 
-sessionUserId :: (?request :: Request) => ByteString -> IO (Id User)
+sessionUserId :: (?request :: Request, ?respond :: Respond) => ByteString -> IO (Id User)
 sessionUserId sessionKey = do
     userIdText <- sessionText sessionKey
     case UUID.fromText userIdText of
@@ -286,7 +285,7 @@ clearAuthenticationSession :: (?request :: Request) => IO ()
 clearAuthenticationSession =
     deleteSession authenticationChallengeSessionKey
 
-jsonError :: (?request :: Request) => Status -> Text -> IO a
+jsonError :: (?request :: Request, ?respond :: Respond) => Status -> Text -> IO a
 jsonError statusCode errorMessage =
     renderJsonWithStatusCode statusCode (Aeson.object ["error" Aeson..= errorMessage])
         >> error "jsonError should have exited the controller"

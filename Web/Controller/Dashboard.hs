@@ -218,43 +218,44 @@ instance Controller DashboardController where
         now <- getCurrentTime
         let marketWithClosedAt = maybe market (\closedAt -> market |> set #closedAt closedAt) newClosedAt
 
-        when (st == MarketStatusOpen && marketWithClosedAt.closedAt <= now) $ do
-            let modalMarket = case newClosedAt of
-                    Just _ ->
-                        marketWithClosedAt
-                            |> validateField #closedAt
-                                (const $ Failure "Closing time must be in the future.")
-                    Nothing -> marketWithClosedAt
-            setModal OpenMarketView
-                { market = modalMarket
-                , page = mPage
-                , searchFilter = mSearchFilter
-                }
-            jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
+        if st == MarketStatusOpen && marketWithClosedAt.closedAt <= now
+            then do
+                let modalMarket = case newClosedAt of
+                        Just _ ->
+                            marketWithClosedAt
+                                |> validateField #closedAt
+                                    (const $ Failure "Closing time must be in the future.")
+                        Nothing -> marketWithClosedAt
+                setModal OpenMarketView
+                    { market = modalMarket
+                    , page = mPage
+                    , searchFilter = mSearchFilter
+                    }
+                jumpToAction $ DashboardMarketsAction { statusFilter = Just market.status, page = mPage, searchFilter = mSearchFilter }
+            else do
+                let marketWithStatus = marketWithClosedAt |> set #status st
 
-        let marketWithStatus = marketWithClosedAt |> set #status st
+                let marketWithTimestamps = case st of
+                        MarketStatusOpen -> marketWithStatus |> set #openedAt (market.openedAt <|> Just now)
+                        MarketStatusResolved -> marketWithStatus |> set #resolvedAt (Just now)
+                        MarketStatusRefunded -> marketWithStatus |> set #refundedAt (Just now)
+                        MarketStatusClosed -> marketWithStatus |> set #closedAt now
+                        _ -> marketWithStatus
 
-        let marketWithTimestamps = case st of
-                MarketStatusOpen -> marketWithStatus |> set #openedAt (market.openedAt <|> Just now)
-                MarketStatusResolved -> marketWithStatus |> set #resolvedAt (Just now)
-                MarketStatusRefunded -> marketWithStatus |> set #refundedAt (Just now)
-                MarketStatusClosed -> marketWithStatus |> set #closedAt now
-                _ -> marketWithStatus
+                updatedMarket <- withTransaction do
+                    updatedMarket <- marketWithTimestamps |> updateRecord
+                    syncCloseMarketJob updatedMarket
+                    pure updatedMarket
 
-        updatedMarket <- withTransaction do
-            updatedMarket <- marketWithTimestamps |> updateRecord
-            syncCloseMarketJob updatedMarket
-            pure updatedMarket
+                let message = case st of
+                        MarketStatusOpen     -> "Market opened successfully"
+                        MarketStatusClosed   -> "Market closed successfully"
+                        MarketStatusResolved -> "Market resolved successfully"
+                        MarketStatusRefunded -> "Market refunded successfully"
+                        _                    -> "Market status updated"
 
-        let message = case st of
-                MarketStatusOpen     -> "Market opened successfully"
-                MarketStatusClosed   -> "Market closed successfully"
-                MarketStatusResolved -> "Market resolved successfully"
-                MarketStatusRefunded -> "Market refunded successfully"
-                _                    -> "Market status updated"
-
-        setSuccessMessage message
-        redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing, searchFilter = mSearchFilter }
+                setSuccessMessage message
+                redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing, searchFilter = mSearchFilter }
 
     action DashboardTransactionsAction { page, searchFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
