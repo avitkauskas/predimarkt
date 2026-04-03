@@ -9,6 +9,7 @@ import qualified Data.Map as M
 import IHP.ModelSupport (trackTableRead)
 import Text.RawString.QQ (r)
 import Web.Controller.Prelude
+import Web.View.Dashboard.DeleteMarket
 import Web.View.Dashboard.Markets
 import Web.View.Dashboard.OpenMarket
 import Web.View.Dashboard.Positions
@@ -200,6 +201,24 @@ instance Controller DashboardController where
             , currentPage = validPage
             , totalPages = totalPages
             , searchFilter = searchQuery
+            }
+
+    action ConfirmDeleteMarketAction { confirmDeleteMarketId, page, searchFilter } = do
+        let mId = if confirmDeleteMarketId == def then param @(Id Market) "marketId" else confirmDeleteMarketId
+        let mPage = page <|> paramOrNothing @Int "page"
+        let mSearchFilter = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
+        market <- fetch mId
+        accessDeniedUnless (market.userId == Just currentUserId)
+        accessDeniedUnless (market.status == MarketStatusDraft)
+        setModal DeleteMarketView
+            { market
+            , page = mPage
+            , searchFilter = mSearchFilter
+            }
+        jumpToAction DashboardMarketsAction
+            { statusFilter = Just MarketStatusDraft
+            , page = mPage
+            , searchFilter = mSearchFilter
             }
 
     action ChangeMarketStatusAction { marketId, status, page, searchFilter } = do

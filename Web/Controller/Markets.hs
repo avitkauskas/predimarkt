@@ -479,13 +479,14 @@ instance Controller MarketsController where
 
     action DeleteMarketAction { marketId, page, searchFilter } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
+        let mPage = page <|> paramOrNothing @Int "page"
         let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
         accessDeniedUnless (market.status == MarketStatusDraft)
         deleteRecord market
         setSuccessMessage "Market deleted"
-        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = Nothing, searchFilter = mSearchFilter }
+        redirectTo $ DashboardMarketsAction { statusFilter = Just MarketStatusDraft, page = mPage, searchFilter = mSearchFilter }
 
     action SetResolveAssetAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId

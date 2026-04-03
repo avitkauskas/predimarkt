@@ -41,9 +41,8 @@ instance View EditView where
                             <div class="card-body">
                                 <h5 class="card-title text-danger">Danger Zone</h5>
                                 <p class="card-text text-muted">Once you delete your account, there is no way back.<br/> Please be certain.</p>
-                                <a href={DeleteUserAction (get #id user)}
-                                   class="btn btn-outline-danger js-delete"
-                                   data-confirm="Are you sure you want to delete your account? This action cannot be undone.">
+                                <a href={ConfirmDeleteUserAction (get #id user)}
+                                   class="btn btn-outline-danger">
                                     Delete My Account
                                 </a>
                             </div>
@@ -117,16 +116,11 @@ renderDeleteButton True _ = [hsx|
     </button>
 |]
 renderDeleteButton False passkey = [hsx|
-    <form method="POST"
-          action={pathTo (DeletePasskeyAction passkey.id)}
-          class="d-inline">
-        <button type="submit"
-                class="btn btn-sm btn-link text-danger p-0"
-                onclick="return confirm('Remove this passkey? You will need another passkey or a new registration to log in.')"
-                title="Remove passkey">
-            <i class="bi bi-trash"></i>
-        </button>
-    </form>
+    <a href={ConfirmDeletePasskeyAction passkey.id}
+       class="btn btn-sm btn-link text-danger p-0"
+       title="Remove passkey">
+        <i class="bi bi-trash"></i>
+    </a>
 |]
 
 renderForm :: User -> Html

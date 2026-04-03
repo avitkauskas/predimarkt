@@ -139,3 +139,24 @@ renderTextParagraphs text =
 
     renderParagraphLine :: Text -> Html
     renderParagraphLine line = [hsx|{line}|]
+
+renderConfirmationModal :: Text -> Text -> Text -> Text -> Text -> Html -> Html
+renderConfirmationModal title closeUrl confirmUrl confirmLabel confirmButtonClass body =
+    renderModal Modal
+        { modalTitle = title
+        , modalCloseUrl = closeUrl
+        , modalFooter = Nothing
+        , modalContent = [hsx|
+            {body}
+            <div class="mt-4">
+                <form method="POST" action={confirmUrl} class="d-inline">
+                    <button type="submit" class={confirmButtonClass}>{confirmLabel}</button>
+                </form>
+                <a href={closeUrl}
+                   class="btn btn-outline-secondary ms-2"
+                   onclick="document.getElementById('modal-backdrop').click(); return false">
+                   Cancel
+                </a>
+            </div>
+        |]
+        }

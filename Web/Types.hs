@@ -45,6 +45,8 @@ type instance CurrentUserRecord = User
 data UsersController
     = EditUserAction {userId :: !(Id User)}
     | UpdateUserAction {userId :: !(Id User)}
+    | ConfirmDeletePasskeyAction {passkeyId :: !(Id Passkey)}
+    | ConfirmDeleteUserAction {userId :: !(Id User)}
     | DeleteUserAction {userId :: !(Id User)}
     deriving (Eq, Show, Data)
 
@@ -119,6 +121,7 @@ data DashboardController
     = DashboardPositionsAction { page :: Maybe Int, searchFilter :: Maybe Text }
     | DashboardMarketsAction { statusFilter :: Maybe MarketStatus, page :: Maybe Int, searchFilter :: Maybe Text }
     | DashboardTransactionsAction { page :: Maybe Int, searchFilter :: Maybe Text }
+    | ConfirmDeleteMarketAction { confirmDeleteMarketId :: !(Id Market), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     deriving (Eq, Show, Data)
 

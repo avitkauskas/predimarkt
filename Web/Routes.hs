@@ -14,7 +14,21 @@ import Web.Types
 
 -- Generator Marker
 instance AutoRoute SessionsController
-instance AutoRoute UsersController
+
+instance HasPath UsersController where
+    pathTo EditUserAction { userId } = "/EditUser?userId=" <> inputValue userId
+    pathTo UpdateUserAction { userId } = "/UpdateUser?userId=" <> inputValue userId
+    pathTo ConfirmDeletePasskeyAction { passkeyId } = "/ConfirmDeletePasskey?passkeyId=" <> inputValue passkeyId
+    pathTo ConfirmDeleteUserAction { userId } = "/ConfirmDeleteUser?userId=" <> inputValue userId
+    pathTo DeleteUserAction { userId } = "/DeleteUser?userId=" <> inputValue userId
+
+instance CanRoute UsersController where
+    parseRoute' =
+        (string "/EditUser" >> pure (EditUserAction def))
+        <|> (string "/UpdateUser" >> onlyAllowMethods [POST] >> pure (UpdateUserAction def))
+        <|> (string "/ConfirmDeletePasskey" >> pure (ConfirmDeletePasskeyAction def))
+        <|> (string "/ConfirmDeleteUser" >> pure (ConfirmDeleteUserAction def))
+        <|> (string "/DeleteUser" >> onlyAllowMethods [POST] >> pure (DeleteUserAction def))
 
 instance HasPath PasskeysController where
     pathTo UpdatePasskeyNameAction { passkeyId } =
@@ -126,7 +140,7 @@ instance CanRoute MarketsController where
         <|> (string "/DeleteMarketChatMessage" >> onlyAllowMethods [POST] >> pure (DeleteMarketChatMessageAction def def Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing))
         <|> (string "/EditMarket" >> pure (EditMarketAction def Nothing Nothing))
         <|> (string "/UpdateMarket" >> pure (UpdateMarketAction def))
-        <|> (string "/DeleteMarket" >> pure (DeleteMarketAction def Nothing Nothing))
+        <|> (string "/DeleteMarket" >> onlyAllowMethods [POST] >> pure (DeleteMarketAction def Nothing Nothing))
         <|> (string "/SetResolveAsset" >> pure (SetResolveAssetAction def))
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
@@ -144,6 +158,11 @@ instance HasPath DashboardController where
         "/DashboardTransactions"
             |> addQueryParam "page" (inputValue <$> page)
             |> addQueryParam "search" searchFilter
+    pathTo ConfirmDeleteMarketAction { confirmDeleteMarketId, page, searchFilter } =
+        "/ConfirmDeleteMarket"
+            |> addQueryParam "marketId" (Just $ inputValue confirmDeleteMarketId)
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
     pathTo ChangeMarketStatusAction { marketId, status, page, searchFilter } =
         "/ChangeMarketStatus"
             |> addQueryParam "marketId" (inputValue <$> marketId)
@@ -156,6 +175,7 @@ instance CanRoute DashboardController where
         (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing Nothing))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
+        <|> (string "/ConfirmDeleteMarket" >> pure (ConfirmDeleteMarketAction def Nothing Nothing))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing Nothing Nothing))
 
 addMarketFlag :: Text -> Maybe Bool -> Text -> Text
