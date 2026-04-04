@@ -101,9 +101,18 @@ instance Controller MarketsController where
                                 queryBuilder
                                     |> orderByDesc #trades
                                     |> orderByDesc #openedAt
-                            _ ->
+                            MarketIndexStatusNewest ->
                                 queryBuilder
                                     |> orderByDesc #openedAt
+                            MarketIndexStatusClosed ->
+                                queryBuilder
+                                    |> orderByDesc #closedAt
+                            MarketIndexStatusResolved ->
+                                queryBuilder
+                                    |> orderByDesc #resolvedAt
+                            MarketIndexStatusRefunded ->
+                                queryBuilder
+                                    |> orderByDesc #refundedAt
 
                 markets <- filteredMarketsQuery
                     |> applyStatusOrdering
