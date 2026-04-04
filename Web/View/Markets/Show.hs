@@ -108,6 +108,7 @@ instance View ShowView where
                             </div>
                             {chartScript}
                             {assetLayoutScript}
+                            {chatComposerScript}
                         </div>
                     </div>
                 </div>
@@ -374,6 +375,35 @@ instance View ShowView where
                 </script>
             |]
 
+            chatComposerScript :: Html
+            chatComposerScript = [hsx|
+                <script>
+                    function initMarketChatComposerShortcut() {
+                        var form = document.getElementById('market-chat-form');
+                        if (!form || form.dataset.shortcutBound === 'true') return;
+
+                        var textarea = form.querySelector('textarea[name="body"]');
+                        if (!textarea) return;
+
+                        textarea.addEventListener('keydown', function(event) {
+                            var shouldSubmit = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
+                            if (!shouldSubmit) return;
+
+                            event.preventDefault();
+                            if (typeof form.requestSubmit === 'function') {
+                                form.requestSubmit();
+                            } else {
+                                form.submit();
+                            }
+                        });
+
+                        form.dataset.shortcutBound = 'true';
+                    }
+
+                    document.addEventListener('turbolinks:load', initMarketChatComposerShortcut);
+                </script>
+            |]
+
             isLeading :: Asset -> Text
             isLeading a = if a.id `S.member` leadingAssetIds then "true" else "false"
 
@@ -464,19 +494,22 @@ instance View ShowView where
                         {renderChatComposerRevInput}
                         {renderTradeQuantityInput}
                         {renderBackToInput}
-                        <div class="input-group mt-2">
-                            <input id={"market-chat-input-" <> fromMaybe "stable" chatComposerRev}
-                                   type="text"
-                                   name="body"
-                                   class="form-control"
-                                   maxlength="280"
-                                   placeholder="Type a message... (280 chars max)"
-                                   autocomplete="off" />
-                            <button id="market-chat-submit"
-                                    class="btn btn-primary"
-                                    type="submit">
-                                Send
-                            </button>
+                        <div class="mt-2">
+                            <textarea id={"market-chat-input-" <> fromMaybe "stable" chatComposerRev}
+                                      name="body"
+                                      class="form-control"
+                                      rows="3"
+                                      maxlength="2000"
+                                      style="resize: vertical; min-height: 5.25rem;"
+                                      autocomplete="off"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-2 gap-3">
+                                <span class="small text-muted ms-2">Multi-line messages supported</span>
+                                <button id="market-chat-submit"
+                                        class="btn btn-primary"
+                                        type="submit">
+                                    Send
+                                </button>
+                            </div>
                         </div>
                     |]
                     nextChatPageUrl = if hasOlderChatMessages
@@ -510,7 +543,7 @@ instance View ShowView where
                             {timeAgo message.createdAt}
                         </span>
                     </div>
-                    <div style="overflow-wrap: anywhere;">
+                    <div style="overflow-wrap: anywhere; white-space: pre-wrap;">
                         {message.body}
                     </div>
                 </div>

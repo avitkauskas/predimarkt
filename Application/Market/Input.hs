@@ -44,7 +44,5 @@ normalizeChatMessageBody = strip
 validateChatMessageBody :: Text -> Maybe Text
 validateChatMessageBody body
     | body == "" = Just "Please enter a message"
-    | Text.any (\char -> char == '\n' || char == '\r') body =
-        Just "Message must be a single line"
-    | Text.length body > 280 = Just "Message must be at most 280 characters"
+    | Text.length body > 2000 = Just "Message must be at most 2000 characters"
     | otherwise = Nothing
