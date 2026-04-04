@@ -500,9 +500,16 @@ instance View ShowView where
                                       style="resize: vertical; min-height: 5.25rem;"
                                       autocomplete="off"></textarea>
                             <div class="d-flex justify-content-between align-items-center mt-2 gap-3">
-                                <span class="small text-muted ms-2">Multi-line messages supported</span>
+                                <span class="small text-muted ms-2 market-chat-shortcut">
+                                    <kbd class="market-chat-key">Cmd</kbd>
+                                    <span class="market-chat-shortcut-separator">|</span>
+                                    <kbd class="market-chat-key">Ctrl</kbd>
+                                    <span class="market-chat-shortcut-separator">+</span>
+                                    <kbd class="market-chat-key">Enter</kbd>
+                                    to send
+                                </span>
                                 <button id="market-chat-submit"
-                                        class="btn btn-primary"
+                                        class="btn btn-primary btn-sm"
                                         type="submit">
                                     Send
                                 </button>

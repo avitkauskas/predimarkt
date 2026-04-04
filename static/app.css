@@ -122,6 +122,37 @@
     display: none;
 }
 
+.market-chat-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.18rem;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    line-height: 1.1;
+}
+
+.market-chat-key {
+    display: inline-block;
+    padding: 0.08rem 0.3rem;
+    font-size: 0.68rem;
+    line-height: 1.05;
+    font-weight: 500;
+    color: var(--bs-secondary-color);
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    box-shadow: none;
+}
+
+.market-chat-shortcut-separator {
+    font-size: 0.68rem;
+    line-height: 1;
+}
+
+[data-bs-theme="dark"] .market-chat-key {
+    color: var(--bs-body-color);
+}
+
 /* Dark mode customizations */
 [data-bs-theme="dark"] {
     --bs-body-color: #adb5bd;
