@@ -62,7 +62,10 @@ instance View ShowView where
                             </div>
                         </div>
                         <div class="card-body p-4">
-                            <header class="mb-4">
+                            <header class={classes
+                                [ ("mb-1", hasUserPositionsInMarket)
+                                , ("mb-4", not hasUserPositionsInMarket)
+                                ]}>
                                 <div class="d-flex align-items-start gap-2">
                                     <a href={backLink}
                                        class="btn btn-outline-secondary back-button flex-shrink-0">
@@ -74,9 +77,14 @@ instance View ShowView where
                                         </span>
                                     </div>
                                 </div>
+                                {renderPositionsRow}
                             </header>
 
-                            <div class="assets-list border-top mt-4">
+                            <div class={classes
+                                [ "assets-list border-top"
+                                , ("mt-0", hasUserPositionsInMarket)
+                                , ("mt-4", not hasUserPositionsInMarket)
+                                ]}>
                                 {forEach assets renderAsset}
                             </div>
 
@@ -267,13 +275,22 @@ instance View ShowView where
                 , searchFilter = Just market.title
                 }
 
+            renderPositionsRow :: Html
+            renderPositionsRow =
+                if hasUserPositionsInMarket
+                    then [hsx|
+                        <div class="d-flex justify-content-end mt-2 mb-2 me-0 me-sm-2">
+                            {renderPositionsLink}
+                        </div>
+                    |]
+                    else [hsx||]
+
             renderMarketLinksRow :: Html
             renderMarketLinksRow =
-                if hasLeadingAssets || hasUserPositionsInMarket
+                if hasLeadingAssets
                     then [hsx|
-                        <div class="d-flex flex-column align-items-end text-end mt-3 me-0 me-sm-2">
+                        <div class="d-flex flex-column align-items-end text-end mt-2 me-0 me-sm-2">
                             {renderAssetsToggleLink}
-                            {renderPositionsLink}
                         </div>
                     |]
                     else [hsx||]
@@ -282,11 +299,9 @@ instance View ShowView where
             renderPositionsLink =
                 if hasUserPositionsInMarket
                     then [hsx|
-                        <div class={classes [("mt-1", hasLeadingAssets)]}>
-                            <a href={positionsAction} class="text-decoration-none">
-                                Your Positions in this Market
-                            </a>
-                        </div>
+                        <a href={positionsAction} class="text-decoration-none">
+                            Your Positions in this Market
+                        </a>
                     |]
                     else [hsx||]
 

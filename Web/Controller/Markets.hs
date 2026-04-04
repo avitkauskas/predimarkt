@@ -171,9 +171,9 @@ instance Controller MarketsController where
         let tAction = MarketInput.sanitizeTradingAction
                 (tradingAction <|> paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (showChart <|> readQueryFlag "showChart")
-        let descriptionVisible = fromMaybe False (showDescription <|> readQueryFlag "showDescription")
+        let descriptionVisible = fromMaybe True (showDescription <|> readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (showAllAssets <|> readQueryFlag "showAllAssets")
-        let tradeHistoryVisible = fromMaybe False (showTradeHistory <|> readQueryFlag "showTradeHistory")
+        let tradeHistoryVisible = fromMaybe True (showTradeHistory <|> readQueryFlag "showTradeHistory")
         let requestedActivityPage = max 1 (fromMaybe 1 (activityPage <|> paramOrNothing @Int "activityPage"))
         let requestedChatPage = max 1 (fromMaybe 1 (chatPage <|> paramOrNothing @Int "chatPage"))
         let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
@@ -273,9 +273,9 @@ instance Controller MarketsController where
         let tAction = MarketInput.sanitizeTradingAction
                 (paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (readQueryFlag "showChart")
-        let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
+        let descriptionVisible = fromMaybe True (readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
-        let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
+        let tradeHistoryVisible = fromMaybe True (readQueryFlag "showTradeHistory")
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
         let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
         let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
@@ -320,9 +320,9 @@ instance Controller MarketsController where
         let tAction = MarketInput.sanitizeTradingAction
                 (paramOrNothing @Text "tradingAction")
         let chartVisible = fromMaybe True (readQueryFlag "showChart")
-        let descriptionVisible = fromMaybe False (readQueryFlag "showDescription")
+        let descriptionVisible = fromMaybe True (readQueryFlag "showDescription")
         let allAssetsVisible = fromMaybe False (readQueryFlag "showAllAssets")
-        let tradeHistoryVisible = fromMaybe False (readQueryFlag "showTradeHistory")
+        let tradeHistoryVisible = fromMaybe True (readQueryFlag "showTradeHistory")
         let currentActivityPage = max 1 (fromMaybe 1 (paramOrNothing @Int "activityPage"))
         let currentChatPage = max 1 (fromMaybe 1 (paramOrNothing @Int "chatPage"))
         let currentChatComposerRev = QueryParams.normalizeOptionalTextParam
