@@ -19,6 +19,7 @@ data IndexView = IndexView
 data MarketIndexStatusFilter
     = MarketIndexStatusPopular
     | MarketIndexStatusNewest
+    | MarketIndexStatusEnding
     | MarketIndexStatusClosed
     | MarketIndexStatusResolved
     | MarketIndexStatusRefunded
@@ -26,17 +27,19 @@ data MarketIndexStatusFilter
 
 parseMarketIndexStatusFilter :: Maybe Text -> MarketIndexStatusFilter
 parseMarketIndexStatusFilter = \case
-    Just "newest" -> MarketIndexStatusNewest
-    Just "closed" -> MarketIndexStatusClosed
+    Just "newest"   -> MarketIndexStatusNewest
+    Just "ending"   -> MarketIndexStatusEnding
+    Just "closed"   -> MarketIndexStatusClosed
     Just "resolved" -> MarketIndexStatusResolved
     Just "refunded" -> MarketIndexStatusRefunded
-    _ -> MarketIndexStatusPopular
+    _               -> MarketIndexStatusPopular
 
 marketIndexStatusFilterParamValue :: MarketIndexStatusFilter -> Maybe Text
 marketIndexStatusFilterParamValue = \case
-    MarketIndexStatusPopular -> Nothing
-    MarketIndexStatusNewest -> Just "newest"
-    MarketIndexStatusClosed -> Just "closed"
+    MarketIndexStatusPopular  -> Nothing
+    MarketIndexStatusNewest   -> Just "newest"
+    MarketIndexStatusEnding   -> Just "ending"
+    MarketIndexStatusClosed   -> Just "closed"
     MarketIndexStatusResolved -> Just "resolved"
     MarketIndexStatusRefunded -> Just "refunded"
 
@@ -45,9 +48,10 @@ marketIndexStatusFilterFormValue = fromMaybe "" . marketIndexStatusFilterParamVa
 
 marketIndexStatusFilterLabel :: MarketIndexStatusFilter -> Text
 marketIndexStatusFilterLabel = \case
-    MarketIndexStatusPopular -> "Popular"
-    MarketIndexStatusNewest -> "Newest"
-    MarketIndexStatusClosed -> "Closed"
+    MarketIndexStatusPopular  -> "Popular"
+    MarketIndexStatusNewest   -> "Newest"
+    MarketIndexStatusEnding   -> "Ending"
+    MarketIndexStatusClosed   -> "Closed"
     MarketIndexStatusResolved -> "Resolved"
     MarketIndexStatusRefunded -> "Refunded"
 
@@ -55,6 +59,7 @@ marketIndexStatusFilterOptions :: [MarketIndexStatusFilter]
 marketIndexStatusFilterOptions =
     [ MarketIndexStatusPopular
     , MarketIndexStatusNewest
+    , MarketIndexStatusEnding
     , MarketIndexStatusClosed
     , MarketIndexStatusResolved
     , MarketIndexStatusRefunded

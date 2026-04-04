@@ -78,6 +78,8 @@ instance Controller MarketsController where
                         activeMarketsFilter queryBuilder
                     MarketIndexStatusNewest ->
                         activeMarketsFilter queryBuilder
+                    MarketIndexStatusEnding ->
+                        activeMarketsFilter queryBuilder
                     MarketIndexStatusClosed ->
                         queryBuilder |> filterWhere (#status, MarketStatusClosed)
                     MarketIndexStatusResolved ->
@@ -104,6 +106,9 @@ instance Controller MarketsController where
                             MarketIndexStatusNewest ->
                                 queryBuilder
                                     |> orderByDesc #openedAt
+                            MarketIndexStatusEnding ->
+                                queryBuilder
+                                    |> orderByAsc #closedAt
                             MarketIndexStatusClosed ->
                                 queryBuilder
                                     |> orderByDesc #closedAt
