@@ -91,14 +91,14 @@ instance HasPath MarketsController where
             |> addQueryParam "marketId" (Just $ inputValue marketId)
             |> addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
             |> addQueryParam "tradingAction" (inputValue <$> tradingAction)
-            |> addMarketFlag "showChart" showChart
-            |> addMarketFlag "showDescription" showDescription
-            |> addMarketFlag "showAllAssets" showAllAssets
-            |> addMarketFlag "showTradeHistory" showTradeHistory
-            |> addQueryParam "activityPage" (inputValue <$> activityPage)
-            |> addQueryParam "chatPage" (inputValue <$> chatPage)
+            |> addMarketFlag "showChart" (omitDefaultMarketFlag True showChart)
+            |> addMarketFlag "showDescription" (omitDefaultMarketFlag True showDescription)
+            |> addMarketFlag "showAllAssets" (omitDefaultMarketFlag False showAllAssets)
+            |> addMarketFlag "showTradeHistory" (omitDefaultMarketFlag True showTradeHistory)
+            |> addQueryParam "activityPage" (inputValue <$> normalizeDefaultPage activityPage)
+            |> addQueryParam "chatPage" (inputValue <$> normalizeDefaultPage chatPage)
             |> addQueryParam "chatComposerRev" (inputValue <$> chatComposerRev)
-            |> addQueryParam "tradeQuantity" (inputValue <$> tradeQuantity)
+            |> addQueryParam "tradeQuantity" (inputValue <$> omitDefaultTradeQuantity tradeQuantity)
             |> addQueryParam "backTo" backTo
     pathTo CreateMarketChatMessageAction { marketId } = "/CreateMarketChatMessage?marketId=" <> inputValue marketId
     pathTo DeleteMarketChatMessageAction { marketChatMessageId, marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
@@ -107,14 +107,14 @@ instance HasPath MarketsController where
             |> addQueryParam "marketId" (Just $ inputValue marketId)
             |> addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
             |> addQueryParam "tradingAction" (inputValue <$> tradingAction)
-            |> addMarketFlag "showChart" showChart
-            |> addMarketFlag "showDescription" showDescription
-            |> addMarketFlag "showAllAssets" showAllAssets
-            |> addMarketFlag "showTradeHistory" showTradeHistory
-            |> addQueryParam "activityPage" (inputValue <$> activityPage)
-            |> addQueryParam "chatPage" (inputValue <$> chatPage)
+            |> addMarketFlag "showChart" (omitDefaultMarketFlag True showChart)
+            |> addMarketFlag "showDescription" (omitDefaultMarketFlag True showDescription)
+            |> addMarketFlag "showAllAssets" (omitDefaultMarketFlag False showAllAssets)
+            |> addMarketFlag "showTradeHistory" (omitDefaultMarketFlag True showTradeHistory)
+            |> addQueryParam "activityPage" (inputValue <$> normalizeDefaultPage activityPage)
+            |> addQueryParam "chatPage" (inputValue <$> normalizeDefaultPage chatPage)
             |> addQueryParam "chatComposerRev" (inputValue <$> chatComposerRev)
-            |> addQueryParam "tradeQuantity" (inputValue <$> tradeQuantity)
+            |> addQueryParam "tradeQuantity" (inputValue <$> omitDefaultTradeQuantity tradeQuantity)
             |> addQueryParam "backTo" backTo
     pathTo EditMarketAction { marketId, page, searchFilter } =
         "/EditMarket"
@@ -186,6 +186,21 @@ addMarketFlag name mValue base =
         Just False -> base <> separator <> name <> "=false"
   where
     separator = if Text.any (== '?') base then "&" else "?"
+
+omitDefaultMarketFlag :: Bool -> Maybe Bool -> Maybe Bool
+omitDefaultMarketFlag defaultValue = \case
+    Just value | value == defaultValue -> Nothing
+    other -> other
+
+normalizeDefaultPage :: Maybe Int -> Maybe Int
+normalizeDefaultPage = \case
+    Just 1 -> Nothing
+    other  -> other
+
+omitDefaultTradeQuantity :: Maybe Int -> Maybe Int
+omitDefaultTradeQuantity = \case
+    Just 10 -> Nothing
+    other   -> other
 
 encodeQueryValue :: Text -> Text
 encodeQueryValue value = cs $ ByteString.foldr encodeByte "" (Text.encodeUtf8 value)
