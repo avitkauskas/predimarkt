@@ -6,6 +6,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import Data.Word (Word8)
+import Generated.Types (Asset)
 import IHP.ModelSupport
 import IHP.Prelude
 import IHP.RouterPrelude
@@ -89,33 +90,13 @@ instance HasPath MarketsController where
     pathTo ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
         "/ShowMarket"
             |> addQueryParam "marketId" (Just $ inputValue marketId)
-            |> addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
-            |> addQueryParam "tradingAction" (inputValue <$> tradingAction)
-            |> addMarketFlag "showChart" (omitDefaultMarketFlag True showChart)
-            |> addMarketFlag "showDescription" (omitDefaultMarketFlag True showDescription)
-            |> addMarketFlag "showAllAssets" (omitDefaultMarketFlag False showAllAssets)
-            |> addMarketFlag "showTradeHistory" (omitDefaultMarketFlag True showTradeHistory)
-            |> addQueryParam "activityPage" (inputValue <$> normalizeDefaultPage activityPage)
-            |> addQueryParam "chatPage" (inputValue <$> normalizeDefaultPage chatPage)
-            |> addQueryParam "chatComposerRev" (inputValue <$> chatComposerRev)
-            |> addQueryParam "tradeQuantity" (inputValue <$> omitDefaultTradeQuantity tradeQuantity)
-            |> addQueryParam "backTo" backTo
+            |> addMarketViewParams tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev tradeQuantity backTo
     pathTo CreateMarketChatMessageAction { marketId } = "/CreateMarketChatMessage?marketId=" <> inputValue marketId
     pathTo DeleteMarketChatMessageAction { marketChatMessageId, marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } =
         "/DeleteMarketChatMessage"
             |> addQueryParam "marketChatMessageId" (Just $ inputValue marketChatMessageId)
             |> addQueryParam "marketId" (Just $ inputValue marketId)
-            |> addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
-            |> addQueryParam "tradingAction" (inputValue <$> tradingAction)
-            |> addMarketFlag "showChart" (omitDefaultMarketFlag True showChart)
-            |> addMarketFlag "showDescription" (omitDefaultMarketFlag True showDescription)
-            |> addMarketFlag "showAllAssets" (omitDefaultMarketFlag False showAllAssets)
-            |> addMarketFlag "showTradeHistory" (omitDefaultMarketFlag True showTradeHistory)
-            |> addQueryParam "activityPage" (inputValue <$> normalizeDefaultPage activityPage)
-            |> addQueryParam "chatPage" (inputValue <$> normalizeDefaultPage chatPage)
-            |> addQueryParam "chatComposerRev" (inputValue <$> chatComposerRev)
-            |> addQueryParam "tradeQuantity" (inputValue <$> omitDefaultTradeQuantity tradeQuantity)
-            |> addQueryParam "backTo" backTo
+            |> addMarketViewParams tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev tradeQuantity backTo
     pathTo EditMarketAction { marketId, page, searchFilter } =
         "/EditMarket"
             |> addQueryParam "marketId" (Just $ inputValue marketId)
@@ -186,6 +167,20 @@ addMarketFlag name mValue base =
         Just False -> base <> separator <> name <> "=false"
   where
     separator = if Text.any (== '?') base then "&" else "?"
+
+addMarketViewParams :: Maybe (Id Asset) -> Maybe Text -> Maybe Bool -> Maybe Bool -> Maybe Bool -> Maybe Bool -> Maybe Int -> Maybe Int -> Maybe Text -> Maybe Int -> Maybe Text -> Text -> Text
+addMarketViewParams tradingAssetId tradingAction showChart showDescription showAllAssets showTradeHistory activityPage chatPage chatComposerRev tradeQuantity backTo =
+    addQueryParam "tradingAssetId" (inputValue <$> tradingAssetId)
+        . addQueryParam "tradingAction" (inputValue <$> tradingAction)
+        . addMarketFlag "showChart" (omitDefaultMarketFlag True showChart)
+        . addMarketFlag "showDescription" (omitDefaultMarketFlag True showDescription)
+        . addMarketFlag "showAllAssets" (omitDefaultMarketFlag False showAllAssets)
+        . addMarketFlag "showTradeHistory" (omitDefaultMarketFlag True showTradeHistory)
+        . addQueryParam "activityPage" (inputValue <$> normalizeDefaultPage activityPage)
+        . addQueryParam "chatPage" (inputValue <$> normalizeDefaultPage chatPage)
+        . addQueryParam "chatComposerRev" chatComposerRev
+        . addQueryParam "tradeQuantity" (inputValue <$> omitDefaultTradeQuantity tradeQuantity)
+        . addQueryParam "backTo" backTo
 
 omitDefaultMarketFlag :: Bool -> Maybe Bool -> Maybe Bool
 omitDefaultMarketFlag defaultValue = \case

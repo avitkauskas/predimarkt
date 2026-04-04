@@ -297,14 +297,11 @@ instance View ShowView where
                     else [hsx||]
 
             renderPositionsLink :: Html
-            renderPositionsLink =
-                if hasUserPositionsInMarket
-                    then [hsx|
-                        <a href={positionsAction} class="text-decoration-none">
-                            Your Positions in this Market
-                        </a>
-                    |]
-                    else [hsx||]
+            renderPositionsLink = [hsx|
+                <a href={positionsAction} class="text-decoration-none">
+                    Your Positions in this Market
+                </a>
+            |]
 
             renderAssetsToggleLink :: Html
             renderAssetsToggleLink =
