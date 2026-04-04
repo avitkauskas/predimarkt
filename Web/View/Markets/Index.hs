@@ -297,9 +297,9 @@ renderMarket backToPath market = [hsx|
                         {formatMoney market.turnover}
                     </span>
                 </div>
-                <span title="Market closing time" style="font-size: 0.74rem;">
+                <span title={marketFooterTimeTitle} style="font-size: 0.74rem;">
                     <i class="bi bi-alarm"></i>
-                    {renderTime market.closedAt}
+                    {renderTime marketFooterTime}
                 </span>
             </div>
 
@@ -319,6 +319,16 @@ renderMarket backToPath market = [hsx|
         bodyClass = marketStatusClasses market.status
         headerClass = marketStatusHeaderClasses market.status
         footerClass = marketStatusFooterClasses market.status
+        marketFooterTimeTitle :: Text
+        marketFooterTimeTitle = case market.status of
+            MarketStatusResolved -> "Market resolution time"
+            MarketStatusRefunded -> "Market refund time"
+            _                    -> "Market closing time"
+        marketFooterTime :: UTCTime
+        marketFooterTime = case market.status of
+            MarketStatusResolved -> fromMaybe market.closedAt market.resolvedAt
+            MarketStatusRefunded -> fromMaybe market.closedAt market.refundedAt
+            _                    -> market.closedAt
 
         qtyMap = M.fromList [(a.id, Quantity a.quantity) | a <- market.assets]
         beta = Beta market.beta
