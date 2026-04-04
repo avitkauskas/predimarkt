@@ -72,14 +72,17 @@ instance Controller MarketsController where
                         (filterWhere (#status, MarketStatusOpen))
                         (filterWhereSql (#updatedAt, ">= CURRENT_DATE - INTERVAL '10 days'"))
 
+        let openMarketsFilter queryBuilder =
+                queryBuilder |> filterWhere (#status, MarketStatusOpen)
+
         let applyStatusFilter queryBuilder =
                 case statusFilter of
                     MarketIndexStatusPopular ->
                         activeMarketsFilter queryBuilder
                     MarketIndexStatusNewest ->
-                        activeMarketsFilter queryBuilder
+                        openMarketsFilter queryBuilder
                     MarketIndexStatusEnding ->
-                        activeMarketsFilter queryBuilder
+                        openMarketsFilter queryBuilder
                     MarketIndexStatusClosed ->
                         queryBuilder |> filterWhere (#status, MarketStatusClosed)
                     MarketIndexStatusResolved ->
