@@ -1012,21 +1012,29 @@ instance View ShowView where
                         chart.timeScale().fitContent();
 
                         var resizeObserver = new ResizeObserver(function(entries) {
-                            chart.applyOptions({
+                            if (!chartContainer._chart) return;
+                            chartContainer._chart.applyOptions({
                                 width: entries[0].contentRect.width,
                                 height: entries[0].contentRect.height,
                             });
                         });
                         resizeObserver.observe(chartContainer);
+                        chartContainer._resizeObserver = resizeObserver;
                     }
 
                     document.addEventListener('turbolinks:load', initPriceChart);
 
                     document.addEventListener('turbolinks:before-cache', function() {
                         var chartContainer = document.getElementById('price-chart');
-                        if (chartContainer && chartContainer._chart) {
-                            chartContainer._chart.remove();
-                            chartContainer._chart = null;
+                        if (chartContainer) {
+                            if (chartContainer._resizeObserver) {
+                                chartContainer._resizeObserver.disconnect();
+                                chartContainer._resizeObserver = null;
+                            }
+                            if (chartContainer._chart) {
+                                chartContainer._chart.remove();
+                                chartContainer._chart = null;
+                            }
                         }
                     });
                 </script>

@@ -41,4 +41,3 @@ instance FrontController WebApplication where
 instance InitControllerContext WebApplication where
     initContext = do
         setLayout withoutFooterLayout
-        initAuthentication @User
