@@ -9,5 +9,4 @@ import Web.Types
 
 config :: ConfigBuilder
 config = do
-    let userAuth = IHP.LoginSupport.Middleware.authMiddleware @User
-    option $ AuthMiddleware userAuth
+    option $ AuthMiddleware (authMiddleware @User)
