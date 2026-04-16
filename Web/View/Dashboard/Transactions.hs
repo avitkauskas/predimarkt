@@ -24,7 +24,8 @@ data TransactionsView = TransactionsView
     , wallet                  :: Wallet
     , positionsValue          :: Integer
     , totalValue              :: Integer
-    , searchFilter            :: Maybe Text
+    , searchFilterT           :: Maybe Text
+    , typeFilter              :: Maybe Text
     }
 
 instance View TransactionsView where
@@ -35,19 +36,30 @@ instance View TransactionsView where
                 {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>
             <div class="mb-3">
-                {renderSearchForm searchFilter}
+                {renderSearchFormWithType searchFilterT typeFilter}
             </div>
-            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilter}
+            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilterT typeFilter}
         </div>
     |]
 
-renderSearchForm :: Maybe Text -> Html
-renderSearchForm searchFilter = [hsx|
-    <div class="d-flex" id="transactions-search-form-container">
+renderSearchFormWithType :: Maybe Text -> Maybe Text -> Html
+renderSearchFormWithType searchFilter mType = [hsx|
+    <div class="d-flex align-items-center gap-3">
+        <div class="flex-grow-1" style="min-width: 0;">
+            {renderSearchForm searchFilter mType}
+        </div>
+        {renderTypeDropdownForm searchFilter mType}
+    </div>
+|]
+
+renderSearchForm :: Maybe Text -> Maybe Text -> Html
+renderSearchForm searchFilter mType = [hsx|
+    <div class="d-flex position-relative" id="transactions-search-form-container">
         <form class="w-100 position-relative"
-              action={DashboardTransactionsAction Nothing Nothing}
+              action={DashboardTransactionsAction Nothing Nothing mType}
               method="GET"
               data-auto-submit-delay="300">
+            {forEach (maybeToList mType) renderTypeHiddenInput}
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
@@ -63,27 +75,73 @@ renderSearchForm searchFilter = [hsx|
     </div>
 |]
 
-renderTransactionsContent :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Html
-renderTransactionsContent [] _ _ Nothing = [hsx|
+renderTypeHiddenInput :: Text -> Html
+renderTypeHiddenInput typeValue = [hsx|
+    <input type="hidden" name="type" value={typeValue} />
+|]
+
+renderTypeDropdownForm :: Maybe Text -> Maybe Text -> Html
+renderTypeDropdownForm searchFilter mType = [hsx|
+    <form class="d-flex align-items-center gap-2 flex-shrink-0"
+          action={DashboardTransactionsAction Nothing Nothing mType}
+          method="GET">
+        {forEach (maybeToList searchFilter) renderSearchHiddenInput}
+        <div class="d-inline-flex align-items-center gap-2 rounded border border-secondary-subtle ps-2 pe-0 text-body-secondary bg-transparent"
+             style="min-width: 133px; padding-top: 0.36rem; padding-bottom: 0.36rem;">
+            <i class="bi bi-filter-right"></i>
+            <select id="transactions-type-filter"
+                    name="type"
+                    class="form-select form-select-sm flex-grow-1 border-0 bg-transparent text-body-secondary shadow-none py-0 ps-0 pe-4"
+                    aria-label="Filter transactions by type"
+                    onchange="window.visitGetFormWithTurbolinks(this.form)">
+                {renderTypeOption mType Nothing}
+                {renderTypeOption mType (Just "buy")}
+                {renderTypeOption mType (Just "sell")}
+            </select>
+        </div>
+    </form>
+|]
+
+renderSearchHiddenInput :: Text -> Html
+renderSearchHiddenInput searchQuery = [hsx|
+    <input type="hidden" name="search" value={searchQuery} />
+|]
+
+renderTypeOption :: Maybe Text -> Maybe Text -> Html
+renderTypeOption mActive mOption = [hsx|
+    <option value={fromMaybe "" mOption}
+            selected={mActive == mOption}>
+        {typeOptionLabel mOption}
+    </option>
+|]
+
+typeOptionLabel :: Maybe Text -> Text
+typeOptionLabel Nothing       = "All"
+typeOptionLabel (Just "buy")  = "Buy"
+typeOptionLabel (Just "sell") = "Sell"
+typeOptionLabel (Just x)      = x
+
+renderTransactionsContent :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
+renderTransactionsContent [] _ _ Nothing _ = [hsx|
     <div class="alert alert-info">
         No transactions found. Start trading to see your history here.
     </div>
 |]
-renderTransactionsContent [] _ _ (Just _) = [hsx|
+renderTransactionsContent [] _ _ (Just _) _ = [hsx|
     <div class="alert alert-info">
-        No transactions match your search. Try a different search term.
+        No transactions match your filters.
     </div>
 |]
-renderTransactionsContent txns currentPage totalPages searchFilter = [hsx|
+renderTransactionsContent txns currentPage totalPages searchFilter mType = [hsx|
     <div class="row g-3">
         {forEach txns (renderTransactionCard currentBackToPath)}
     </div>
     <div>
-        {renderTxnPagination currentPage totalPages searchFilter}
+        {renderTxnPagination currentPage totalPages searchFilter mType}
     </div>
 |]
     where
-        currentBackToPath = pathTo (DashboardTransactionsAction (normalizePageParam currentPage) searchFilter)
+        currentBackToPath = pathTo (DashboardTransactionsAction (normalizePageParam currentPage) searchFilter mType)
 
 renderTransactionCard :: (?context :: ControllerContext) => Text -> TransactionWithDetails -> Html
 renderTransactionCard backToPath twd =
@@ -156,7 +214,7 @@ renderTransactionCard backToPath twd =
         </div>
     |]
 
-renderTxnPagination :: Int -> Int -> Maybe Text -> Html
-renderTxnPagination currentPage totalPages searchFilter =
+renderTxnPagination :: Int -> Int -> Maybe Text -> Maybe Text -> Html
+renderTxnPagination currentPage totalPages searchFilter mType =
     renderSmartPagination currentPage totalPages "Transaction pagination"
-        (\pageNum -> pathTo (DashboardTransactionsAction (Just pageNum) searchFilter))
+        (\pageNum -> pathTo (DashboardTransactionsAction (Just pageNum) searchFilter mType))

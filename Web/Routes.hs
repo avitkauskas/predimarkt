@@ -136,10 +136,11 @@ instance HasPath DashboardController where
             |> addQueryParam "statusFilter" (inputValue <$> statusFilter)
             |> addQueryParam "page" (inputValue <$> page)
             |> addQueryParam "search" searchFilter
-    pathTo DashboardTransactionsAction { page, searchFilter } =
+    pathTo DashboardTransactionsAction { pageT, searchFilterT, typeFilter } =
         "/DashboardTransactions"
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
+            |> addQueryParam "page" (inputValue <$> pageT)
+            |> addQueryParam "search" searchFilterT
+            |> addQueryParam "type" typeFilter
     pathTo ConfirmDeleteMarketAction { confirmDeleteMarketId, page, searchFilter } =
         "/ConfirmDeleteMarket"
             |> addQueryParam "marketId" (Just $ inputValue confirmDeleteMarketId)
@@ -156,7 +157,7 @@ instance CanRoute DashboardController where
     parseRoute' =
         (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing Nothing))
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing Nothing))
-        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
+        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing Nothing))
         <|> (string "/ConfirmDeleteMarket" >> pure (ConfirmDeleteMarketAction def Nothing Nothing))
         <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing Nothing Nothing))
 

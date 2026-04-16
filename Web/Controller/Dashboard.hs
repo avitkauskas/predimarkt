@@ -305,30 +305,45 @@ instance Controller DashboardController where
                 setSuccessMessage message
                 redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing, searchFilter = mSearchFilter }
 
-    action DashboardTransactionsAction { page, searchFilter } = do
-        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
-        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
+    action DashboardTransactionsAction { pageT, searchFilterT, typeFilter } = do
+        let currentPage = fromMaybe 1 (pageT <|> paramOrNothing @Int "page")
+        let searchQuery = normalizeSearchQuery (searchFilterT <|> paramOrNothing @Text "search")
+        let mTypeFilter :: Maybe Text = typeFilter <|> paramOrNothing @Text "type"
         let itemsPerPage = 5
 
-        -- Get total count for pagination (with search filter if provided)
-        totalCount <- case searchQuery of
-            Just query -> do
-                -- Use sqlQueryScalar for efficient counting
-                -- Search in both market title and asset name
-                count <- sqlQueryScalar
-                    [r|
-                        SELECT COUNT(*)::INTEGER
-                        FROM transactions t
-                        JOIN markets m ON t.market_id = m.id
-                        JOIN assets a ON t.asset_id = a.id
-                        WHERE t.user_id = ?
-                        AND (m.title ILIKE ? OR a.name ILIKE ?)
-                    |]
-                    (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
+        -- Get total count for pagination (with search and type filters if provided)
+        totalCount <- case (searchQuery, mTypeFilter) of
+            (Just query, mType) -> do
+                let typeClause = case mType of
+                        Just "buy"  -> " AND t.quantity > 0"
+                        Just "sell" -> " AND t.quantity < 0"
+                        Nothing     -> ""
+                let baseQuery = [r|
+                    SELECT COUNT(*)::INTEGER
+                    FROM transactions t
+                    JOIN markets m ON t.market_id = m.id
+                    JOIN assets a ON t.asset_id = a.id
+                    WHERE t.user_id = ?
+                    AND (m.title ILIKE ? OR a.name ILIKE ?)
+                |] <> typeClause
+                count <- case mType of
+                        Just _ -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
+                        Nothing -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
                 pure count
-            Nothing -> query @Transaction
-                |> filterWhere (#userId, currentUserId)
-                |> fetchCount
+            (Nothing, mType) -> do
+                let typeClause = case mType of
+                        Just "buy"  -> " AND t.quantity > 0"
+                        Just "sell" -> " AND t.quantity < 0"
+                        Nothing     -> ""
+                let baseQuery = [r|
+                    SELECT COUNT(*)::INTEGER
+                    FROM transactions t
+                    WHERE t.user_id = ?
+                |] <> typeClause
+                case mType of
+                        Just "buy" -> sqlQueryScalar baseQuery (Only currentUserId)
+                        Just "sell" -> sqlQueryScalar baseQuery (Only currentUserId)
+                        Nothing -> sqlQueryScalar baseQuery (Only currentUserId)
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
@@ -339,34 +354,68 @@ instance Controller DashboardController where
         let userId = currentUserId :: Id User
         let txnLimit = itemsPerPage :: Int
         let txnOffset = pageOffset :: Int
-        transactions <- case searchQuery of
-            Just query -> do
-                -- First get matching transaction IDs
+        let typeClause = case mTypeFilter of
+                Just "buy"  -> " AND t.quantity > 0"
+                Just "sell" -> " AND t.quantity < 0"
+                Nothing     -> ""
+        transactions <- case (searchQuery, mTypeFilter) of
+            (Just query, mType) -> do
+                let typeClauseInner = case mType of
+                        Just "buy"  -> " AND t.quantity > 0"
+                        Just "sell" -> " AND t.quantity < 0"
+                        Nothing     -> ""
                 (txnIdRows :: [Only UUID]) <- sqlQuery
-                    [r|
+                    ([r|
                         SELECT t.id
                         FROM transactions t
                         JOIN markets m ON t.market_id = m.id
                         JOIN assets a ON t.asset_id = a.id
                         WHERE t.user_id = ?
                         AND (m.title ILIKE ? OR a.name ILIKE ?)
+                    |] <> typeClauseInner <> [r|
                         ORDER BY t.created_at DESC
                         LIMIT ? OFFSET ?
-                    |]
+                    |])
                     (userId, "%" <> query <> "%", "%" <> query <> "%", txnLimit, txnOffset)
-                -- Fetch full records by IDs (N+1 acceptable for small page size)
                 let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
                 txnRecords <- mapM fetch txnIds
                 collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-            Nothing ->
-                query @Transaction
-                    |> filterWhere (#userId, currentUserId)
-                    |> orderByDesc #createdAt
-                    |> limit itemsPerPage
-                    |> offset pageOffset
-                    |> fetch
-                    >>= collectionFetchRelated #assetId
-                    >>= collectionFetchRelated #marketId
+            (Nothing, Just "buy") -> do
+                (txnIdRows :: [Only UUID]) <- sqlQuery
+                    [r|
+                        SELECT id FROM transactions
+                        WHERE user_id = ? AND quantity > 0
+                        ORDER BY created_at DESC
+                        LIMIT ? OFFSET ?
+                    |]
+                    (currentUserId, txnLimit, txnOffset)
+                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                txnRecords <- mapM fetch txnIds
+                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+            (Nothing, Just "sell") -> do
+                (txnIdRows :: [Only UUID]) <- sqlQuery
+                    [r|
+                        SELECT id FROM transactions
+                        WHERE user_id = ? AND quantity < 0
+                        ORDER BY created_at DESC
+                        LIMIT ? OFFSET ?
+                    |]
+                    (currentUserId, txnLimit, txnOffset)
+                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                txnRecords <- mapM fetch txnIds
+                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+            (Nothing, Nothing) -> do
+                (txnIdRows :: [Only UUID]) <- sqlQuery
+                    [r|
+                        SELECT id FROM transactions
+                        WHERE user_id = ?
+                        ORDER BY created_at DESC
+                        LIMIT ? OFFSET ?
+                    |]
+                    (currentUserId, txnLimit, txnOffset)
+                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                txnRecords <- mapM fetch txnIds
+                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
 
         let transactionsWithDetails = map (\t -> TransactionWithDetails { transaction = t }) transactions
 
@@ -385,7 +434,8 @@ instance Controller DashboardController where
             , wallet = wallet
             , positionsValue = totalPositionsValue
             , totalValue = totalValue
-            , searchFilter = searchQuery
+            , searchFilterT = searchQuery
+            , typeFilter = mTypeFilter
             }
 
 fetchUserPositionsValue :: (?modelContext :: ModelContext) => Id User -> IO Integer
