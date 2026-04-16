@@ -77,22 +77,6 @@ positionStatusFilterOptions =
     , PositionStatusFilterRefunded
     ]
 
-statusFilterFromText :: Maybe Text -> PositionStatusFilter
-statusFilterFromText = \case
-    Just "active"   -> PositionStatusFilterActive
-    Just "closed"   -> PositionStatusFilterClosed
-    Just "resolved" -> PositionStatusFilterResolved
-    Just "refunded" -> PositionStatusFilterRefunded
-    _              -> PositionStatusFilterAll
-
-textFromPositionStatus :: PositionStatusFilter -> Maybe Text
-textFromPositionStatus = \case
-    PositionStatusFilterActive   -> Just "active"
-    PositionStatusFilterClosed   -> Just "closed"
-    PositionStatusFilterResolved -> Just "resolved"
-    PositionStatusFilterRefunded -> Just "refunded"
-    PositionStatusFilterAll      -> Nothing
-
 renderSearchFormWithStatus :: Maybe Text -> Maybe Text -> Html
 renderSearchFormWithStatus searchFilter mStatus = [hsx|
     <div class="d-flex align-items-center gap-3">
@@ -145,7 +129,7 @@ renderStatusDropdownForm searchFilter mStatus = [hsx|
                     class="form-select form-select-sm flex-grow-1 border-0 bg-transparent text-body-secondary shadow-none py-0 ps-0 pe-4"
                     aria-label="Filter positions by status"
                     onchange="window.visitGetFormWithTurbolinks(this.form)">
-                {forEach positionStatusFilterOptions (renderStatusOption (statusFilterFromText mStatus))}
+                {forEach positionStatusFilterOptions (renderStatusOption (parsePositionStatusFilter mStatus))}
             </select>
         </div>
     </form>

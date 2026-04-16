@@ -122,12 +122,12 @@ typeOptionLabel (Just "sell") = "Sell"
 typeOptionLabel (Just x)      = x
 
 renderTransactionsContent :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
-renderTransactionsContent [] _ _ Nothing _ = [hsx|
+renderTransactionsContent [] _ _ Nothing Nothing = [hsx|
     <div class="alert alert-info">
         No transactions found. Start trading to see your history here.
     </div>
 |]
-renderTransactionsContent [] _ _ (Just _) _ = [hsx|
+renderTransactionsContent [] _ _ _ _ = [hsx|
     <div class="alert alert-info">
         No transactions match your filters.
     </div>
