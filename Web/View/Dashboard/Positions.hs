@@ -15,8 +15,8 @@ data PositionsView = PositionsView
     , wallet             :: Wallet
     , positionsValue     :: Integer
     , totalValue         :: Integer
-    , searchFilterP      :: Maybe Text
-    , statusFilterP      :: Maybe Text
+    , searchFilter       :: Maybe Text
+    , statusFilter       :: Maybe Text
     }
 
 instance View PositionsView where
@@ -27,9 +27,9 @@ instance View PositionsView where
                 {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>
             <div class="mb-3">
-                {renderSearchFormWithStatus searchFilterP statusFilterP}
+                {renderSearchFormWithStatus searchFilter statusFilter}
             </div>
-            {renderPositionsContent positionsWithValue currentPage totalPages searchFilterP statusFilterP}
+            {renderPositionsContent positionsWithValue currentPage totalPages searchFilter statusFilter}
         </div>
     |]
 
@@ -159,16 +159,16 @@ renderPositionsContent [] _ _ (Just _) _ = [hsx|
         No positions match your search. Try a different search term.
     </div>
 |]
-renderPositionsContent positions currentPage totalPages searchFilterP statusFilterP = [hsx|
+renderPositionsContent positions currentPage totalPages searchFilter statusFilter = [hsx|
     <div class="row g-3">
         {forEach positions (renderPositionCard currentBackToPath)}
     </div>
     <div>
-        {renderPositionsPagination currentPage totalPages searchFilterP statusFilterP}
+        {renderPositionsPagination currentPage totalPages searchFilter statusFilter}
     </div>
 |]
     where
-        currentBackToPath = pathTo (DashboardPositionsAction (normalizePageParam currentPage) searchFilterP statusFilterP)
+        currentBackToPath = pathTo (DashboardPositionsAction (normalizePageParam currentPage) searchFilter statusFilter)
 
 renderPositionCard :: (?context :: ControllerContext) => Text -> EnrichedPosition -> Html
 renderPositionCard backToPath ep =
@@ -333,9 +333,9 @@ renderStatusButton marketId backToPath cls txt =
     |]
 
 renderPositionsPagination :: Int -> Int -> Maybe Text -> Maybe Text -> Html
-renderPositionsPagination currentPage totalPages searchFilterP statusFilterP =
+renderPositionsPagination currentPage totalPages searchFilter statusFilter =
     renderSmartPagination currentPage totalPages "Positions pagination"
-        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilterP statusFilterP))
+        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilter statusFilter))
 
 renderClosedPnL :: Integer -> Html
 renderClosedPnL pnl

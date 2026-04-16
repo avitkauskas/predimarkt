@@ -126,20 +126,20 @@ instance CanRoute MarketsController where
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
 instance HasPath DashboardController where
-    pathTo DashboardPositionsAction { pageP, searchFilterP, statusFilterP } =
+    pathTo DashboardPositionsAction { page, searchFilter, positionStatusFilter } =
         "/DashboardPositions"
-            |> addQueryParam "page" (inputValue <$> pageP)
-            |> addQueryParam "search" searchFilterP
-            |> addQueryParam "statusFilter" statusFilterP
-    pathTo DashboardMarketsAction { statusFilter, page, searchFilter } =
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
+            |> addQueryParam "statusFilter" positionStatusFilter
+    pathTo DashboardMarketsAction { page, searchFilter, statusFilter } =
         "/DashboardMarkets"
             |> addQueryParam "statusFilter" (inputValue <$> statusFilter)
             |> addQueryParam "page" (inputValue <$> page)
             |> addQueryParam "search" searchFilter
-    pathTo DashboardTransactionsAction { pageT, searchFilterT, typeFilter } =
+    pathTo DashboardTransactionsAction { page, searchFilter, typeFilter } =
         "/DashboardTransactions"
-            |> addQueryParam "page" (inputValue <$> pageT)
-            |> addQueryParam "search" searchFilterT
+            |> addQueryParam "page" (inputValue <$> page)
+            |> addQueryParam "search" searchFilter
             |> addQueryParam "type" typeFilter
     pathTo ConfirmDeleteMarketAction { confirmDeleteMarketId, page, searchFilter } =
         "/ConfirmDeleteMarket"

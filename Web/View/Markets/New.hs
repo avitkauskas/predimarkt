@@ -85,7 +85,7 @@ renderForm market assets categories = formFor market [hsx|
     </div>
     <div class="d-flex gap-3">
         {submitButton}
-        <a href={DashboardMarketsAction (Just MarketStatusDraft) Nothing Nothing}
+        <a href={DashboardMarketsAction Nothing Nothing (Just MarketStatusDraft)}
            class="btn btn-outline-secondary">
             Cancel
         </a>

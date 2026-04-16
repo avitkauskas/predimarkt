@@ -32,7 +32,7 @@ instance View MarketsView where
         </div>
     |]
         where
-            currentBackToPath = pathTo (DashboardMarketsAction (Just activeStatus) (Just currentPage) searchFilter)
+            currentBackToPath = pathTo (DashboardMarketsAction (Just currentPage) searchFilter (Just activeStatus))
 
 renderMarket :: (?context :: ControllerContext) => Text -> Int -> Maybe Text -> Market -> Html
 renderMarket backToPath currentPage searchFilter market = [hsx|
@@ -75,7 +75,7 @@ renderTabs activeStatus searchFilter = [hsx|
         renderTab search status = [hsx|
             <li class="nav-item">
                 <a class={classes [("nav-link", True), ("active", status == activeStatus)]}
-                   href={DashboardMarketsAction (Just status) Nothing search}>
+                   href={DashboardMarketsAction Nothing search (Just status)}>
                     {statusLabel status}
                 </a>
             </li>
@@ -130,13 +130,13 @@ renderActions market currentPage searchFilter backToPath =
 renderMarketsPagination :: Int -> Int -> MarketStatus -> Maybe Text -> Html
 renderMarketsPagination currentPage totalPages statusFilter searchFilter =
     renderSmartPagination currentPage totalPages "Markets pagination"
-        (\pageNum -> pathTo (DashboardMarketsAction (Just statusFilter) (Just pageNum) searchFilter))
+        (\pageNum -> pathTo (DashboardMarketsAction (Just pageNum) searchFilter (Just statusFilter)))
 
 renderSearchForm :: MarketStatus -> Maybe Text -> Html
 renderSearchForm activeStatus searchFilter = [hsx|
     <div class="d-flex" id="markets-search-form-container">
         <form class="w-100 position-relative"
-              action={DashboardMarketsAction (Just activeStatus) Nothing Nothing}
+              action={DashboardMarketsAction Nothing Nothing (Just activeStatus)}
               method="GET"
               data-auto-submit-delay="300">
             <i class="bi bi-search text-muted position-absolute"

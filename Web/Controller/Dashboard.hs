@@ -18,10 +18,10 @@ import Web.View.Dashboard.Transactions
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardPositionsAction { pageP, searchFilterP, statusFilterP } = autoRefresh do
-        let currentPage = fromMaybe 1 (pageP <|> paramOrNothing @Int "page")
-        let searchQuery = normalizeSearchQuery (searchFilterP <|> paramOrNothing @Text "search")
-        let mStatusText :: Maybe Text = statusFilterP <|> paramOrNothing @Text "statusFilter"
+    action DashboardPositionsAction { page, searchFilter, positionStatusFilter } = autoRefresh do
+        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
+        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
+        let mStatusText :: Maybe Text = positionStatusFilter <|> paramOrNothing @Text "statusFilter"
         let activeStatus = case mStatusText of
                 Just "active"   -> Just MarketStatusOpen
                 Just "closed"   -> Just MarketStatusClosed
@@ -161,8 +161,8 @@ instance Controller DashboardController where
             , wallet = wallet
             , positionsValue = totalPositionsValue
             , totalValue = totalValue
-            , searchFilterP = searchQuery
-            , statusFilterP = mStatusText
+            , searchFilter = searchQuery
+            , statusFilter = mStatusText
             }
 
     action DashboardMarketsAction { statusFilter, page, searchFilter } = do
@@ -305,9 +305,9 @@ instance Controller DashboardController where
                 setSuccessMessage message
                 redirectTo $ DashboardMarketsAction { statusFilter = Just st, page = Nothing, searchFilter = mSearchFilter }
 
-    action DashboardTransactionsAction { pageT, searchFilterT, typeFilter } = do
-        let currentPage = fromMaybe 1 (pageT <|> paramOrNothing @Int "page")
-        let searchQuery = normalizeSearchQuery (searchFilterT <|> paramOrNothing @Text "search")
+    action DashboardTransactionsAction { page, searchFilter, typeFilter } = do
+        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
+        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
         let mTypeFilter :: Maybe Text = typeFilter <|> paramOrNothing @Text "type"
         let itemsPerPage = 5
 
@@ -434,7 +434,7 @@ instance Controller DashboardController where
             , wallet = wallet
             , positionsValue = totalPositionsValue
             , totalValue = totalValue
-            , searchFilterT = searchQuery
+            , searchFilter = searchQuery
             , typeFilter = mTypeFilter
             }
 

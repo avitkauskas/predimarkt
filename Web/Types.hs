@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Web.Types
     ( module Web.Types
     , AssetChartData (..)
@@ -13,6 +15,14 @@ import IHP.Prelude
 data WebApplication
     = WebApplication
     deriving (Eq, Show)
+
+data DashboardController
+    = DashboardPositionsAction { page :: !(Maybe Int), searchFilter :: !(Maybe Text), positionStatusFilter :: !(Maybe Text) }
+    | DashboardMarketsAction { page :: !(Maybe Int), searchFilter :: !(Maybe Text), statusFilter :: !(Maybe MarketStatus) }
+    | DashboardTransactionsAction { page :: !(Maybe Int), searchFilter :: !(Maybe Text), typeFilter :: !(Maybe Text) }
+    | ConfirmDeleteMarketAction { confirmDeleteMarketId :: !(Id Market), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
+    | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
+    deriving (Eq, Show, Data)
 
 data StaticController
     = AboutAction
@@ -115,14 +125,6 @@ data TradesController
     | ClosePositionAction { assetId :: !(Id Asset) }
     | ResolveMarketAction { marketId :: !(Id Market) }
     | RefundMarketAction { marketId :: !(Id Market) }
-    deriving (Eq, Show, Data)
-
-data DashboardController
-    = DashboardPositionsAction { pageP :: Maybe Int, searchFilterP :: Maybe Text, statusFilterP :: Maybe Text }
-    | DashboardMarketsAction { statusFilter :: Maybe MarketStatus, page :: Maybe Int, searchFilter :: Maybe Text }
-    | DashboardTransactionsAction { pageT :: Maybe Int, searchFilterT :: Maybe Text, typeFilter :: Maybe Text }
-    | ConfirmDeleteMarketAction { confirmDeleteMarketId :: !(Id Market), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
-    | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     deriving (Eq, Show, Data)
 
 data LeaderboardController

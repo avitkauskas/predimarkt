@@ -272,9 +272,9 @@ instance View ShowView where
 
             positionsAction :: DashboardController
             positionsAction = DashboardPositionsAction
-                { pageP = Nothing
-                , searchFilterP = Just market.title
-                , statusFilterP = Nothing
+                { page = Nothing
+                , searchFilter = Just market.title
+                , positionStatusFilter = Nothing
                 }
 
             renderPositionsRow :: Html

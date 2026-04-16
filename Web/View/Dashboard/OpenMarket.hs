@@ -40,4 +40,4 @@ instance View OpenMarketView where
                 </a>
             </div>
         |]
-        closeUrl = pathTo $ DashboardMarketsAction (Just market.status) page searchFilter
+        closeUrl = pathTo $ DashboardMarketsAction page searchFilter (Just market.status)

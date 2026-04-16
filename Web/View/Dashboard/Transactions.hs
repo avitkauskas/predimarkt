@@ -24,7 +24,7 @@ data TransactionsView = TransactionsView
     , wallet                  :: Wallet
     , positionsValue          :: Integer
     , totalValue              :: Integer
-    , searchFilterT           :: Maybe Text
+    , searchFilter            :: Maybe Text
     , typeFilter              :: Maybe Text
     }
 
@@ -36,9 +36,9 @@ instance View TransactionsView where
                 {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>
             <div class="mb-3">
-                {renderSearchFormWithType searchFilterT typeFilter}
+                {renderSearchFormWithType searchFilter typeFilter}
             </div>
-            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilterT typeFilter}
+            {renderTransactionsContent transactionsWithDetails currentPage totalPages searchFilter typeFilter}
         </div>
     |]
 
