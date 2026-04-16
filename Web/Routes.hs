@@ -126,10 +126,11 @@ instance CanRoute MarketsController where
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
 instance HasPath DashboardController where
-    pathTo DashboardPositionsAction { page, searchFilter } =
+    pathTo DashboardPositionsAction { pageP, searchFilterP, statusFilterP } =
         "/DashboardPositions"
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
+            |> addQueryParam "page" (inputValue <$> pageP)
+            |> addQueryParam "search" searchFilterP
+            |> addQueryParam "statusFilter" statusFilterP
     pathTo DashboardMarketsAction { statusFilter, page, searchFilter } =
         "/DashboardMarkets"
             |> addQueryParam "statusFilter" (inputValue <$> statusFilter)
@@ -153,7 +154,7 @@ instance HasPath DashboardController where
 
 instance CanRoute DashboardController where
     parseRoute' =
-        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing))
+        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing Nothing))
         <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing Nothing))
         <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing))
         <|> (string "/ConfirmDeleteMarket" >> pure (ConfirmDeleteMarketAction def Nothing Nothing))

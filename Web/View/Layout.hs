@@ -114,7 +114,7 @@ navbar = [hsx|
         loggedInNav :: User -> Html
         loggedInNav user = [hsx|
             {leaderboardNavItem}
-            <li class="nav-item"><a class="nav-link" href={DashboardPositionsAction Nothing Nothing}>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href={DashboardPositionsAction Nothing Nothing Nothing}>Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a aria-expanded="false"
                    class="nav-link dropdown-toggle"
@@ -124,7 +124,7 @@ navbar = [hsx|
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto;">
                     <li><h6 class="dropdown-header">{user.nickname}</h6></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a  class="dropdown-item" href={DashboardPositionsAction Nothing Nothing}>Positions</a></li>
+                    <li><a  class="dropdown-item" href={DashboardPositionsAction Nothing Nothing Nothing}>Positions</a></li>
                     <li><a  class="dropdown-item" href={DashboardTransactionsAction Nothing Nothing}>Transactions</a></li>
                     <li><a  class="dropdown-item" href={DashboardMarketsAction (Just MarketStatusOpen) Nothing Nothing}>Markets</a></li>
                     <li><hr class="dropdown-divider" /></li>
@@ -153,7 +153,7 @@ dashboardLayout inner = [hsx|
                             <a class={classes
                                     ["nav-link",
                                     ("active", isPathPrefix "/DashboardPositions")]}
-                               href={DashboardPositionsAction Nothing Nothing}>
+                               href={DashboardPositionsAction Nothing Nothing Nothing}>
                               <i class="bi bi-wallet"></i>Positions
                             </a>
                         </li>

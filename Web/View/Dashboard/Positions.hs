@@ -15,7 +15,8 @@ data PositionsView = PositionsView
     , wallet             :: Wallet
     , positionsValue     :: Integer
     , totalValue         :: Integer
-    , searchFilter       :: Maybe Text
+    , searchFilterP      :: Maybe Text
+    , statusFilterP      :: Maybe Text
     }
 
 instance View PositionsView where
@@ -26,19 +27,90 @@ instance View PositionsView where
                 {renderPortfolioSummary wallet.amount positionsValue totalValue}
             </div>
             <div class="mb-3">
-                {renderSearchForm searchFilter}
+                {renderSearchFormWithStatus searchFilterP statusFilterP}
             </div>
-            {renderPositionsContent positionsWithValue currentPage totalPages searchFilter}
+            {renderPositionsContent positionsWithValue currentPage totalPages searchFilterP statusFilterP}
         </div>
     |]
 
-renderSearchForm :: Maybe Text -> Html
-renderSearchForm searchFilter = [hsx|
-    <div class="d-flex" id="positions-search-form-container">
+data PositionStatusFilter
+    = PositionStatusFilterAll
+    | PositionStatusFilterActive
+    | PositionStatusFilterClosed
+    | PositionStatusFilterResolved
+    | PositionStatusFilterRefunded
+    deriving (Eq, Show)
+
+parsePositionStatusFilter :: Maybe Text -> PositionStatusFilter
+parsePositionStatusFilter = \case
+    Just "active"   -> PositionStatusFilterActive
+    Just "closed"   -> PositionStatusFilterClosed
+    Just "resolved" -> PositionStatusFilterResolved
+    Just "refunded" -> PositionStatusFilterRefunded
+    _              -> PositionStatusFilterAll
+
+positionStatusFilterParamValue :: PositionStatusFilter -> Maybe Text
+positionStatusFilterParamValue = \case
+    PositionStatusFilterAll      -> Nothing
+    PositionStatusFilterActive   -> Just "active"
+    PositionStatusFilterClosed   -> Just "closed"
+    PositionStatusFilterResolved -> Just "resolved"
+    PositionStatusFilterRefunded -> Just "refunded"
+
+positionStatusFilterFormValue :: PositionStatusFilter -> Text
+positionStatusFilterFormValue = fromMaybe "" . positionStatusFilterParamValue
+
+positionStatusFilterLabel :: PositionStatusFilter -> Text
+positionStatusFilterLabel = \case
+    PositionStatusFilterAll      -> "All"
+    PositionStatusFilterActive   -> "Active"
+    PositionStatusFilterClosed   -> "Closed"
+    PositionStatusFilterResolved -> "Resolved"
+    PositionStatusFilterRefunded -> "Refunded"
+
+positionStatusFilterOptions :: [PositionStatusFilter]
+positionStatusFilterOptions =
+    [ PositionStatusFilterAll
+    , PositionStatusFilterActive
+    , PositionStatusFilterClosed
+    , PositionStatusFilterResolved
+    , PositionStatusFilterRefunded
+    ]
+
+statusFilterFromText :: Maybe Text -> PositionStatusFilter
+statusFilterFromText = \case
+    Just "active"   -> PositionStatusFilterActive
+    Just "closed"   -> PositionStatusFilterClosed
+    Just "resolved" -> PositionStatusFilterResolved
+    Just "refunded" -> PositionStatusFilterRefunded
+    _              -> PositionStatusFilterAll
+
+textFromPositionStatus :: PositionStatusFilter -> Maybe Text
+textFromPositionStatus = \case
+    PositionStatusFilterActive   -> Just "active"
+    PositionStatusFilterClosed   -> Just "closed"
+    PositionStatusFilterResolved -> Just "resolved"
+    PositionStatusFilterRefunded -> Just "refunded"
+    PositionStatusFilterAll      -> Nothing
+
+renderSearchFormWithStatus :: Maybe Text -> Maybe Text -> Html
+renderSearchFormWithStatus searchFilter mStatus = [hsx|
+    <div class="d-flex align-items-center gap-3">
+        <div class="flex-grow-1" style="min-width: 0;">
+            {renderSearchForm searchFilter mStatus}
+        </div>
+        {renderStatusDropdownForm searchFilter mStatus}
+    </div>
+|]
+
+renderSearchForm :: Maybe Text -> Maybe Text -> Html
+renderSearchForm searchFilter mStatus = [hsx|
+    <div class="d-flex position-relative" id="positions-search-form-container">
         <form class="w-100 position-relative"
-              action={DashboardPositionsAction Nothing Nothing}
+              action={DashboardPositionsAction Nothing Nothing mStatus}
               method="GET"
               data-auto-submit-delay="300">
+            {forEach (maybeToList mStatus) renderStatusHiddenInput}
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
@@ -54,27 +126,65 @@ renderSearchForm searchFilter = [hsx|
     </div>
 |]
 
-renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Html
-renderPositionsContent [] _ _ Nothing = [hsx|
+renderStatusHiddenInput :: Text -> Html
+renderStatusHiddenInput statusValue = [hsx|
+    <input type="hidden" name="statusFilter" value={statusValue} />
+|]
+
+renderStatusDropdownForm :: Maybe Text -> Maybe Text -> Html
+renderStatusDropdownForm searchFilter mStatus = [hsx|
+    <form class="d-flex align-items-center gap-2 flex-shrink-0"
+          action={DashboardPositionsAction Nothing Nothing mStatus}
+          method="GET">
+        {forEach (maybeToList searchFilter) renderSearchHiddenInput}
+        <div class="d-inline-flex align-items-center gap-2 rounded border border-secondary-subtle ps-2 pe-0 text-body-secondary bg-transparent"
+             style="min-width: 133px; padding-top: 0.36rem; padding-bottom: 0.36rem;">
+            <i class="bi bi-filter-right"></i>
+            <select id="positions-status-filter"
+                    name="statusFilter"
+                    class="form-select form-select-sm flex-grow-1 border-0 bg-transparent text-body-secondary shadow-none py-0 ps-0 pe-4"
+                    aria-label="Filter positions by status"
+                    onchange="window.visitGetFormWithTurbolinks(this.form)">
+                {forEach positionStatusFilterOptions (renderStatusOption (statusFilterFromText mStatus))}
+            </select>
+        </div>
+    </form>
+|]
+
+renderSearchHiddenInput :: Text -> Html
+renderSearchHiddenInput searchQuery = [hsx|
+    <input type="hidden" name="search" value={searchQuery} />
+|]
+
+renderStatusOption :: PositionStatusFilter -> PositionStatusFilter -> Html
+renderStatusOption activeStatus optionStatus = [hsx|
+    <option value={positionStatusFilterFormValue optionStatus}
+            selected={activeStatus == optionStatus}>
+        {positionStatusFilterLabel optionStatus}
+    </option>
+|]
+
+renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
+renderPositionsContent [] _ _ Nothing _ = [hsx|
     <div class="alert alert-info">
-        No positions found. Start trading to see your positions here.
+        No positions found.
     </div>
 |]
-renderPositionsContent [] _ _ (Just _) = [hsx|
+renderPositionsContent [] _ _ (Just _) _ = [hsx|
     <div class="alert alert-info">
         No positions match your search. Try a different search term.
     </div>
 |]
-renderPositionsContent positions currentPage totalPages searchFilter = [hsx|
+renderPositionsContent positions currentPage totalPages searchFilterP statusFilterP = [hsx|
     <div class="row g-3">
         {forEach positions (renderPositionCard currentBackToPath)}
     </div>
     <div>
-        {renderPositionsPagination currentPage totalPages searchFilter}
+        {renderPositionsPagination currentPage totalPages searchFilterP statusFilterP}
     </div>
 |]
     where
-        currentBackToPath = pathTo (DashboardPositionsAction (normalizePageParam currentPage) searchFilter)
+        currentBackToPath = pathTo (DashboardPositionsAction (normalizePageParam currentPage) searchFilterP statusFilterP)
 
 renderPositionCard :: (?context :: ControllerContext) => Text -> EnrichedPosition -> Html
 renderPositionCard backToPath ep =
@@ -238,10 +348,10 @@ renderStatusButton marketId backToPath cls txt =
            style="width: 94px;">{txt}</a>
     |]
 
-renderPositionsPagination :: Int -> Int -> Maybe Text -> Html
-renderPositionsPagination currentPage totalPages searchFilter =
+renderPositionsPagination :: Int -> Int -> Maybe Text -> Maybe Text -> Html
+renderPositionsPagination currentPage totalPages searchFilterP statusFilterP =
     renderSmartPagination currentPage totalPages "Positions pagination"
-        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilter))
+        (\pageNum -> pathTo (DashboardPositionsAction (Just pageNum) searchFilterP statusFilterP))
 
 renderClosedPnL :: Integer -> Html
 renderClosedPnL pnl

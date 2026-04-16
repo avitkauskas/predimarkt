@@ -18,9 +18,16 @@ import Web.View.Dashboard.Transactions
 instance Controller DashboardController where
     beforeAction = ensureIsUser
 
-    action DashboardPositionsAction { page, searchFilter } = autoRefresh do
-        let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
-        let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
+    action DashboardPositionsAction { pageP, searchFilterP, statusFilterP } = autoRefresh do
+        let currentPage = fromMaybe 1 (pageP <|> paramOrNothing @Int "page")
+        let searchQuery = normalizeSearchQuery (searchFilterP <|> paramOrNothing @Text "search")
+        let mStatusText :: Maybe Text = statusFilterP <|> paramOrNothing @Text "statusFilter"
+        let activeStatus = case mStatusText of
+                Just "active"   -> Just MarketStatusOpen
+                Just "closed"   -> Just MarketStatusClosed
+                Just "resolved" -> Just MarketStatusResolved
+                Just "refunded" -> Just MarketStatusRefunded
+                _               -> Nothing
         let itemsPerPage = 5
 
         trackTableRead "positions"
@@ -28,25 +35,37 @@ instance Controller DashboardController where
             trackTableRead "markets"
             trackTableRead "assets"
 
-        -- Get total count for pagination (with search filter if provided)
-        totalCount <- case searchQuery of
-            Just query -> do
-                -- Use sqlQueryScalar for efficient counting
-                -- Search in both market title and asset name
-                count <- sqlQueryScalar
-                    [r|
-                        SELECT COUNT(*)::INTEGER
-                        FROM positions p
-                        JOIN markets m ON p.market_id = m.id
-                        JOIN assets a ON p.asset_id = a.id
-                        WHERE p.user_id = ?
-                        AND (m.title ILIKE ? OR a.name ILIKE ?)
-                    |]
-                    (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
+        -- Get total count for pagination (with search and status filters if provided)
+        totalCount <- case (searchQuery, activeStatus) of
+            (Just query, mStatus) -> do
+                let statusClause = case mStatus of
+                        Just st -> " AND m.status = ?"
+                        Nothing -> ""
+                let baseQuery = [r|
+                    SELECT COUNT(*)::INTEGER
+                    FROM positions p
+                    JOIN markets m ON p.market_id = m.id
+                    JOIN assets a ON p.asset_id = a.id
+                    WHERE p.user_id = ?
+                    AND (m.title ILIKE ? OR a.name ILIKE ?)
+                |] <> statusClause
+                count <- case mStatus of
+                        Just st -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%", st)
+                        Nothing -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
                 pure count
-            Nothing -> query @Position
-                |> filterWhere (#userId, currentUserId)
-                |> fetchCount
+            (Nothing, mStatus) -> do
+                let statusClause = case mStatus of
+                        Just st -> " AND m.status = ?"
+                        Nothing -> ""
+                let baseQuery = [r|
+                    SELECT COUNT(*)::INTEGER
+                    FROM positions p
+                    JOIN markets m ON p.market_id = m.id
+                    WHERE p.user_id = ?
+                |] <> statusClause
+                case mStatus of
+                        Just st -> sqlQueryScalar baseQuery (currentUserId, st)
+                        Nothing -> sqlQueryScalar baseQuery (Only currentUserId)
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
@@ -56,6 +75,10 @@ instance Controller DashboardController where
         -- 1. Markets ordered by their most recently updated position (desc)
         -- 2. Within each market, positions ordered by updated_at (desc)
         -- 3. Search filter on market title and asset name (case-insensitive)
+        -- 4. Optional status filter on market status
+        let statusClause = case activeStatus of
+                Just st -> " AND m.status = ?"
+                Nothing -> ""
         let positionQuery = case searchQuery of
                 Just query -> [r|
                     SELECT p.id, p.user_id, p.market_id, p.asset_id, p.quantity, p.invested, p.received, p.updated_at
@@ -66,18 +89,21 @@ instance Controller DashboardController where
                     ) p
                     JOIN markets m ON p.market_id = m.id
                     JOIN assets a ON p.asset_id = a.id
-                    WHERE m.title ILIKE ? OR a.name ILIKE ?
+                    WHERE (m.title ILIKE ? OR a.name ILIKE ?)
+                |] <> statusClause <> [r|
                     ORDER BY market_max DESC, p.updated_at DESC
                     LIMIT ? OFFSET ?
                 |]
                 Nothing -> [r|
-                    SELECT id, user_id, market_id, asset_id, quantity, invested, received, updated_at
+                    SELECT sub.id, sub.user_id, sub.market_id, sub.asset_id, sub.quantity, sub.invested, sub.received, sub.updated_at
                     FROM (
                         SELECT *, MAX(updated_at) OVER (PARTITION BY market_id) as market_max
                         FROM positions
                         WHERE user_id = ?
                     ) sub
-                    ORDER BY market_max DESC, updated_at DESC
+                    JOIN markets m ON sub.market_id = m.id
+                |] <> statusClause <> [r|
+                    ORDER BY market_max DESC, sub.updated_at DESC
                     LIMIT ? OFFSET ?
                 |]
 
@@ -85,9 +111,11 @@ instance Controller DashboardController where
         let userId = currentUserId :: Id User
         let posLimit = itemsPerPage :: Int
         let posOffset = pageOffset :: Int
-        positionsRaw <- case searchQuery of
-            Just query -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", posLimit, posOffset) :: IO [Position]
-            Nothing -> sqlQuery positionQuery (userId, posLimit, posOffset) :: IO [Position]
+        positionsRaw <- case (searchQuery, activeStatus) of
+            (Just query, Just st) -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", st, posLimit, posOffset) :: IO [Position]
+            (Just query, Nothing) -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", posLimit, posOffset) :: IO [Position]
+            (Nothing, Just st) -> sqlQuery positionQuery (userId, st, posLimit, posOffset) :: IO [Position]
+            (Nothing, Nothing) -> sqlQuery positionQuery (userId, posLimit, posOffset) :: IO [Position]
         positions <- collectionFetchRelated #assetId positionsRaw >>= collectionFetchRelated #marketId
 
         -- Get unique market IDs from positions
@@ -133,7 +161,8 @@ instance Controller DashboardController where
             , wallet = wallet
             , positionsValue = totalPositionsValue
             , totalValue = totalValue
-            , searchFilter = searchQuery
+            , searchFilterP = searchQuery
+            , statusFilterP = mStatusText
             }
 
     action DashboardMarketsAction { statusFilter, page, searchFilter } = do
