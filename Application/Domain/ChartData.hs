@@ -76,10 +76,11 @@ buildChartData startDay maxEndDay assets beta transactions =
                 chartDays = generateDayRange chartStartDay maxEndDay
                 pricesPerDay = computePricesFromLastTxn beta lastTxnPerDay
                 initialPrices =
-                    let firstTxn = List.head filteredTxns
-                    in case parseMarketState (get #marketState firstTxn) of
-                        Just qtyMap -> allAssetPrices (Beta beta) qtyMap
-                        Nothing     -> currentPrices
+                    case List.uncons filteredTxns of
+                        Just (firstTxn, _) -> case parseMarketState (get #marketState firstTxn) of
+                            Just qtyMap -> allAssetPrices (Beta beta) qtyMap
+                            Nothing     -> currentPrices
+                        Nothing -> currentPrices
                 filledData = fillMissingDays chartDays pricesPerDay initialPrices
             in map (buildAssetChartData assets filledData) topAssets
   where
