@@ -317,6 +317,7 @@ instance Controller DashboardController where
                 let typeClause = case mType of
                         Just "buy"  -> " AND t.quantity > 0"
                         Just "sell" -> " AND t.quantity < 0"
+                        Just _      -> ""
                         Nothing     -> ""
                 let baseQuery = [r|
                     SELECT COUNT(*)::INTEGER
@@ -334,6 +335,7 @@ instance Controller DashboardController where
                 let typeClause = case mType of
                         Just "buy"  -> " AND t.quantity > 0"
                         Just "sell" -> " AND t.quantity < 0"
+                        Just _      -> ""
                         Nothing     -> ""
                 let baseQuery = [r|
                     SELECT COUNT(*)::INTEGER
@@ -343,6 +345,7 @@ instance Controller DashboardController where
                 case mType of
                         Just "buy" -> sqlQueryScalar baseQuery (Only currentUserId)
                         Just "sell" -> sqlQueryScalar baseQuery (Only currentUserId)
+                        Just _ -> sqlQueryScalar baseQuery (Only currentUserId)
                         Nothing -> sqlQueryScalar baseQuery (Only currentUserId)
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
@@ -357,12 +360,14 @@ instance Controller DashboardController where
         let typeClause = case mTypeFilter of
                 Just "buy"  -> " AND t.quantity > 0"
                 Just "sell" -> " AND t.quantity < 0"
+                Just _      -> ""
                 Nothing     -> ""
         transactions <- case (searchQuery, mTypeFilter) of
             (Just query, mType) -> do
                 let typeClauseInner = case mType of
                         Just "buy"  -> " AND t.quantity > 0"
                         Just "sell" -> " AND t.quantity < 0"
+                        Just _      -> ""
                         Nothing     -> ""
                 (txnIdRows :: [Only UUID]) <- sqlQuery
                     ([r|
@@ -380,42 +385,55 @@ instance Controller DashboardController where
                 let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
                 txnRecords <- mapM fetch txnIds
                 collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-            (Nothing, Just "buy") -> do
-                (txnIdRows :: [Only UUID]) <- sqlQuery
-                    [r|
-                        SELECT id FROM transactions
-                        WHERE user_id = ? AND quantity > 0
-                        ORDER BY created_at DESC
-                        LIMIT ? OFFSET ?
-                    |]
-                    (currentUserId, txnLimit, txnOffset)
-                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                txnRecords <- mapM fetch txnIds
-                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-            (Nothing, Just "sell") -> do
-                (txnIdRows :: [Only UUID]) <- sqlQuery
-                    [r|
-                        SELECT id FROM transactions
-                        WHERE user_id = ? AND quantity < 0
-                        ORDER BY created_at DESC
-                        LIMIT ? OFFSET ?
-                    |]
-                    (currentUserId, txnLimit, txnOffset)
-                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                txnRecords <- mapM fetch txnIds
-                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-            (Nothing, Nothing) -> do
-                (txnIdRows :: [Only UUID]) <- sqlQuery
-                    [r|
-                        SELECT id FROM transactions
-                        WHERE user_id = ?
-                        ORDER BY created_at DESC
-                        LIMIT ? OFFSET ?
-                    |]
-                    (currentUserId, txnLimit, txnOffset)
-                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                txnRecords <- mapM fetch txnIds
-                collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+            (Nothing, mType) -> case mType of
+                Just "buy" -> do
+                    (txnIdRows :: [Only UUID]) <- sqlQuery
+                        [r|
+                            SELECT id FROM transactions
+                            WHERE user_id = ? AND quantity > 0
+                            ORDER BY created_at DESC
+                            LIMIT ? OFFSET ?
+                        |]
+                        (currentUserId, txnLimit, txnOffset)
+                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                    txnRecords <- mapM fetch txnIds
+                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+                Just "sell" -> do
+                    (txnIdRows :: [Only UUID]) <- sqlQuery
+                        [r|
+                            SELECT id FROM transactions
+                            WHERE user_id = ? AND quantity < 0
+                            ORDER BY created_at DESC
+                            LIMIT ? OFFSET ?
+                        |]
+                        (currentUserId, txnLimit, txnOffset)
+                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                    txnRecords <- mapM fetch txnIds
+                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+                Just _ -> do
+                    (txnIdRows :: [Only UUID]) <- sqlQuery
+                        [r|
+                            SELECT id FROM transactions
+                            WHERE user_id = ?
+                            ORDER BY created_at DESC
+                            LIMIT ? OFFSET ?
+                        |]
+                        (currentUserId, txnLimit, txnOffset)
+                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                    txnRecords <- mapM fetch txnIds
+                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+                Nothing -> do
+                    (txnIdRows :: [Only UUID]) <- sqlQuery
+                        [r|
+                            SELECT id FROM transactions
+                            WHERE user_id = ?
+                            ORDER BY created_at DESC
+                            LIMIT ? OFFSET ?
+                        |]
+                        (currentUserId, txnLimit, txnOffset)
+                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                    txnRecords <- mapM fetch txnIds
+                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
 
         let transactionsWithDetails = map (\t -> TransactionWithDetails { transaction = t }) transactions
 
