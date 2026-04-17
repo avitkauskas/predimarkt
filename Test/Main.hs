@@ -449,11 +449,10 @@ main = hspec do
             it "normalizes and validates chat message bodies" do
                 normalizeChatMessageBody "  hello  " `shouldBe` "hello"
                 validateChatMessageBody "" `shouldBe` Just "Please enter a message"
-                validateChatMessageBody "hello\nworld"
-                    `shouldBe` Just "Message must be a single line"
-                validateChatMessageBody (Text.replicate 281 "a")
-                    `shouldBe` Just "Message must be at most 280 characters"
-                validateChatMessageBody (Text.replicate 280 "a")
+                validateChatMessageBody "hello\nworld" `shouldBe` Nothing
+                validateChatMessageBody (Text.replicate 2001 "a")
+                    `shouldBe` Just "Message must be at most 2000 characters"
+                validateChatMessageBody (Text.replicate 2000 "a")
                     `shouldBe` Nothing
 
             it "sanitizes trade quantity and trading action" do
