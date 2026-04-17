@@ -3,7 +3,6 @@
 
 module Web.View.Dashboard.Transactions where
 
-import Admin.Controller.Prelude
 import Application.Domain.Types (Quantity (Quantity))
 import Application.Helper.Formatting (formatPricePercent)
 import Application.Helper.QueryParams (normalizePageParam)
