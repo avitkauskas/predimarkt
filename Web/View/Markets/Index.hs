@@ -78,7 +78,7 @@ renderSearchForm categoryFilter statusFilter searchFilter = [hsx|
         <form class="w-100 position-relative"
               action={pathTo MarketsAction}
               method="GET"
-              data-auto-submit-delay="300">
+              data-auto-submit-delay="800">
             {forEach (maybeToList categoryFilter) renderCategoryInput}
             {renderStatusInput statusFilter}
             <i class="bi bi-search text-muted position-absolute"

@@ -470,7 +470,7 @@ main = hspec do
         describe "Query param helpers" do
             it "normalizes search and optional text params" do
                 normalizeSearchQuery (Just "  inflation  ")
-                    `shouldBe` Just "inflation"
+                    `shouldBe` Just "inflation  "
                 normalizeSearchQuery (Just "   ") `shouldBe` Nothing
                 normalizeSearchQuery Nothing `shouldBe` Nothing
 

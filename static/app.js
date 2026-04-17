@@ -78,7 +78,7 @@ function initAutoSubmitSearchForms() {
         if (form.autoSubmitInitialized) return;
         form.autoSubmitInitialized = true;
 
-        const delay = Number(form.dataset.autoSubmitDelay || '300');
+        const delay = Number(form.dataset.autoSubmitDelay || '800');
         const searchInput = form.querySelector('input[type="search"]');
         if (!searchInput) return;
 
@@ -190,7 +190,7 @@ window.visitGetFormWithTurbolinks = function (form) {
     for (const [key, rawValue] of new FormData(form).entries()) {
         if (typeof rawValue !== 'string') continue
 
-        const value = rawValue.trim()
+        const value = key === 'search' ? rawValue.trimEnd() : rawValue.trim()
         if (value === '') continue
 
         params.append(key, value)

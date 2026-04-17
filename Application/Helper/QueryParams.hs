@@ -5,7 +5,7 @@ import IHP.Prelude
 
 normalizeSearchQuery :: Maybe Text -> Maybe Text
 normalizeSearchQuery (Just query)
-    | Text.strip query /= "" = Just (Text.strip query)
+    | Text.stripStart query /= "" = Just (Text.stripStart query)
 normalizeSearchQuery _ = Nothing
 
 normalizeOptionalTextParam :: Maybe Text -> Maybe Text

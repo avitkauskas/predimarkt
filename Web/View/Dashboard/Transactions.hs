@@ -57,7 +57,7 @@ renderSearchForm searchFilter mType = [hsx|
         <form class="w-100 position-relative"
               action={DashboardTransactionsAction Nothing Nothing mType}
               method="GET"
-              data-auto-submit-delay="300">
+              data-auto-submit-delay="800">
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
