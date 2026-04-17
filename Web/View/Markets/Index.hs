@@ -244,6 +244,40 @@ buildCurrentMarketsPath :: Maybe (Id Category) -> MarketIndexStatusFilter -> May
 buildCurrentMarketsPath categoryFilter statusFilter searchFilter currentPage =
     buildMarketsPath categoryFilter statusFilter searchFilter (if currentPage > 1 then Just currentPage else Nothing)
 
+-- Helper to construct ShowMarketAction with default Nothing values, reducing positional noise
+showMarketWithBackTo :: Id Market -> Maybe Text -> MarketsController
+showMarketWithBackTo marketId backTo = ShowMarketAction
+    { marketId = marketId
+    , tradingAssetId = Nothing
+    , tradingAction = Nothing
+    , showChart = Nothing
+    , showDescription = Nothing
+    , showAllAssets = Nothing
+    , showTradeHistory = Nothing
+    , activityPage = Nothing
+    , chatPage = Nothing
+    , chatComposerRev = Nothing
+    , tradeQuantity = Nothing
+    , backTo = backTo
+    }
+
+-- Helper to construct ShowMarketAction for trading operations with asset and action specified
+showMarketTradeAction :: Id Market -> Id Asset -> Text -> Maybe Text -> MarketsController
+showMarketTradeAction marketId assetId action backTo = ShowMarketAction
+    { marketId = marketId
+    , tradingAssetId = Just assetId
+    , tradingAction = Just action
+    , showChart = Nothing
+    , showDescription = Nothing
+    , showAllAssets = Nothing
+    , showTradeHistory = Nothing
+    , activityPage = Nothing
+    , chatPage = Nothing
+    , chatComposerRev = Nothing
+    , tradeQuantity = Nothing
+    , backTo = backTo
+    }
+
 renderMarket :: (?context :: ControllerContext) => Text -> Include' ["categoryId", "assets"] Market -> Html
 renderMarket backToPath market = [hsx|
     <div class="col-12 col-sm-6 col-lg-4">
@@ -313,7 +347,7 @@ renderMarket backToPath market = [hsx|
 |]
     where
         showMarketLink :: MarketsController
-        showMarketLink = ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)
+        showMarketLink = showMarketWithBackTo market.id (Just backToPath)
 
         category = market.categoryId
 
@@ -355,13 +389,13 @@ renderMarket backToPath market = [hsx|
                 buttons = if market.status == MarketStatusOpen
                     then [hsx|
                         <div class="d-flex gap-1 ms-1" style="width: 80px;">
-                            <a href={ShowMarketAction market.id (Just asset.id) (Just "buy") Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
+                            <a href={showMarketTradeAction market.id asset.id "buy" (Just backToPath)}
                                     data-start-market-page-at-top="true"
                                     class="btn btn-outline-success p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
                                 BUY
                             </a>
-                            <a href={ShowMarketAction market.id (Just asset.id) (Just "sell") Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}
+                            <a href={showMarketTradeAction market.id asset.id "sell" (Just backToPath)}
                                     data-start-market-page-at-top="true"
                                     class="btn btn-outline-danger p-0 rounded-1 fw-medium"
                                     style="font-size: 0.65rem; width: calc(50% - 2px);">
