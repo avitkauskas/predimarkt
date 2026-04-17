@@ -59,18 +59,17 @@ renderSearchForm searchFilter mType = [hsx|
               action={DashboardTransactionsAction Nothing Nothing mType}
               method="GET"
               data-auto-submit-delay="300">
-            {forEach (maybeToList mType) renderTypeHiddenInput}
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
             <input type="search"
-                       id="transactions-search-input"
-                       class="form-control"
-                       name="search"
-                       value={fromMaybe "" searchFilter}
-                       placeholder="Search transactions by market or asset..."
-                       aria-label="Search transactions"
-                       style="padding-left: 36px;">
+                   id="transactions-search-input"
+                   class="form-control"
+                   name="search"
+                   value={fromMaybe "" searchFilter}
+                   placeholder="Search transactions by market or asset..."
+                   aria-label="Search transactions"
+                   style="padding-left: 36px;">
         </form>
     </div>
 |]

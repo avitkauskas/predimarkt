@@ -94,25 +94,19 @@ renderSearchForm searchFilter mStatus = [hsx|
               action={DashboardPositionsAction Nothing Nothing mStatus}
               method="GET"
               data-auto-submit-delay="300">
-            {forEach (maybeToList mStatus) renderStatusHiddenInput}
             <i class="bi bi-search text-muted position-absolute"
                style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 3;">
             </i>
             <input type="search"
-                       id="positions-search-input"
-                       class="form-control"
-                       name="search"
-                       value={fromMaybe "" searchFilter}
-                       placeholder="Search positions by market or asset..."
-                       aria-label="Search positions"
-                       style="padding-left: 36px;">
+                   id="positions-search-input"
+                   class="form-control"
+                   name="search"
+                   value={fromMaybe "" searchFilter}
+                   placeholder="Search positions by market or asset..."
+                   aria-label="Search positions"
+                   style="padding-left: 36px;">
         </form>
     </div>
-|]
-
-renderStatusHiddenInput :: Text -> Html
-renderStatusHiddenInput statusValue = [hsx|
-    <input type="hidden" name="statusFilter" value={statusValue} />
 |]
 
 renderStatusDropdownForm :: Maybe Text -> Maybe Text -> Html
