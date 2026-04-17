@@ -3,10 +3,9 @@
 ## Project Overview
 
 This is an IHP (Integrated Haskell Platform) web application using:
-- **Framework**: IHP v1.4.1 (Haskell web framework)
+- **Framework**: IHP master latest (Haskell web framework)
 - **Build System**: Nix + devenv for reproducible development
 - **Database**: PostgreSQL (schema in `Application/Schema.sql`)
-- **Deployment**: NixOS with `deploy-to-nixos`
 
 ## Build, Test & Lint Commands
 
@@ -20,7 +19,7 @@ make build/Generated/Types.hs
 # Linting & Formatting
 stylish-haskell -i **/*.hs   # Format all Haskell files in-place (always run this before committing)
 
-# To run tests when they exist:
+# To run tests:
 runghc $(make print-ghc-extensions) -i. -ibuild -iConfig Test/Main.hs
 ```
 
@@ -33,7 +32,6 @@ runghc $(make print-ghc-extensions) -i. -ibuild -iConfig Test/Main.hs
 ## Code Style Guidelines
 
 ### Imports
-- Import order: Prelude/IHP first, then generated types, then project modules
 - Use `IHP.Prelude` (not standard Prelude)
 - Import project modules fully qualified or explicit
 - Example:
@@ -87,7 +85,6 @@ runghc $(make print-ghc-extensions) -i. -ibuild -iConfig Test/Main.hs
 ```
 Application/
   Schema.sql          # Database schema
-  Fixtures.sql        # Test fixtures
   Helper/
     Controller.hs     # Controller helpers
     View.hs           # View helpers
@@ -102,11 +99,6 @@ Web/
   Job/                # Jobs modules
   Types.hs            # Web-specific types
   Routes.hs           # URL routing
-
-Admin/
-  Controller/         # Admin controllers
-  View/               # Admin views
-  Types.hs            # Admin types
 
 build/Generated/      # Auto-generated from schema
 Main.hs               # Application entry
