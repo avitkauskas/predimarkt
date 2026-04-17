@@ -327,10 +327,7 @@ instance Controller DashboardController where
                     WHERE t.user_id = ?
                     AND (m.title ILIKE ? OR a.name ILIKE ?)
                 |] <> typeClause
-                count <- case mType of
-                        Just _ -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
-                        Nothing -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
-                pure count
+                sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
             (Nothing, mType) -> do
                 let typeClause = case mType of
                         Just "buy"  -> " AND t.quantity > 0"
@@ -342,11 +339,7 @@ instance Controller DashboardController where
                     FROM transactions t
                     WHERE t.user_id = ?
                 |] <> typeClause
-                case mType of
-                        Just "buy" -> sqlQueryScalar baseQuery (Only currentUserId)
-                        Just "sell" -> sqlQueryScalar baseQuery (Only currentUserId)
-                        Just _ -> sqlQueryScalar baseQuery (Only currentUserId)
-                        Nothing -> sqlQueryScalar baseQuery (Only currentUserId)
+                sqlQueryScalar baseQuery (Only currentUserId)
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
@@ -357,11 +350,7 @@ instance Controller DashboardController where
         let userId = currentUserId :: Id User
         let txnLimit = itemsPerPage :: Int
         let txnOffset = pageOffset :: Int
-        let typeClause = case mTypeFilter of
-                Just "buy"  -> " AND t.quantity > 0"
-                Just "sell" -> " AND t.quantity < 0"
-                Just _      -> ""
-                Nothing     -> ""
+
         transactions <- case (searchQuery, mTypeFilter) of
             (Just query, mType) -> do
                 let typeClauseInner = case mType of
@@ -410,19 +399,7 @@ instance Controller DashboardController where
                     let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
                     txnRecords <- mapM fetch txnIds
                     collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-                Just _ -> do
-                    (txnIdRows :: [Only UUID]) <- sqlQuery
-                        [r|
-                            SELECT id FROM transactions
-                            WHERE user_id = ?
-                            ORDER BY created_at DESC
-                            LIMIT ? OFFSET ?
-                        |]
-                        (currentUserId, txnLimit, txnOffset)
-                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                    txnRecords <- mapM fetch txnIds
-                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-                Nothing -> do
+                _ -> do
                     (txnIdRows :: [Only UUID]) <- sqlQuery
                         [r|
                             SELECT id FROM transactions
