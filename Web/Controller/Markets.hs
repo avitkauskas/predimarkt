@@ -6,7 +6,6 @@
 module Web.Controller.Markets where
 
 import Application.Domain.ChartData
-import Application.Domain.MarketAssets (sortAssetsForDisplay)
 import Application.Domain.Types
 import qualified Application.Helper.QueryParams as QueryParams
 import qualified Application.Market.Input as MarketInput
@@ -132,10 +131,11 @@ instance Controller MarketsController where
 
                 assets <- query @Asset
                     |> filterWhereIn (#marketId, marketIds)
+                    |> orderByDesc #quantity
                     |> fetch
 
                 let assetsByMarket =
-                        M.fromListWith (<>)
+                        M.fromListWith (flip (<>))
                             (map (\asset -> (asset.marketId, [asset])) assets)
 
                 let markets' =
@@ -187,9 +187,8 @@ instance Controller MarketsController where
         category <- fetch (market.categoryId)
         assets <- query @Asset
             |> filterWhere (#marketId, mId)
-            |> orderByAsc #quantity
+            |> orderByDesc #quantity
             |> fetch
-        let sortedAssets = sortAssetsForDisplay assets
 
         chartData <- fetchChartData market assets market.beta
 
@@ -244,7 +243,7 @@ instance Controller MarketsController where
             { market
             , owner
             , category
-            , assets = sortedAssets
+            , assets
             , tradingAssetId = tAssetId
             , tradingAction = tAction
             , showChart = chartVisible
@@ -360,7 +359,7 @@ instance Controller MarketsController where
         accessDeniedUnless (market.status `elem` editableMarketStatuses)
         assets <- query @Asset
             |> filterWhere (#marketId, mId)
-            |> orderByAsc #quantity
+            |> orderByDesc #quantity
             |> fetch
         let marketAssets = assets
         categories <- fetchCategories
@@ -378,7 +377,7 @@ instance Controller MarketsController where
         categories <- fetchCategories
         assets <- query @Asset
             |> filterWhere (#marketId, mId)
-            |> orderByAsc #quantity
+            |> orderByDesc #quantity
             |> fetch
         let marketAssets = assets
         let editMode = marketEditMode market.status
@@ -544,7 +543,7 @@ attachAssetsToMarket
     -> [Asset]
     -> Include' '["categoryId", "assets"] Market
 attachAssetsToMarket market assets =
-    market { GeneratedMarket.assets = sortAssetsForDisplay assets }
+    market { GeneratedMarket.assets = assets }
 
 fillMarketWithFormData :: (?context :: ControllerContext, ?request :: Request) => Market -> Market
 fillMarketWithFormData market =

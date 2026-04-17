@@ -4,7 +4,6 @@ module Test.Main where
 import Application.Domain.ChartData (AssetChartData (..), PricePoint (..),
                                      buildChartData)
 import Application.Domain.LMSR
-import Application.Domain.MarketAssets (sortAssetsForDisplay)
 import Application.Domain.Position (Side (Long, Short), currentPnL,
                                     positionSide, positionValue,
                                     resolutionPayout)
@@ -50,6 +49,7 @@ import Crypto.WebAuthn.Model.Types (AttestationConveyancePreference (Attestation
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as ByteString
 import qualified Data.CaseInsensitive as CI
+
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
@@ -597,22 +597,6 @@ main = hspec do
                         chartData (fromJust (head (filter (\entry -> chartAssetName entry == "Alpha") built)))
                 fmap priceValue alphaSeries
                     `shouldBe` [currentPrices M.! get #id assetA]
-
-        describe "Asset display ordering" do
-            it "puts Yes before No in binary markets" do
-                map (get #name) (sortAssetsForDisplay
-                    [ mkTestAsset "No" "NO" 0
-                    , mkTestAsset "Yes" "YES" 0
-                    ])
-                    `shouldBe` ["Yes", "No"]
-
-            it "sorts non-binary markets by quantity descending" do
-                map (get #name) (sortAssetsForDisplay
-                    [ mkTestAsset "Low" "LOW" 10
-                    , mkTestAsset "High" "HIGH" 50
-                    , mkTestAsset "Mid" "MID" 30
-                    ])
-                    `shouldBe` ["High", "Mid", "Low"]
 
         describe "Formatting helpers" do
             it "formats money and signed money values" do

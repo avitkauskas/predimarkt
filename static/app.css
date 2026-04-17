@@ -496,7 +496,7 @@
     border-top-color: rgba(255, 255, 255, 0.08);
 }
 
-.market-row:hover .market-link-hover {
+.market-row:hover a.market-link-hover {
     color: var(--bs-primary) !important;
 }
 

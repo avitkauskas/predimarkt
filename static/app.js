@@ -177,9 +177,17 @@ function initMarketsPageOpenMarketLinks() {
     const links = document.querySelectorAll('.market-row a');
 
     links.forEach(link => {
+        // Skip if already initialized to prevent duplicate handlers on Turbolinks revisits
+        if (link.marketPageOpenMarketLinksInitialized) {
+            return;
+        }
+
         link.addEventListener('click', function (event) {
             event.stopPropagation();
         });
+
+        // Mark this link as already initialized
+        link.marketPageOpenMarketLinksInitialized = true;
     });
 }
 
@@ -187,6 +195,11 @@ function initDashboardMarketsRowClick() {
     const rows = document.querySelectorAll('.market-row');
 
     rows.forEach(row => {
+        // Skip if already bound to prevent duplicate handlers on Turbolinks revisits
+        if (row.dataset.marketClickBound === 'true') {
+            return;
+        }
+
         row.addEventListener('click', function (event) {
             // Ignore clicks on buttons or their descendants
             if (event.target.closest('button') || event.target.closest('.btn')) {
@@ -199,6 +212,9 @@ function initDashboardMarketsRowClick() {
                 link.click();
             }
         });
+
+        // Mark this row as already bound
+        row.dataset.marketClickBound = 'true';
     });
 }
 
