@@ -19,6 +19,7 @@ $(document).on('ready turbolinks:load', function () {
     initMarketChatTradeQuantity()
     initMarketShowTradeQuantityLinks()
     initMarketsPageOpenMarketLinks()
+    initDashboardMarketsRowClick()
     initMarketPageScroll()
 
     // Initialize info blocks for any pre-opened trade forms (only on market show pages)
@@ -173,14 +174,32 @@ function initMarketPageScroll() {
 }
 
 function initMarketsPageOpenMarketLinks() {
-    document.querySelectorAll('a[data-start-market-page-at-top="true"]').forEach(link => {
-        if (link.marketPageStartTopInitialized) return
-        link.marketPageStartTopInitialized = true
+    const links = document.querySelectorAll('.market-row a');
 
-        link.addEventListener('click', function () {
-            window.marketPageShouldStartAtTop = true
-        })
-    })
+    links.forEach(link => {
+        link.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+    });
+}
+
+function initDashboardMarketsRowClick() {
+    const rows = document.querySelectorAll('.market-row');
+
+    rows.forEach(row => {
+        row.addEventListener('click', function (event) {
+            // Ignore clicks on buttons or their descendants
+            if (event.target.closest('button') || event.target.closest('.btn')) {
+                return;
+            }
+
+            // Find the link in this row and navigate to it
+            const link = row.querySelector('.market-link-hover');
+            if (link) {
+                link.click();
+            }
+        });
+    });
 }
 
 window.visitGetFormWithTurbolinks = function (form) {

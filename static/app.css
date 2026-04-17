@@ -495,3 +495,11 @@
     background: rgba(255, 255, 255, 0.03);
     border-top-color: rgba(255, 255, 255, 0.08);
 }
+
+.market-row:hover .market-link-hover {
+    color: var(--bs-primary) !important;
+}
+
+.market-row {
+    cursor: pointer;
+}

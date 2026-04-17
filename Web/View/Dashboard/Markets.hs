@@ -36,9 +36,9 @@ instance View MarketsView where
 
 renderMarket :: (?context :: ControllerContext) => Text -> Int -> Maybe Text -> Market -> Html
 renderMarket backToPath currentPage searchFilter market = [hsx|
-    <tr class="d-none d-sm-table-row">
+    <tr class="d-none d-sm-table-row market-row">
         <td class="align-middle">
-            <a class="text-decoration-none text-body"
+            <a class="text-decoration-none text-reset market-link-hover"
                href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}>
                 {market.title}
             </a>
@@ -48,9 +48,9 @@ renderMarket backToPath currentPage searchFilter market = [hsx|
         </td>
     </tr>
     <tr class="d-table-row d-sm-none">
-        <td class="align-middle">
+        <td class="align-middle market-row">
             <div class="d-flex flex-column gap-2 py-1">
-                <a class="text-decoration-none text-body"
+                <a class="text-decoration-none text-reset market-link-hover"
                    href={ShowMarketAction market.id Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just backToPath)}>
                     {market.title}
                 </a>
