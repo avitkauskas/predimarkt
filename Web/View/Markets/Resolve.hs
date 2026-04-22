@@ -15,18 +15,34 @@ instance View ResolveView where
                 </div>
                 <div class="card-body p-4">
                     <header>
-                        <button class="btn btn-outline-secondary back-button ms-2 mb-3"
+                        <div class="d-flex align-items-start gap-2 ms-2 mb-3">
+                            <button
                                 onclick="history.back()"
-                                type="button">
-                            ←
-                        </button>
-                        <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
+                                class="btn btn-outline-secondary back-button flex-shrink-0"
+                                aria-label="Go back">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <div class="flex-grow-1 ms-1" style="padding-top: 0.29rem;">
+                                <span class="h4 fw-semibold">
+                                    {market.title}
+                                </span>
+                            </div>
+                        </div>
                     </header>
 
                     <div class="alert alert-info ms-2" role="alert">
-                        <strong>Select the outcome</strong><br/>
-                        Choose which asset represents what actually happened.<br/>
-                        All user positions will be settled based on this selection.
+                        <div class="fw-semibold mb-2">
+                            Select outcome
+                        </div>
+                        <div class="mb-1">
+                            Choose the asset that reflects what actually happened.
+                        </div>
+                        <div class="mb-2">
+                            All positions will be settled based on your selection.
+                        </div>
+                        <div class="text-danger fw-medium">
+                            This action cannot be undone!
+                        </div>
                     </div>
 
                     {resolveForm}

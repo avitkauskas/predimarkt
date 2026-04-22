@@ -13,18 +13,30 @@ instance View RefundView where
                 </div>
                 <div class="card-body p-4">
                     <header>
-                        <button class="btn btn-outline-secondary back-button mb-3 ms-2"
+                        <div class="d-flex align-items-start gap-2 ms-2 mb-3">
+                            <button
                                 onclick="history.back()"
-                                type="button">
-                            ←
-                        </button>
-                        <span class="h3 fw-bold mb-3 ms-2">{market.title}</span>
+                                class="btn btn-outline-secondary back-button flex-shrink-0">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <div class="flex-grow-1 ms-1" style="padding-top: 0.29rem;">
+                                <span class="h4 fw-semibold">
+                                    {market.title}
+                                </span>
+                            </div>
+                        </div>
                     </header>
 
                     <div class="alert alert-warning mb-4 mx-2" role="alert">
-                        <strong>Refunding this market:</strong><br/>
-                        All users will receive back their net position amounts.<br/>
-                        This will reverse all transactions and change the market status to "Refunded".
+                        <div class="fw-semibold mb-2">
+                            Refunding the market
+                        </div>
+                        <div class="mb-2">
+                            All transactions will be reversed, and users will receive their net position amounts.
+                        </div>
+                        <div class="text-danger fw-medium">
+                            This action cannot be undone!
+                        </div>
                     </div>
 
                     <div class="d-flex gap-2 ms-2">
