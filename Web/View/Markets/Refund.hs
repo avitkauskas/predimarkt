@@ -16,7 +16,8 @@ instance View RefundView where
                         <div class="d-flex align-items-start gap-2 ms-2 mb-3">
                             <button
                                 onclick="history.back()"
-                                class="btn btn-outline-secondary back-button flex-shrink-0">
+                                class="btn btn-outline-secondary back-button flex-shrink-0"
+                                aria-label="Go back">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
                             <div class="flex-grow-1 ms-1" style="padding-top: 0.29rem;">
