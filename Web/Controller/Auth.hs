@@ -16,6 +16,7 @@ import qualified Data.UUID as UUID
 import qualified Data.Validation as Validation
 import Database.PostgreSQL.Simple.Types (Binary (Binary))
 import IHP.ControllerPrelude
+import IHP.TypedSql (sqlQueryTyped, typedSql)
 import Network.HTTP.Types.Status (Status, status400, status409, status422)
 import Web.Controller.Prelude
 import Web.View.Sessions.New
@@ -40,7 +41,7 @@ instance Controller AuthController where
                 pure (user.id, user.nickname, map passkeyCredentialDescriptor existingPasskeys)
             Nothing -> do
                 nickname <- requireAvailableNickname payload.nickname
-                userUuid <- sqlQueryScalar "SELECT uuidv7()" ()
+                userUuid <- typedScalar <$> sqlQueryTyped [typedSql| SELECT uuidv7() |]
                 pure (Id userUuid, nickname, [])
 
         challenge <- liftIO generateChallenge
@@ -197,6 +198,12 @@ instance Controller AuthController where
             |> updateRecord
         setSuccessMessage "Logged in successfully"
         renderJson (Aeson.object ["ok" Aeson..= True, "redirectTo" Aeson..= ("/" :: Text)])
+
+typedScalar :: HasCallStack => [value] -> value
+typedScalar result = case result of
+    [value] -> value
+    []      -> error "typedScalar: Query returned no rows"
+    _       -> error $ "typedScalar: Expected 1 row, got " <> tshow (length result)
 
 registrationChallengeSessionKey :: ByteString
 registrationChallengeSessionKey = "passkey-registration-challenge"
