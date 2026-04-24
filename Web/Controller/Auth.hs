@@ -41,7 +41,7 @@ instance Controller AuthController where
                 pure (user.id, user.nickname, map passkeyCredentialDescriptor existingPasskeys)
             Nothing -> do
                 nickname <- requireAvailableNickname payload.nickname
-                userUuid <- typedScalar <$> sqlQueryTyped [typedSql| SELECT uuidv7() |]
+                userUuid <- typedNullableScalar <$> sqlQueryTyped [typedSql| SELECT uuidv7() |]
                 pure (Id userUuid, nickname, [])
 
         challenge <- liftIO generateChallenge
@@ -204,6 +204,13 @@ typedScalar result = case result of
     [value] -> value
     []      -> error "typedScalar: Query returned no rows"
     _       -> error $ "typedScalar: Expected 1 row, got " <> tshow (length result)
+
+typedNullableScalar :: HasCallStack => [Maybe value] -> value
+typedNullableScalar result = case result of
+    [Just value] -> value
+    [Nothing]    -> error "typedNullableScalar: Query returned NULL"
+    []           -> error "typedNullableScalar: Query returned no rows"
+    _            -> error $ "typedNullableScalar: Expected 1 row, got " <> tshow (length result)
 
 registrationChallengeSessionKey :: ByteString
 registrationChallengeSessionKey = "passkey-registration-challenge"
