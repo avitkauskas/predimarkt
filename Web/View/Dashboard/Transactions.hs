@@ -176,7 +176,7 @@ renderTransactionCard backToPath twd =
                         <div>
                             <a href={marketUrl} class="text-decoration-none">
                                 <span class="h6 mb-0 fw-bold">{get #title market}</span> -
-                                <span class="text-muted">{get #name asset}</span>
+                                <span class="text-body-secondary fw-medium">{get #name asset}</span>
                             </a>
                         </div>
                     </div>

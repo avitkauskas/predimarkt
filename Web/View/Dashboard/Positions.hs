@@ -222,7 +222,7 @@ renderPositionCard backToPath ep =
                     <div class="d-flex justify-content-between align-items-start mb-2 overflow-x-auto scroll-no-bar">
                         <a href={marketUrl} class="text-decoration-none">
                             <span class="mb-0 h6 fw-bold">{get #title market}</span> -
-                            <span class="text-body-secondary fw-bold">{get #name asset}</span>
+                            <span class="text-body-secondary fw-medium">{get #name asset}</span>
                         </a>
                     </div>
 

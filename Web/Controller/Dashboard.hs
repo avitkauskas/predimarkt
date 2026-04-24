@@ -7,7 +7,7 @@ import Application.Domain.Types
 import Application.Helper.QueryParams (normalizeSearchQuery)
 import qualified Data.Map as M
 import IHP.ModelSupport (trackTableRead)
-import Text.RawString.QQ (r)
+import IHP.TypedSql (sqlQueryTyped, typedSql)
 import Web.Controller.Prelude
 import Web.View.Dashboard.DeleteMarket
 import Web.View.Dashboard.Markets
@@ -38,34 +38,38 @@ instance Controller DashboardController where
         -- Get total count for pagination (with search and status filters if provided)
         totalCount <- case (searchQuery, activeStatus) of
             (Just query, mStatus) -> do
-                let statusClause = case mStatus of
-                        Just st -> " AND m.status = ?"
-                        Nothing -> ""
-                let baseQuery = [r|
-                    SELECT COUNT(*)::INTEGER
-                    FROM positions p
-                    JOIN markets m ON p.market_id = m.id
-                    JOIN assets a ON p.asset_id = a.id
-                    WHERE p.user_id = ?
-                    AND (m.title ILIKE ? OR a.name ILIKE ?)
-                |] <> statusClause
-                count <- case mStatus of
-                        Just st -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%", st)
-                        Nothing -> sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
-                pure count
-            (Nothing, mStatus) -> do
-                let statusClause = case mStatus of
-                        Just st -> " AND m.status = ?"
-                        Nothing -> ""
-                let baseQuery = [r|
-                    SELECT COUNT(*)::INTEGER
-                    FROM positions p
-                    JOIN markets m ON p.market_id = m.id
-                    WHERE p.user_id = ?
-                |] <> statusClause
+                let searchPattern = "%" <> query <> "%"
                 case mStatus of
-                        Just st -> sqlQueryScalar baseQuery (currentUserId, st)
-                        Nothing -> sqlQueryScalar baseQuery (Only currentUserId)
+                    Just st ->
+                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                            SELECT COUNT(*)
+                            FROM positions p
+                            JOIN markets m ON p.market_id = m.id
+                            JOIN assets a ON p.asset_id = a.id
+                            WHERE p.user_id = ${currentUserId}
+                            AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                            AND m.status = ${st}
+                        |]
+                    Nothing ->
+                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                            SELECT COUNT(*)
+                            FROM positions p
+                            JOIN markets m ON p.market_id = m.id
+                            JOIN assets a ON p.asset_id = a.id
+                            WHERE p.user_id = ${currentUserId}
+                            AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                        |]
+            (Nothing, mStatus) -> do
+                case mStatus of
+                    Just st ->
+                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                            SELECT COUNT(*)
+                            FROM positions p
+                            JOIN markets m ON p.market_id = m.id
+                            WHERE p.user_id = ${currentUserId}
+                            AND m.status = ${st}
+                        |]
+                    Nothing -> query @Position |> filterWhere (#userId, currentUserId) |> fetchCount
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
@@ -76,46 +80,78 @@ instance Controller DashboardController where
         -- 2. Within each market, positions ordered by updated_at (desc)
         -- 3. Search filter on market title and asset name (case-insensitive)
         -- 4. Optional status filter on market status
-        let statusClause = case activeStatus of
-                Just st -> " AND m.status = ?"
-                Nothing -> ""
-        let positionQuery = case searchQuery of
-                Just query -> [r|
-                    SELECT p.id, p.user_id, p.market_id, p.asset_id, p.quantity, p.invested, p.received, p.updated_at
-                    FROM (
-                        SELECT *, MAX(updated_at) OVER (PARTITION BY market_id) as market_max
-                        FROM positions
-                        WHERE user_id = ?
-                    ) p
-                    JOIN markets m ON p.market_id = m.id
-                    JOIN assets a ON p.asset_id = a.id
-                    WHERE (m.title ILIKE ? OR a.name ILIKE ?)
-                |] <> statusClause <> [r|
-                    ORDER BY market_max DESC, p.updated_at DESC
-                    LIMIT ? OFFSET ?
-                |]
-                Nothing -> [r|
-                    SELECT sub.id, sub.user_id, sub.market_id, sub.asset_id, sub.quantity, sub.invested, sub.received, sub.updated_at
-                    FROM (
-                        SELECT *, MAX(updated_at) OVER (PARTITION BY market_id) as market_max
-                        FROM positions
-                        WHERE user_id = ?
-                    ) sub
-                    JOIN markets m ON sub.market_id = m.id
-                |] <> statusClause <> [r|
-                    ORDER BY market_max DESC, sub.updated_at DESC
-                    LIMIT ? OFFSET ?
-                |]
-
         -- Fetch positions with pagination using raw SQL
         let userId = currentUserId :: Id User
-        let posLimit = itemsPerPage :: Int
-        let posOffset = pageOffset :: Int
+        let posLimit = fromIntegral itemsPerPage :: Integer
+        let posOffset = fromIntegral pageOffset :: Integer
         positionsRaw <- case (searchQuery, activeStatus) of
-            (Just query, Just st) -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", st, posLimit, posOffset) :: IO [Position]
-            (Just query, Nothing) -> sqlQuery positionQuery (userId, "%" <> query <> "%", "%" <> query <> "%", posLimit, posOffset) :: IO [Position]
-            (Nothing, Just st) -> sqlQuery positionQuery (userId, st, posLimit, posOffset) :: IO [Position]
-            (Nothing, Nothing) -> sqlQuery positionQuery (userId, posLimit, posOffset) :: IO [Position]
+            (Just query, Just st) -> do
+                let searchPattern = "%" <> query <> "%"
+                sqlQueryTyped [typedSql|
+                    SELECT p.id, p.user_id, p.market_id, p.asset_id, p.quantity, p.invested, p.received, p.updated_at
+                    FROM positions p
+                    JOIN (
+                        SELECT market_id, MAX(updated_at) AS market_max
+                        FROM positions
+                        WHERE user_id = ${userId}
+                        GROUP BY market_id
+                    ) market_sort ON market_sort.market_id = p.market_id
+                    JOIN markets m ON p.market_id = m.id
+                    JOIN assets a ON p.asset_id = a.id
+                    WHERE p.user_id = ${userId}
+                    AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                    AND m.status = ${st}
+                    ORDER BY market_sort.market_max DESC, p.updated_at DESC
+                    LIMIT ${posLimit} OFFSET ${posOffset}
+                |]
+            (Just query, Nothing) -> do
+                let searchPattern = "%" <> query <> "%"
+                sqlQueryTyped [typedSql|
+                    SELECT p.id, p.user_id, p.market_id, p.asset_id, p.quantity, p.invested, p.received, p.updated_at
+                    FROM positions p
+                    JOIN (
+                        SELECT market_id, MAX(updated_at) AS market_max
+                        FROM positions
+                        WHERE user_id = ${userId}
+                        GROUP BY market_id
+                    ) market_sort ON market_sort.market_id = p.market_id
+                    JOIN markets m ON p.market_id = m.id
+                    JOIN assets a ON p.asset_id = a.id
+                    WHERE p.user_id = ${userId}
+                    AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                    ORDER BY market_sort.market_max DESC, p.updated_at DESC
+                    LIMIT ${posLimit} OFFSET ${posOffset}
+                |]
+            (Nothing, Just st) ->
+                sqlQueryTyped [typedSql|
+                    SELECT p.id, p.user_id, p.market_id, p.asset_id, p.quantity, p.invested, p.received, p.updated_at
+                    FROM positions p
+                    JOIN (
+                        SELECT market_id, MAX(updated_at) AS market_max
+                        FROM positions
+                        WHERE user_id = ${userId}
+                        GROUP BY market_id
+                    ) market_sort ON market_sort.market_id = p.market_id
+                    JOIN markets m ON p.market_id = m.id
+                    WHERE p.user_id = ${userId}
+                    AND m.status = ${st}
+                    ORDER BY market_sort.market_max DESC, p.updated_at DESC
+                    LIMIT ${posLimit} OFFSET ${posOffset}
+                |]
+            (Nothing, Nothing) ->
+                sqlQueryTyped [typedSql|
+                    SELECT p.id, p.user_id, p.market_id, p.asset_id, p.quantity, p.invested, p.received, p.updated_at
+                    FROM positions p
+                    JOIN (
+                        SELECT market_id, MAX(updated_at) AS market_max
+                        FROM positions
+                        WHERE user_id = ${userId}
+                        GROUP BY market_id
+                    ) market_sort ON market_sort.market_id = p.market_id
+                    WHERE p.user_id = ${userId}
+                    ORDER BY market_sort.market_max DESC, p.updated_at DESC
+                    LIMIT ${posLimit} OFFSET ${posOffset}
+                |]
         positions <- collectionFetchRelated #assetId positionsRaw >>= collectionFetchRelated #marketId
 
         -- Get unique market IDs from positions
@@ -174,47 +210,65 @@ instance Controller DashboardController where
 
         totalCount <- case searchQuery of
             Just query -> do
-                count <- sqlQueryScalar
-                    [r|
-                        SELECT COUNT(*)::INTEGER
-                        FROM markets
-                        WHERE user_id = ?
-                        AND status = ?
-                        AND title ILIKE ?
-                    |]
-                    (currentUserId, activeStatus, "%" <> query <> "%")
-                pure count
+                let searchPattern = "%" <> query <> "%"
+                typedCountScalar <$> sqlQueryTyped [typedSql|
+                    SELECT COUNT(*)
+                    FROM markets
+                    WHERE user_id = ${currentUserId}
+                    AND status = ${activeStatus}
+                    AND title ILIKE ${searchPattern}
+                |]
             Nothing ->
-                case activeStatus of
-                    MarketStatusDraft -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
-                    MarketStatusOpen -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
-                    MarketStatusClosed -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
-                    MarketStatusResolved -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
-                    MarketStatusRefunded -> query @Market |> filterWhere (#userId, Just currentUserId) |> filterWhere (#status, activeStatus) |> fetchCount
+                query @Market
+                    |> filterWhere (#userId, Just currentUserId)
+                    |> filterWhere (#status, activeStatus)
+                    |> fetchCount
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
         let pageOffset = (validPage - 1) * itemsPerPage
+        let sqlItemsPerPage = fromIntegral itemsPerPage :: Integer
+        let sqlPageOffset = fromIntegral pageOffset :: Integer
 
         markets <- case searchQuery of
             Just query -> do
-                (marketIdRows :: [Only UUID]) <- case activeStatus of
-                    MarketStatusDraft -> sqlQuery
-                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?|]
-                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
-                    MarketStatusOpen -> sqlQuery
-                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY opened_at DESC LIMIT ? OFFSET ?|]
-                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
-                    MarketStatusClosed -> sqlQuery
-                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY closed_at DESC LIMIT ? OFFSET ?|]
-                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
-                    MarketStatusResolved -> sqlQuery
-                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY resolved_at DESC LIMIT ? OFFSET ?|]
-                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
-                    MarketStatusRefunded -> sqlQuery
-                        [r|SELECT id FROM markets WHERE user_id = ? AND status = ? AND title ILIKE ? ORDER BY refunded_at DESC LIMIT ? OFFSET ?|]
-                        (currentUserId, activeStatus, "%" <> query <> "%", itemsPerPage, pageOffset)
-                let marketIds = map (\(Only uuid) -> Id uuid :: Id Market) marketIdRows
+                let searchPattern = "%" <> query <> "%"
+                marketIds <- case activeStatus of
+                    MarketStatusDraft -> sqlQueryTyped [typedSql|
+                        SELECT id
+                        FROM markets
+                        WHERE user_id = ${currentUserId} AND status = ${activeStatus} AND title ILIKE ${searchPattern}
+                        ORDER BY created_at DESC
+                        LIMIT ${sqlItemsPerPage} OFFSET ${sqlPageOffset}
+                    |]
+                    MarketStatusOpen -> sqlQueryTyped [typedSql|
+                        SELECT id
+                        FROM markets
+                        WHERE user_id = ${currentUserId} AND status = ${activeStatus} AND title ILIKE ${searchPattern}
+                        ORDER BY opened_at DESC
+                        LIMIT ${sqlItemsPerPage} OFFSET ${sqlPageOffset}
+                    |]
+                    MarketStatusClosed -> sqlQueryTyped [typedSql|
+                        SELECT id
+                        FROM markets
+                        WHERE user_id = ${currentUserId} AND status = ${activeStatus} AND title ILIKE ${searchPattern}
+                        ORDER BY closed_at DESC
+                        LIMIT ${sqlItemsPerPage} OFFSET ${sqlPageOffset}
+                    |]
+                    MarketStatusResolved -> sqlQueryTyped [typedSql|
+                        SELECT id
+                        FROM markets
+                        WHERE user_id = ${currentUserId} AND status = ${activeStatus} AND title ILIKE ${searchPattern}
+                        ORDER BY resolved_at DESC
+                        LIMIT ${sqlItemsPerPage} OFFSET ${sqlPageOffset}
+                    |]
+                    MarketStatusRefunded -> sqlQueryTyped [typedSql|
+                        SELECT id
+                        FROM markets
+                        WHERE user_id = ${currentUserId} AND status = ${activeStatus} AND title ILIKE ${searchPattern}
+                        ORDER BY refunded_at DESC
+                        LIMIT ${sqlItemsPerPage} OFFSET ${sqlPageOffset}
+                    |]
                 mapM fetch marketIds
             Nothing ->
                 case activeStatus of
@@ -314,32 +368,52 @@ instance Controller DashboardController where
         -- Get total count for pagination (with search and type filters if provided)
         totalCount <- case (searchQuery, mTypeFilter) of
             (Just query, mType) -> do
-                let typeClause = case mType of
-                        Just "buy"  -> " AND t.quantity > 0"
-                        Just "sell" -> " AND t.quantity < 0"
-                        Just _      -> ""
-                        Nothing     -> ""
-                let baseQuery = [r|
-                    SELECT COUNT(*)::INTEGER
-                    FROM transactions t
-                    JOIN markets m ON t.market_id = m.id
-                    JOIN assets a ON t.asset_id = a.id
-                    WHERE t.user_id = ?
-                    AND (m.title ILIKE ? OR a.name ILIKE ?)
-                |] <> typeClause
-                sqlQueryScalar baseQuery (currentUserId, "%" <> query <> "%", "%" <> query <> "%")
-            (Nothing, mType) -> do
-                let typeClause = case mType of
-                        Just "buy"  -> " AND t.quantity > 0"
-                        Just "sell" -> " AND t.quantity < 0"
-                        Just _      -> ""
-                        Nothing     -> ""
-                let baseQuery = [r|
-                    SELECT COUNT(*)::INTEGER
-                    FROM transactions t
-                    WHERE t.user_id = ?
-                |] <> typeClause
-                sqlQueryScalar baseQuery (Only currentUserId)
+                let searchPattern = "%" <> query <> "%"
+                case mType of
+                    Just "buy" ->
+                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                            SELECT COUNT(*)
+                            FROM transactions t
+                            JOIN markets m ON t.market_id = m.id
+                            JOIN assets a ON t.asset_id = a.id
+                            WHERE t.user_id = ${currentUserId}
+                            AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                            AND t.quantity > 0
+                        |]
+                    Just "sell" ->
+                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                            SELECT COUNT(*)
+                            FROM transactions t
+                            JOIN markets m ON t.market_id = m.id
+                            JOIN assets a ON t.asset_id = a.id
+                            WHERE t.user_id = ${currentUserId}
+                            AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                            AND t.quantity < 0
+                        |]
+                    _ ->
+                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                            SELECT COUNT(*)
+                            FROM transactions t
+                            JOIN markets m ON t.market_id = m.id
+                            JOIN assets a ON t.asset_id = a.id
+                            WHERE t.user_id = ${currentUserId}
+                            AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                        |]
+            (Nothing, mType) -> case mType of
+                Just "buy" ->
+                    query @Transaction
+                        |> filterWhere (#userId, currentUserId)
+                        |> filterWhereGreaterThan (#quantity, 0)
+                        |> fetchCount
+                Just "sell" ->
+                    query @Transaction
+                        |> filterWhere (#userId, currentUserId)
+                        |> filterWhereLessThan (#quantity, 0)
+                        |> fetchCount
+                _ ->
+                    query @Transaction
+                        |> filterWhere (#userId, currentUserId)
+                        |> fetchCount
 
         let totalPages = max 1 ((totalCount + itemsPerPage - 1) `div` itemsPerPage)
         let validPage = max 1 (min currentPage totalPages)
@@ -350,67 +424,77 @@ instance Controller DashboardController where
         let userId = currentUserId :: Id User
         let txnLimit = itemsPerPage :: Int
         let txnOffset = pageOffset :: Int
+        let sqlTxnLimit = fromIntegral txnLimit :: Integer
+        let sqlTxnOffset = fromIntegral txnOffset :: Integer
 
         transactions <- case (searchQuery, mTypeFilter) of
             (Just query, mType) -> do
-                let typeClauseInner = case mType of
-                        Just "buy"  -> " AND t.quantity > 0"
-                        Just "sell" -> " AND t.quantity < 0"
-                        Just _      -> ""
-                        Nothing     -> ""
-                (txnIdRows :: [Only UUID]) <- sqlQuery
-                    ([r|
+                let searchPattern = "%" <> query <> "%"
+                txnIds <- case mType of
+                    Just "buy" -> sqlQueryTyped [typedSql|
                         SELECT t.id
                         FROM transactions t
                         JOIN markets m ON t.market_id = m.id
                         JOIN assets a ON t.asset_id = a.id
-                        WHERE t.user_id = ?
-                        AND (m.title ILIKE ? OR a.name ILIKE ?)
-                    |] <> typeClauseInner <> [r|
+                        WHERE t.user_id = ${userId}
+                        AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                        AND t.quantity > 0
                         ORDER BY t.created_at DESC
-                        LIMIT ? OFFSET ?
-                    |])
-                    (userId, "%" <> query <> "%", "%" <> query <> "%", txnLimit, txnOffset)
-                let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
+                        LIMIT ${sqlTxnLimit} OFFSET ${sqlTxnOffset}
+                    |]
+                    Just "sell" -> sqlQueryTyped [typedSql|
+                        SELECT t.id
+                        FROM transactions t
+                        JOIN markets m ON t.market_id = m.id
+                        JOIN assets a ON t.asset_id = a.id
+                        WHERE t.user_id = ${userId}
+                        AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                        AND t.quantity < 0
+                        ORDER BY t.created_at DESC
+                        LIMIT ${sqlTxnLimit} OFFSET ${sqlTxnOffset}
+                    |]
+                    _ -> sqlQueryTyped [typedSql|
+                        SELECT t.id
+                        FROM transactions t
+                        JOIN markets m ON t.market_id = m.id
+                        JOIN assets a ON t.asset_id = a.id
+                        WHERE t.user_id = ${userId}
+                        AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                        ORDER BY t.created_at DESC
+                        LIMIT ${sqlTxnLimit} OFFSET ${sqlTxnOffset}
+                    |]
                 txnRecords <- mapM fetch txnIds
                 collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
             (Nothing, mType) -> case mType of
                 Just "buy" -> do
-                    (txnIdRows :: [Only UUID]) <- sqlQuery
-                        [r|
-                            SELECT id FROM transactions
-                            WHERE user_id = ? AND quantity > 0
-                            ORDER BY created_at DESC
-                            LIMIT ? OFFSET ?
-                        |]
-                        (currentUserId, txnLimit, txnOffset)
-                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                    txnRecords <- mapM fetch txnIds
-                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+                    query @Transaction
+                        |> filterWhere (#userId, currentUserId)
+                        |> filterWhereGreaterThan (#quantity, 0)
+                        |> orderByDesc #createdAt
+                        |> limit txnLimit
+                        |> offset txnOffset
+                        |> fetch
+                        >>= collectionFetchRelated #assetId
+                        >>= collectionFetchRelated #marketId
                 Just "sell" -> do
-                    (txnIdRows :: [Only UUID]) <- sqlQuery
-                        [r|
-                            SELECT id FROM transactions
-                            WHERE user_id = ? AND quantity < 0
-                            ORDER BY created_at DESC
-                            LIMIT ? OFFSET ?
-                        |]
-                        (currentUserId, txnLimit, txnOffset)
-                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                    txnRecords <- mapM fetch txnIds
-                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
-                _ -> do
-                    (txnIdRows :: [Only UUID]) <- sqlQuery
-                        [r|
-                            SELECT id FROM transactions
-                            WHERE user_id = ?
-                            ORDER BY created_at DESC
-                            LIMIT ? OFFSET ?
-                        |]
-                        (currentUserId, txnLimit, txnOffset)
-                    let txnIds = map (\(Only uuid) -> Id uuid :: Id Transaction) txnIdRows
-                    txnRecords <- mapM fetch txnIds
-                    collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
+                    query @Transaction
+                        |> filterWhere (#userId, currentUserId)
+                        |> filterWhereLessThan (#quantity, 0)
+                        |> orderByDesc #createdAt
+                        |> limit txnLimit
+                        |> offset txnOffset
+                        |> fetch
+                        >>= collectionFetchRelated #assetId
+                        >>= collectionFetchRelated #marketId
+                _ ->
+                    query @Transaction
+                        |> filterWhere (#userId, currentUserId)
+                        |> orderByDesc #createdAt
+                        |> limit txnLimit
+                        |> offset txnOffset
+                        |> fetch
+                        >>= collectionFetchRelated #assetId
+                        >>= collectionFetchRelated #marketId
 
         let transactionsWithDetails = map (\t -> TransactionWithDetails { transaction = t }) transactions
 
@@ -432,6 +516,12 @@ instance Controller DashboardController where
             , searchFilter = searchQuery
             , typeFilter = mTypeFilter
             }
+
+typedCountScalar :: HasCallStack => [Integer] -> Int
+typedCountScalar result = case result of
+    [value]      -> fromIntegral value
+    []           -> error "typedCountScalar: Query returned no rows"
+    _            -> error $ "typedCountScalar: Expected 1 row, got " <> tshow (length result)
 
 fetchUserPositionsValue :: (?modelContext :: ModelContext) => Id User -> IO Integer
 fetchUserPositionsValue userId = do

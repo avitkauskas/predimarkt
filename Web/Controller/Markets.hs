@@ -17,7 +17,7 @@ import Data.Time (addDays, utctDay)
 import Data.Time.Clock (UTCTime (..))
 import qualified Generated.ActualTypes.Market as GeneratedMarket
 import IHP.ModelSupport (trackTableRead)
-import Text.RawString.QQ (r)
+import IHP.TypedSql (sqlQueryTyped, typedSql)
 import Web.Controller.Prelude
 import Web.Types
 import Web.View.Layout (withFooterLayout)
@@ -48,15 +48,14 @@ instance Controller MarketsController where
 
         matchingMarketIds <- case searchFilter of
             Just searchQuery -> do
-                (rows :: [Only (Id Market)]) <- sqlQuery
-                    [r|
+                let searchPattern = "%" <> searchQuery <> "%"
+                rows <- sqlQueryTyped [typedSql|
                         SELECT DISTINCT m.id
                         FROM markets m
                         LEFT JOIN assets a ON a.market_id = m.id
-                        WHERE m.title ILIKE ? OR a.name ILIKE ?
+                        WHERE m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern}
                     |]
-                    ("%" <> searchQuery <> "%", "%" <> searchQuery <> "%")
-                pure $ Just (map fromOnly rows)
+                pure $ Just rows
             Nothing -> pure Nothing
 
         let applySearchFilter queryBuilder =

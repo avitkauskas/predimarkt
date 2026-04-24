@@ -35,6 +35,7 @@
                             } {});
                         in with p; [
                             p.ihp
+                            ihp-typed-sql
                             base
                             wai
                             text
@@ -42,7 +43,6 @@
                             jwt
                             base64
                             webauthn
-                            raw-strings-qq
                         ];
                     devHaskellPackages = p: with p; [
                         # Haskell development dependencies go here
