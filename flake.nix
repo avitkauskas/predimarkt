@@ -55,6 +55,12 @@
 
                 # Custom configuration that will start with `devenv up`
                 devenv.shells.default = {
+                    overlays = [
+                        (_final: prev: {
+                            postgresql = prev.postgresql_18;
+                        })
+                    ];
+
                     # Start Mailhog on local development to catch outgoing emails
                     # services.mailhog.enable = true;
                     services.postgres = {
