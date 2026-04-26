@@ -1,9 +1,11 @@
 module Web.View.Markets.Resolve where
+
 import Web.View.Prelude
 
 data ResolveView = ResolveView
     { market :: Market
     , assets :: [Asset]
+    , backTo :: Text
     }
 
 instance View ResolveView where
@@ -16,12 +18,11 @@ instance View ResolveView where
                 <div class="card-body p-4">
                     <header>
                         <div class="d-flex align-items-start gap-2 ms-2 mb-3">
-                            <button
-                                onclick="history.back()"
+                            <a href={backTo}
                                 class="btn btn-outline-secondary back-button flex-shrink-0"
                                 aria-label="Go back">
                                 <i class="bi bi-chevron-left"></i>
-                            </button>
+                            </a>
                             <div class="flex-grow-1 ms-1" style="padding-top: 0.29rem;">
                                 <span class="h4 fw-semibold">
                                     {market.title}
@@ -61,7 +62,7 @@ instance View ResolveView where
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Resolve Market</button>
-                <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+                <a href={backTo} class="btn btn-outline-secondary">Cancel</a>
             </div>
         |]
 

@@ -131,9 +131,9 @@ navbar = [hsx|
                     <li><a  class="dropdown-item" href={EditUserAction user.id}>Profile</a></li>
                     <li><hr class="dropdown-divider" /></li>
                     <li>
-                        <a class="dropdown-item js-delete js-delete-no-confirm"
-                           href={DeleteSessionAction}
-                        >Logout</a>
+                        <form method="POST" action={pathTo DeleteSessionAction} class="d-inline">
+                            <button type="submit" class="dropdown-item js-delete js-delete-no-confirm">Logout</button>
+                        </form>
                     </li>
                 </ul>
             </li>

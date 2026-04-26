@@ -519,12 +519,14 @@ instance Controller MarketsController where
             |> filterWhere (#marketId, mId)
             |> orderByDesc #quantity
             |> fetch
+        let backTo = pathTo $ DashboardMarketsAction { statusFilter = Just MarketStatusClosed, page = Nothing, searchFilter = Nothing }
         render ResolveView { .. }
 
     action ConfirmRefundMarketAction { marketId } = do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         market <- fetch mId
         accessDeniedUnless (market.userId == Just currentUserId)
+        let backTo = pathTo $ DashboardMarketsAction { statusFilter = Just MarketStatusClosed, page = Nothing, searchFilter = Nothing }
         render RefundView { .. }
 
 fetchAssetsFromParams :: (?context :: ControllerContext, ?request :: Request) => IO [Asset]

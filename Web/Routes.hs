@@ -27,7 +27,7 @@ instance UrlCapture MarketStatus where
 [routes|webRoutes
 
 -- Sessions
-GET|DELETE /DeleteSession DeleteSessionAction
+POST /DeleteSession DeleteSessionAction
 
 -- Leaderboard
 GET /Leaderboard LeaderboardAction
@@ -87,14 +87,14 @@ POST /CreateMarketChatMessage?marketId CreateMarketChatMessageAction
 POST /DeleteMarketChatMessage?marketChatMessageId&marketId&tradingAssetId&tradingAction&showChart&showDescription&showAllAssets&showTradeHistory&activityPage&chatPage&chatComposerRev&tradeQuantity&backTo DeleteMarketChatMessageAction
 GET /EditMarket?marketId&page&search EditMarketAction { searchFilter = #search }
 POST /UpdateMarket?marketId UpdateMarketAction
-GET|POST /DeleteMarket?marketId&page&search DeleteMarketAction { searchFilter = #search }
-GET|POST /SetResolveAsset?marketId SetResolveAssetAction
-GET|POST /ConfirmRefundMarket?marketId ConfirmRefundMarketAction
+POST /DeleteMarket?marketId&page&search DeleteMarketAction { searchFilter = #search }
+POST /SetResolveAsset?marketId SetResolveAssetAction
+POST /ConfirmRefundMarket?marketId ConfirmRefundMarketAction
 
 -- Dashboard
 GET /DashboardPositions?page&search&positionStatusFilter DashboardPositionsAction { searchFilter = #search }
 GET /DashboardMarkets?page&search&statusFilter DashboardMarketsAction { searchFilter = #search }
 GET /DashboardTransactions?page&search&typeFilter DashboardTransactionsAction { searchFilter = #search, typeFilter = #typeFilter }
 GET /ConfirmDeleteMarket?marketId&page&search ConfirmDeleteMarketAction { confirmDeleteMarketId = #marketId, searchFilter = #search }
-GET|POST /ChangeMarketStatus?marketId&status&page&search ChangeMarketStatusAction { searchFilter = #search }
+POST /ChangeMarketStatus?marketId&status&page&search ChangeMarketStatusAction { searchFilter = #search }
 |]

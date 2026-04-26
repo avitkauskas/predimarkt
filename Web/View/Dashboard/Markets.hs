@@ -102,6 +102,12 @@ renderActions market currentPage searchFilter backToPath =
         reopenClosedForm = renderPostForm (pathTo (ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
             <button type="submit" class={actionClasses <> " btn-outline-primary"}>Open</button>
         |]
+        resolveForm = renderPostForm (pathTo (SetResolveAssetAction market.id)) [("class", "d-inline")] [hsx|
+            <button type="submit" class={actionClasses <> " btn-outline-success"}>Resolve</button>
+        |]
+        refundForm = renderPostForm (pathTo (ConfirmRefundMarketAction market.id)) [("class", "d-inline")] [hsx|
+            <button type="submit" class={actionClasses <> " btn-outline-danger"}>Refund</button>
+        |]
     in case market.status of
         MarketStatusDraft -> [hsx|
             <div class="d-inline-flex flex-nowrap align-items-center gap-2">
@@ -120,8 +126,8 @@ renderActions market currentPage searchFilter backToPath =
             <div class="d-inline-flex flex-nowrap align-items-center gap-2">
                 <a href={EditMarketAction market.id (Just currentPage) searchFilter} class={actionClasses <> " btn-outline-secondary"}>Edit</a>
                 {reopenClosedForm}
-                <a href={SetResolveAssetAction market.id} class={actionClasses <> " btn-outline-success"}>Resolve</a>
-                <a href={ConfirmRefundMarketAction market.id} class={actionClasses <> " btn-outline-danger"}>Refund</a>
+                {resolveForm}
+                {refundForm}
             </div>
         |]
         MarketStatusRefunded -> mempty
