@@ -6,13 +6,29 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import Data.Word (Word8)
-import Generated.Types (Asset)
+import Generated.Types (Asset, MarketStatus (..))
 import IHP.ModelSupport
 import IHP.Prelude
+import IHP.Router.Capture
 import IHP.Router.DSL
 import IHP.RouterPrelude
 import Numeric (showHex)
 import Web.Types
+
+instance UrlCapture MarketStatus where
+    parseCapture bs = case bs of
+        "draft"    -> Just MarketStatusDraft
+        "open"     -> Just MarketStatusOpen
+        "closed"   -> Just MarketStatusClosed
+        "resolved" -> Just MarketStatusResolved
+        "refunded" -> Just MarketStatusRefunded
+        _          -> Nothing
+    renderCapture = \case
+        MarketStatusDraft    -> "draft"
+        MarketStatusOpen     -> "open"
+        MarketStatusClosed   -> "closed"
+        MarketStatusResolved -> "resolved"
+        MarketStatusRefunded -> "refunded"
 
 -- Generator Marker
 instance AutoRoute SessionsController
@@ -116,41 +132,13 @@ instance CanRoute MarketsController where
         <|> (string "/SetResolveAsset" >> pure (SetResolveAssetAction def))
         <|> (string "/ConfirmRefundMarket" >> pure (ConfirmRefundMarketAction def))
 
-instance HasPath DashboardController where
-    pathTo DashboardPositionsAction { page, searchFilter, positionStatusFilter } =
-        "/DashboardPositions"
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
-            |> addQueryParam "statusFilter" positionStatusFilter
-    pathTo DashboardMarketsAction { page, searchFilter, statusFilter } =
-        "/DashboardMarkets"
-            |> addQueryParam "statusFilter" (inputValue <$> statusFilter)
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
-    pathTo DashboardTransactionsAction { page, searchFilter, typeFilter } =
-        "/DashboardTransactions"
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
-            |> addQueryParam "type" typeFilter
-    pathTo ConfirmDeleteMarketAction { confirmDeleteMarketId, page, searchFilter } =
-        "/ConfirmDeleteMarket"
-            |> addQueryParam "marketId" (Just $ inputValue confirmDeleteMarketId)
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
-    pathTo ChangeMarketStatusAction { marketId, status, page, searchFilter } =
-        "/ChangeMarketStatus"
-            |> addQueryParam "marketId" (inputValue <$> marketId)
-            |> addQueryParam "status" (inputValue <$> status)
-            |> addQueryParam "page" (inputValue <$> page)
-            |> addQueryParam "search" searchFilter
-
-instance CanRoute DashboardController where
-    parseRoute' =
-        (string "/DashboardPositions" >> pure (DashboardPositionsAction Nothing Nothing Nothing))
-        <|> (string "/DashboardMarkets" >> pure (DashboardMarketsAction Nothing Nothing Nothing))
-        <|> (string "/DashboardTransactions" >> pure (DashboardTransactionsAction Nothing Nothing Nothing))
-        <|> (string "/ConfirmDeleteMarket" >> pure (ConfirmDeleteMarketAction def Nothing Nothing))
-        <|> (string "/ChangeMarketStatus" >> pure (ChangeMarketStatusAction Nothing Nothing Nothing Nothing))
+[routes|DashboardController
+GET /DashboardPositions?page&search&positionStatusFilter    DashboardPositionsAction { searchFilter = #search }
+GET /DashboardMarkets?page&search&statusFilter         DashboardMarketsAction { searchFilter = #search, statusFilter = #statusFilter }
+GET /DashboardTransactions?page&search&type    DashboardTransactionsAction { searchFilter = #search, typeFilter = #type }
+GET /ConfirmDeleteMarket?marketId&page&search     ConfirmDeleteMarketAction { confirmDeleteMarketId = #marketId, searchFilter = #search }
+GET /ChangeMarketStatus?marketId&status&page&search  ChangeMarketStatusAction { searchFilter = #search }
+|]
 
 addMarketFlag :: Text -> Maybe Bool -> Text -> Text
 addMarketFlag name mValue base =

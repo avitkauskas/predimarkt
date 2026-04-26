@@ -490,17 +490,17 @@ instance Controller DashboardController where
                         ORDER BY t.created_at DESC
                         LIMIT ${sqlLimit} OFFSET ${sqlOffset}
                     |]
-                    _ -> sqlQueryTyped [typedSql|
-                        SELECT t.id
-                        FROM transactions t
-                        JOIN markets m ON t.market_id = m.id
-                        JOIN assets a ON t.asset_id = a.id
-                        WHERE t.user_id = ${userId}
-                            AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
-                            AND t.quantity = 0
-                        ORDER BY t.created_at DESC
-                        LIMIT ${sqlLimit} OFFSET ${sqlOffset}
-                    |]
+                    _ ->
+                        sqlQueryTyped [typedSql|
+                            SELECT t.id
+                            FROM transactions t
+                            JOIN markets m ON t.market_id = m.id
+                            JOIN assets a ON t.asset_id = a.id
+                            WHERE t.user_id = ${userId}
+                                AND (m.title ILIKE ${searchPattern} OR a.name ILIKE ${searchPattern})
+                            ORDER BY t.created_at DESC
+                            LIMIT ${sqlLimit} OFFSET ${sqlOffset}
+                        |]
                 txnRecords <- mapM fetch txnIds
                 collectionFetchRelated #assetId txnRecords >>= collectionFetchRelated #marketId
             (Nothing, mType) -> case mType of
