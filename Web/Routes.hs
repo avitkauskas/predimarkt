@@ -9,6 +9,7 @@ import Data.Word (Word8)
 import Generated.Types (Asset)
 import IHP.ModelSupport
 import IHP.Prelude
+import IHP.Router.DSL
 import IHP.RouterPrelude
 import Numeric (showHex)
 import Web.Types
@@ -47,26 +48,16 @@ instance AutoRoute AssetsController
 instance AutoRoute TradesController
 instance AutoRoute LeaderboardController
 
-instance HasPath StaticController where
-    pathTo AboutAction            = "/about"
-    pathTo HowItWorksAction       = "/how-it-works"
-    pathTo CommunityRulesAction   = "/community-rules"
-    pathTo TermsAction            = "/terms-of-service"
-    pathTo PrivacyPolicyAction    = "/privacy-policy"
-    pathTo CookiePolicyAction     = "/cookie-policy"
-    pathTo ModerationPolicyAction = "/moderation-policy"
-    pathTo LegalNoticeAction      = "/legal-notice"
-
-instance CanRoute StaticController where
-    parseRoute' =
-        (string "/about" >> pure AboutAction)
-        <|> (string "/how-it-works" >> pure HowItWorksAction)
-        <|> (string "/community-rules" >> pure CommunityRulesAction)
-        <|> (string "/terms-of-service" >> pure TermsAction)
-        <|> (string "/privacy-policy" >> pure PrivacyPolicyAction)
-        <|> (string "/cookie-policy" >> pure CookiePolicyAction)
-        <|> (string "/moderation-policy" >> pure ModerationPolicyAction)
-        <|> (string "/legal-notice" >> pure LegalNoticeAction)
+[routes|StaticController
+GET /about                AboutAction
+GET /how-it-works     HowItWorksAction
+GET /community-rules  CommunityRulesAction
+GET /terms-of-service    TermsAction
+GET /privacy-policy       PrivacyPolicyAction
+GET /cookie-policy        CookiePolicyAction
+GET /moderation-policy   ModerationPolicyAction
+GET /legal-notice     LegalNoticeAction
+|]
 
 instance HasPath AuthController where
     pathTo LoginAction                       = "/NewSession"
