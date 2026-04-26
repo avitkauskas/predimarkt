@@ -376,29 +376,24 @@ instance View ShowView where
             chatComposerScript :: Html
             chatComposerScript = [hsx|
                 <script>
-                    function initMarketChatComposerShortcut() {
-                        var form = document.getElementById('market-chat-form');
-                        if (!form || form.dataset.shortcutBound === 'true') return;
+                    document.addEventListener('keydown', function(event) {
+                        var target = event.target;
+                        if (!target.matches || !target.matches('textarea[name="body"]')) return;
+                        if (target.id.indexOf('market-chat-input-') !== 0) return;
 
-                        var textarea = form.querySelector('textarea[name="body"]');
-                        if (!textarea) return;
+                        var shouldSubmit = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
+                        if (!shouldSubmit) return;
 
-                        textarea.addEventListener('keydown', function(event) {
-                            var shouldSubmit = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
-                            if (!shouldSubmit) return;
+                        var form = target.form;
+                        if (!form) return;
 
-                            event.preventDefault();
-                            if (typeof form.requestSubmit === 'function') {
-                                form.requestSubmit();
-                            } else {
-                                form.submit();
-                            }
-                        });
-
-                        form.dataset.shortcutBound = 'true';
-                    }
-
-                    document.addEventListener('turbolinks:load', initMarketChatComposerShortcut);
+                        event.preventDefault();
+                        if (typeof form.requestSubmit === 'function') {
+                            form.requestSubmit();
+                        } else {
+                            form.submit();
+                        }
+                    });
                 </script>
             |]
 
