@@ -1,6 +1,30 @@
 module Application.Helper.Pagination where
 
+import Data.Int (Int64)
 import IHP.ViewPrelude
+
+data PaginationBounds = PaginationBounds
+    { paginationCurrentPage :: Int
+    , paginationTotalPages  :: Int
+    , paginationOffset      :: Int
+    , paginationSqlLimit    :: Int64
+    , paginationSqlOffset   :: Int64
+    }
+    deriving (Eq, Show)
+
+paginate :: Int -> Int -> Int -> PaginationBounds
+paginate currentPage itemsPerPage totalCount =
+    let safeItemsPerPage = max 1 itemsPerPage
+        totalPages = max 1 ((totalCount + safeItemsPerPage - 1) `div` safeItemsPerPage)
+        validPage = max 1 (min currentPage totalPages)
+        pageOffset = (validPage - 1) * safeItemsPerPage
+    in PaginationBounds
+        { paginationCurrentPage = validPage
+        , paginationTotalPages = totalPages
+        , paginationOffset = pageOffset
+        , paginationSqlLimit = fromIntegral safeItemsPerPage
+        , paginationSqlOffset = fromIntegral pageOffset
+        }
 
 data PaginationItem
     = PageNumber Int

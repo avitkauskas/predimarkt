@@ -7,8 +7,10 @@ module Web.Controller.Markets where
 
 import Application.Domain.ChartData
 import Application.Domain.Types
+import qualified Application.Helper.Pagination as Pagination
 import qualified Application.Helper.QueryParams as QueryParams
 import qualified Application.Market.Input as MarketInput
+import Data.Int (Int64)
 import Data.List (zipWith4)
 import qualified Data.Map.Strict as M
 import Data.Text (strip)
@@ -36,7 +38,7 @@ instance Controller MarketsController where
         let searchFilter = QueryParams.normalizeSearchQuery (paramOrNothing "search")
         let currentPage = max 1 $ fromMaybe 1 (paramOrNothing @Int "page")
         let marketsPerPage = 12
-        let visibleMarkets = currentPage * marketsPerPage
+        let visibleMarkets = fromIntegral (currentPage * marketsPerPage) :: Int64
 
         when (isJust searchFilter) do
             trackTableRead "assets"
@@ -101,24 +103,17 @@ instance Controller MarketsController where
                 let applyStatusOrdering queryBuilder =
                         case statusFilter of
                             MarketIndexStatusPopular ->
-                                queryBuilder
-                                    |> orderByDesc #trades
-                                    |> orderByDesc #openedAt
+                                queryBuilder |> orderByDesc #trades |> orderByDesc #openedAt
                             MarketIndexStatusNewest ->
-                                queryBuilder
-                                    |> orderByDesc #openedAt
+                                queryBuilder |> orderByDesc #openedAt
                             MarketIndexStatusEnding ->
-                                queryBuilder
-                                    |> orderByAsc #closedAt
+                                queryBuilder |> orderByAsc #closedAt
                             MarketIndexStatusClosed ->
-                                queryBuilder
-                                    |> orderByDesc #closedAt
+                                queryBuilder |> orderByDesc #closedAt
                             MarketIndexStatusResolved ->
-                                queryBuilder
-                                    |> orderByDesc #resolvedAt
+                                queryBuilder |> orderByDesc #resolvedAt
                             MarketIndexStatusRefunded ->
-                                queryBuilder
-                                    |> orderByDesc #refundedAt
+                                queryBuilder |> orderByDesc #refundedAt
 
                 markets <- filteredMarketsQuery
                     |> applyStatusOrdering
@@ -164,7 +159,19 @@ instance Controller MarketsController where
         categories <- fetchCategories
         render NewView { .. }
 
-    action ShowMarketAction { marketId, tradingAssetId, tradingAction, showChart, showDescription, showAllAssets, showTradeHistory, activityPage, chatPage, chatComposerRev, tradeQuantity, backTo } = autoRefresh do
+    action ShowMarketAction
+            { marketId
+            , tradingAssetId
+            , tradingAction
+            , showChart
+            , showDescription
+            , showAllAssets
+            , showTradeHistory
+            , activityPage
+            , chatPage
+            , chatComposerRev
+            , tradeQuantity
+            , backTo } = autoRefresh do
         let mId = if marketId == def then param @(Id Market) "marketId" else marketId
         let tAssetId = tradingAssetId <|> paramOrNothing @(Id Asset) "tradingAssetId"
         let tAction = MarketInput.sanitizeTradingAction
@@ -196,15 +203,15 @@ instance Controller MarketsController where
             |> filterWhere (#marketId, mId)
             |> fetchCount
 
-        let activityTotalPages = max 1 ((activityTransactionsCount + activityItemsPerPage - 1) `div` activityItemsPerPage)
-        let currentActivityPage = min requestedActivityPage activityTotalPages
-        let activityOffset = (currentActivityPage - 1) * activityItemsPerPage
+        let activityPagination = Pagination.paginate requestedActivityPage activityItemsPerPage activityTransactionsCount
+        let activitySqlLimit = Pagination.paginationSqlLimit activityPagination
+        let activitySqlOffset = Pagination.paginationSqlOffset activityPagination
 
         activityTransactions <- query @Transaction
             |> filterWhere (#marketId, mId)
             |> orderByDesc #createdAt
-            |> limit activityItemsPerPage
-            |> offset activityOffset
+            |> limit activitySqlLimit
+            |> offset activitySqlOffset
             |> fetch
             >>= collectionFetchRelated #assetId
             >>= collectionFetchRelated #userId
@@ -214,20 +221,20 @@ instance Controller MarketsController where
             |> filterWhere (#marketId, mId)
             |> fetchCount
 
-        let chatTotalPages = max 1 ((chatMessagesCount + chatItemsPerPage - 1) `div` chatItemsPerPage)
-        let currentChatPage = min requestedChatPage chatTotalPages
-        let visibleChatMessages = currentChatPage * chatItemsPerPage
+        let chatPagination = Pagination.paginate requestedChatPage chatItemsPerPage chatMessagesCount
+        let chatSqlLimit = Pagination.paginationSqlLimit chatPagination
 
         chatMessages <- query @MarketChatMessage
             |> filterWhere (#marketId, mId)
             |> orderByDesc #createdAt
-            |> limit visibleChatMessages
+            |> limit chatSqlLimit
             |> fetch
             >>= collectionFetchRelated #userId
 
         let chatEntries = map (\message -> MarketChatEntry { message = message, author = get #userId message }) chatMessages
 
-        let hasOlderChatMessages = length chatMessages < chatMessagesCount
+        let hasOlderChatMessages =
+                Pagination.paginationCurrentPage chatPagination < Pagination.paginationTotalPages chatPagination
 
         hasUserPositionsInMarket <- case currentUserOrNothing @User of
             Just currentUser -> do
@@ -250,11 +257,11 @@ instance Controller MarketsController where
             , showAllAssets = allAssetsVisible
             , showTradeHistory = tradeHistoryVisible
             , activityTransactions
-            , activityCurrentPage = currentActivityPage
-            , activityTotalPages
+            , activityCurrentPage = Pagination.paginationCurrentPage activityPagination
+            , activityTotalPages = Pagination.paginationTotalPages activityPagination
             , chatMessages = chatEntries
-            , chatCurrentPage = currentChatPage
-            , hasOlderChatMessages
+            , chatCurrentPage = Pagination.paginationCurrentPage chatPagination
+            , hasOlderChatMessages = hasOlderChatMessages
             , chatComposerRev = currentChatComposerRev
             , tradeQuantity = currentTradeQuantity
             , backTo = backToPath
