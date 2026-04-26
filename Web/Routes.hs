@@ -1,16 +1,12 @@
-{-# LANGUAGE LambdaCase  #-}
-{-# LANGUAGE QuasiQuotes #-}
-
 module Web.Routes where
 
 import Generated.Types (MarketStatus (..))
-import IHP.Router.Capture
 import IHP.Router.DSL (routes)
 import IHP.RouterPrelude
 import Web.Types
 
 instance UrlCapture MarketStatus where
-    parseCapture bs = case bs of
+    parseCapture = \case
         "draft"    -> Just MarketStatusDraft
         "open"     -> Just MarketStatusOpen
         "closed"   -> Just MarketStatusClosed
