@@ -52,7 +52,7 @@ instance View ResolveView where
         </div>
     |]
       where
-        resolveForm = renderPostForm (pathTo (ResolveMarketAction market.id)) [("class", "ms-2")] [hsx|
+        resolveForm = renderPostForm (pathTo $ ResolveMarketAction market.id) [("class", "ms-2")] [hsx|
             <div class="mb-4">
                 <label class="form-label fw-semibold">Select Winning Asset</label>
                 <div>

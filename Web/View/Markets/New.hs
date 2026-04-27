@@ -24,7 +24,7 @@ instance View NewView where
     |]
 
 renderForm :: Market -> [Asset] -> [Category] -> Html
-renderForm market assets categories = formFor market [hsx|
+renderForm market assets categories = formFor' market (pathTo CreateMarketAction) [hsx|
     {(textField #title)}
     {(textareaField #description) {
         fieldLabel = "Rules & Description",

@@ -124,7 +124,7 @@ renderDeleteButton False passkey = [hsx|
 |]
 
 renderForm :: User -> Html
-renderForm user = formFor user [hsx|
+renderForm user = formFor' user (pathTo $ UpdateUserAction user.id) [hsx|
     {(textField #nickname) {required = True}}
     {submitButton {label = "Save Changes"}}
 |]

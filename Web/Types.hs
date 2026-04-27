@@ -21,7 +21,7 @@ data DashboardController
     | DashboardMarketsAction { page :: !(Maybe Int), searchFilter :: !(Maybe Text), statusFilter :: !(Maybe MarketStatus) }
     | DashboardTransactionsAction { page :: !(Maybe Int), searchFilter :: !(Maybe Text), typeFilter :: !(Maybe Text) }
     | ConfirmDeleteMarketAction { confirmDeleteMarketId :: !(Id Market), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
-    | ChangeMarketStatusAction { marketId :: !(Maybe (Id Market)), status :: !(Maybe MarketStatus), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
+    | ChangeMarketStatusAction { marketId :: !(Id Market), status :: !(Maybe MarketStatus), page :: !(Maybe Int), searchFilter :: !(Maybe Text) }
     deriving (Eq, Show, Data)
 
 data StaticController

@@ -38,7 +38,7 @@ instance View EditView where
 renderForm :: Market -> [Asset] -> [Category] -> Maybe Int -> Maybe Text -> EditMode -> Html
 renderForm market marketAssets categories returnPage searchFilter editMode =
     case editMode of
-        DraftEditMode -> formFor market [hsx|
+        DraftEditMode -> formFor' market (pathTo $ UpdateMarketAction market.id) [hsx|
             {renderReturnPageInput returnPage}
             {renderSearchFilterInput searchFilter}
             {(textField #title)}
@@ -71,7 +71,7 @@ renderForm market marketAssets categories returnPage searchFilter editMode =
                 </button>
             </div>
         |]
-        LimitedEditMode -> formFor market [hsx|
+        LimitedEditMode -> formFor' market (pathTo $ UpdateMarketAction market.id) [hsx|
             {renderReturnPageInput returnPage}
             {renderSearchFilterInput searchFilter}
             {(textField #title)}

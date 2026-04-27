@@ -347,13 +347,12 @@ instance Controller DashboardController where
             }
 
     action ChangeMarketStatusAction { marketId, status, page, searchFilter } = do
-        let mId = fromMaybe (param @(Id Market) "marketId") marketId
         let st = fromMaybe (param @MarketStatus "status") status
         let mPage = page <|> paramOrNothing @Int "page"
         let mSearchFilter = searchFilter <|> paramOrNothing @Text "search"
         let newClosedAt :: Maybe UTCTime
             newClosedAt = paramOrNothing "closedAt"
-        market <- fetch mId
+        market <- fetch marketId
         accessDeniedUnless (market.userId == Just currentUserId)
 
         when (st == MarketStatusOpen && market.status `notElem` [MarketStatusDraft, MarketStatusClosed]) $ do

@@ -22,38 +22,33 @@ instance UrlCapture MarketStatus where
 
 [routes|webRoutes
 
--- Sessions
-POST /DeleteSession DeleteSessionAction
-
 -- Leaderboard
-GET /Leaderboard LeaderboardAction
+GET  /leaderboard LeaderboardAction
 
 -- Assets
-GET /NewAsset NewAssetAction
-
--- Trades
-POST /ExecuteTrade?assetId ExecuteTradeAction
-POST /ClosePosition?assetId ClosePositionAction
-POST /ResolveMarket?marketId ResolveMarketAction
-POST /RefundMarket?marketId RefundMarketAction
+GET  /assets/new NewAssetAction
+POST /assets/{assetId}/execute-trade ExecuteTradeAction
+POST /assets/{assetId}/close-position ClosePositionAction
 
 -- Users
-GET /EditUser?userId EditUserAction
-POST /UpdateUser?userId UpdateUserAction
-GET /ConfirmDeletePasskey?passkeyId ConfirmDeletePasskeyAction
-GET /ConfirmDeleteUser?userId ConfirmDeleteUserAction
-POST /DeleteUser?userId DeleteUserAction
-
--- Passkeys
-POST /UpdatePasskeyName?passkeyId UpdatePasskeyNameAction
-POST /DeletePasskey?passkeyId DeletePasskeyAction
+POST /users/{userId} UpdateUserAction
+GET  /users/{userId}/edit EditUserAction
+POST /users/{userId}/delete DeleteUserAction
+GET  /users/{userId}/confirm-delete ConfirmDeleteUserAction
 
 -- Auth
-GET /NewSession LoginAction
+GET  /login LoginAction
+POST /logout DeleteSessionAction
+
+-- Passkeys
 POST /passkeys/registration/begin BeginPasskeyRegistrationAction
 POST /passkeys/registration/finish FinishPasskeyRegistrationAction
 POST /passkeys/authentication/begin BeginPasskeyAuthenticationAction
 POST /passkeys/authentication/finish FinishPasskeyAuthenticationAction
+
+GET  /passkeys/{passkeyId}/confirm-delete ConfirmDeletePasskeyAction
+POST /passkeys/{passkeyId}/update-name UpdatePasskeyNameAction
+POST /passkeys/{passkeyId}/delete DeletePasskeyAction
 
 -- Static
 GET /about AboutAction
@@ -66,22 +61,24 @@ GET /moderation-policy ModerationPolicyAction
 GET /legal-notice LegalNoticeAction
 
 -- Markets
-GET /Markets MarketsAction
-GET /NewMarket NewMarketAction
-POST /CreateMarket CreateMarketAction
-GET /ShowMarket?marketId&tradingAssetId&tradingAction&showChart&showDescription&showAllAssets&showTradeHistory&activityPage&chatPage&chatComposerRev&tradeQuantity&backTo ShowMarketAction
-POST /CreateMarketChatMessage?marketId CreateMarketChatMessageAction
-POST /DeleteMarketChatMessage?marketChatMessageId&marketId&tradingAssetId&tradingAction&showChart&showDescription&showAllAssets&showTradeHistory&activityPage&chatPage&chatComposerRev&tradeQuantity&backTo DeleteMarketChatMessageAction
-GET /EditMarket?marketId&page&search EditMarketAction { searchFilter = #search }
-POST /UpdateMarket?marketId UpdateMarketAction
-POST /DeleteMarket?marketId&page&search DeleteMarketAction { searchFilter = #search }
-POST /SetResolveAsset?marketId SetResolveAssetAction
-POST /ConfirmRefundMarket?marketId ConfirmRefundMarketAction
+GET  /markets MarketsAction
+POST /markets CreateMarketAction
+GET  /markets/new NewMarketAction
+GET  /markets/{marketId}?tradingAssetId&tradingAction&showChart&showDescription&showAllAssets&showTradeHistory&activityPage&chatPage&chatComposerRev&tradeQuantity&backTo ShowMarketAction
+POST /markets/{marketId} UpdateMarketAction
+GET  /markets/{marketId}/edit?page&search EditMarketAction { searchFilter = #search }
+GET  /markets/{marketId}/confirm-delete?page&search ConfirmDeleteMarketAction { confirmDeleteMarketId = #marketId, searchFilter = #search }
+POST /markets/{marketId}/delete?page&search DeleteMarketAction { searchFilter = #search }
+POST /markets/{marketId}/change-status?status&page&search ChangeMarketStatusAction { searchFilter = #search }
+POST /markets/{marketId}/set-resolve-asset SetResolveAssetAction
+POST /markets/{marketId}/resolve ResolveMarketAction
+POST /markets/{marketId}/confirm-refund ConfirmRefundMarketAction
+POST /markets/{marketId}/refund RefundMarketAction
+POST /markets/{marketId}/chat-messages CreateMarketChatMessageAction
+POST /markets/{marketId}/chat-messages/{marketChatMessageId}/delete?tradingAssetId&tradingAction&showChart&showDescription&showAllAssets&showTradeHistory&activityPage&chatPage&chatComposerRev&tradeQuantity&backTo DeleteMarketChatMessageAction
 
 -- Dashboard
-GET /DashboardPositions?page&search&positionStatusFilter DashboardPositionsAction { searchFilter = #search }
-GET /DashboardMarkets?page&search&statusFilter DashboardMarketsAction { searchFilter = #search }
-GET /DashboardTransactions?page&search&typeFilter DashboardTransactionsAction { searchFilter = #search, typeFilter = #typeFilter }
-GET /ConfirmDeleteMarket?marketId&page&search ConfirmDeleteMarketAction { confirmDeleteMarketId = #marketId, searchFilter = #search }
-POST /ChangeMarketStatus?marketId&status&page&search ChangeMarketStatusAction { searchFilter = #search }
+GET  /dashboard/positions?page&search&positionStatusFilter DashboardPositionsAction { searchFilter = #search }
+GET  /dashboard/transactions?page&search&typeFilter DashboardTransactionsAction { searchFilter = #search, typeFilter = #typeFilter }
+GET  /dashboard/markets?page&search&statusFilter DashboardMarketsAction { searchFilter = #search }
 |]

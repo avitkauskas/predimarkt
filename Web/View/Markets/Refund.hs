@@ -51,6 +51,6 @@ instance View RefundView where
         </div>
     |]
       where
-        refundForm = renderPostForm (pathTo (RefundMarketAction market.id)) [("class", "d-inline")] [hsx|
+        refundForm = renderPostForm (pathTo $ RefundMarketAction market.id) [("class", "d-inline")] [hsx|
             <button type="submit" class="btn btn-danger">Confirm Refund</button>
         |]

@@ -93,13 +93,13 @@ renderActions market currentPage searchFilter backToPath =
     let pageValue = if currentPage > 1 then Just currentPage else Nothing
         actionClasses :: Text
         actionClasses = "btn btn-sm text-nowrap"
-        openDraftForm = renderPostForm (pathTo (ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
+        openDraftForm = renderPostForm (pathTo (ChangeMarketStatusAction market.id (Just MarketStatusOpen) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
             <button type="submit" class={actionClasses <> " btn-outline-primary"}>Open</button>
         |]
-        closeOpenForm = renderPostForm (pathTo (ChangeMarketStatusAction (Just market.id) (Just MarketStatusClosed) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
+        closeOpenForm = renderPostForm (pathTo (ChangeMarketStatusAction market.id (Just MarketStatusClosed) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
             <button type="submit" class={actionClasses <> " btn-outline-primary"}>Close</button>
         |]
-        reopenClosedForm = renderPostForm (pathTo (ChangeMarketStatusAction (Just market.id) (Just MarketStatusOpen) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
+        reopenClosedForm = renderPostForm (pathTo (ChangeMarketStatusAction market.id (Just MarketStatusOpen) pageValue searchFilter)) [("class", "d-inline-flex flex-shrink-0")] [hsx|
             <button type="submit" class={actionClasses <> " btn-outline-primary"}>Open</button>
         |]
         resolveForm = renderPostForm (pathTo (SetResolveAssetAction market.id)) [("class", "d-inline")] [hsx|
