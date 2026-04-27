@@ -376,24 +376,34 @@ instance View ShowView where
             chatComposerScript :: Html
             chatComposerScript = [hsx|
                 <script>
-                    document.addEventListener('keydown', function(event) {
-                        var target = event.target;
-                        if (!target.matches || !target.matches('textarea[name="body"]')) return;
-                        if (target.id.indexOf('market-chat-input-') !== 0) return;
+                    function initMarketChatShortcuts() {
+                        if (document.getElementById('market-chat-shortcuts-initialized')) return;
+                        document.documentElement.insertAdjacentHTML('beforeend', '<span id="market-chat-shortcuts-initialized" data-init="true" style="display:none"></span>');
 
-                        var shouldSubmit = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
-                        if (!shouldSubmit) return;
+                        document.addEventListener('keydown', function(event) {
+                            var target = event.target;
+                            if (!target.matches || !target.matches('textarea[name="body"]')) return;
+                            if (target.id.indexOf('market-chat-input-') !== 0) return;
 
-                        var form = target.form;
-                        if (!form) return;
+                            var shouldSubmit = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
+                            if (!shouldSubmit) return;
 
-                        event.preventDefault();
-                        if (typeof form.requestSubmit === 'function') {
-                            form.requestSubmit();
-                        } else {
-                            form.submit();
-                        }
-                    });
+                            var form = target.form;
+                            if (!form) return;
+
+                            event.preventDefault();
+                            if (typeof form.requestSubmit === 'function') {
+                                form.requestSubmit();
+                            } else {
+                                form.submit();
+                            }
+                        });
+                    }
+
+                    document.addEventListener('turbolinks:load', initMarketChatShortcuts);
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        initMarketChatShortcuts();
+                    }
                 </script>
             |]
 
