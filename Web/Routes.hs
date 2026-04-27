@@ -37,15 +37,6 @@ POST /ClosePosition?assetId ClosePositionAction
 POST /ResolveMarket?marketId ResolveMarketAction
 POST /RefundMarket?marketId RefundMarketAction
 
--- Categories
-GET /Categories CategoriesAction
-GET /NewCategory NewCategoryAction
-GET /ShowCategory?categoryId ShowCategoryAction
-POST /CreateCategory CreateCategoryAction
-GET /EditCategory?categoryId EditCategoryAction
-POST /UpdateCategory?categoryId UpdateCategoryAction
-POST /DeleteCategory?categoryId DeleteCategoryAction
-
 -- Users
 GET /EditUser?userId EditUserAction
 POST /UpdateUser?userId UpdateUserAction
