@@ -75,7 +75,7 @@ renderSearchForm searchFilter mType = [hsx|
 
 renderTypeHiddenInput :: Text -> Html
 renderTypeHiddenInput typeValue = [hsx|
-    <input type="hidden" name="type" value={typeValue} />
+    <input type="hidden" name="typeFilter" value={typeValue} />
 |]
 
 renderTypeDropdownForm :: Maybe Text -> Maybe Text -> Html
@@ -88,7 +88,7 @@ renderTypeDropdownForm searchFilter mType = [hsx|
              style="min-width: 133px; padding-top: 0.36rem; padding-bottom: 0.36rem;">
             <i class="bi bi-filter-right"></i>
             <select id="transactions-type-filter"
-                    name="type"
+                    name="typeFilter"
                     class="form-select form-select-sm flex-grow-1 border-0 bg-transparent text-body-secondary shadow-none py-0 ps-0 pe-4"
                     aria-label="Filter transactions by type"
                     onchange="window.visitGetFormWithTurbolinks(this.form)">

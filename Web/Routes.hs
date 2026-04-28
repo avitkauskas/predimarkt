@@ -79,6 +79,6 @@ POST /markets/{marketId}/chat-messages/{marketChatMessageId}/delete?tradingAsset
 
 -- Dashboard
 GET  /dashboard/positions?page&search&positionStatusFilter DashboardPositionsAction { searchFilter = #search }
-GET  /dashboard/transactions?page&search&typeFilter DashboardTransactionsAction { searchFilter = #search, typeFilter = #typeFilter }
+GET  /dashboard/transactions?page&search&typeFilter DashboardTransactionsAction { searchFilter = #search }
 GET  /dashboard/markets?page&search&statusFilter DashboardMarketsAction { searchFilter = #search }
 |]

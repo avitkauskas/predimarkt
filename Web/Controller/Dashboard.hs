@@ -403,7 +403,7 @@ instance Controller DashboardController where
     action DashboardTransactionsAction { page, searchFilter, typeFilter } = do
         let currentPage = fromMaybe 1 (page <|> paramOrNothing @Int "page")
         let searchQuery = normalizeSearchQuery (searchFilter <|> paramOrNothing @Text "search")
-        let mTypeFilter :: Maybe Text = typeFilter <|> paramOrNothing @Text "type"
+        let mTypeFilter :: Maybe Text = typeFilter <|> paramOrNothing @Text "typeFilter"
         let itemsPerPage = 5
 
         -- Get total count for pagination (with search and type filters if provided)
