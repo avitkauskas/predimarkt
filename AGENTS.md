@@ -119,3 +119,11 @@ hoogle search "Text -> ByteString"   # Search by type signature, function name, 
 **Modify schema**: Edit `Application/Schema.sql`, run `make build/Generated/Types.hs`
 
 **Add a helper**: Create in `Application/Helper/`, export from `Application/Helper/Controller.hs` or `View.hs`
+
+## Code Review
+
+```bash
+coderabbit review --agent   # Run CodeRabbit AI code review
+```
+
+CodeRabbit provides AI-powered code reviews. Run this when requested to check for issues.

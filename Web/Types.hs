@@ -48,7 +48,7 @@ data AuthController
     deriving (Eq, Show, Data)
 
 instance HasNewSessionUrl User where
-    newSessionUrl _ = "/NewSession"
+    newSessionUrl _ = "/login"
 
 type instance CurrentUserRecord = User
 
