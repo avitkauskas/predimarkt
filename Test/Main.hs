@@ -659,7 +659,7 @@ main = hspec do
                         MarketIndexStatusResolved
                         (Just "inflation")
                         (Just 3)
-                path `shouldSatisfy` Text.isPrefixOf "/Markets?category="
+                path `shouldSatisfy` Text.isPrefixOf "/markets?category="
                 path `shouldSatisfy`
                     Text.isInfixOf "&status=resolved&search=inflation&page=3"
 
@@ -669,7 +669,7 @@ main = hspec do
                     MarketIndexStatusPopular
                     Nothing
                     Nothing
-                    `shouldBe` "/Markets"
+                    `shouldBe` "/markets"
 
         describe "leaderboardScore" do
             it "uses the stabilized log return with C = 0.5" do
