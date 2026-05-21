@@ -100,26 +100,66 @@ instance Controller MarketsController where
                             |> applySearchFilter
 
                 totalMarkets <- filteredMarketsQuery |> fetchCount
-                let applyStatusOrdering queryBuilder =
-                        case statusFilter of
-                            MarketIndexStatusPopular ->
-                                queryBuilder |> orderByDesc #trades |> orderByDesc #openedAt
-                            MarketIndexStatusNewest ->
-                                queryBuilder |> orderByDesc #openedAt
-                            MarketIndexStatusEnding ->
-                                queryBuilder |> orderByAsc #closedAt
-                            MarketIndexStatusClosed ->
-                                queryBuilder |> orderByDesc #closedAt
-                            MarketIndexStatusResolved ->
-                                queryBuilder |> orderByDesc #resolvedAt
-                            MarketIndexStatusRefunded ->
-                                queryBuilder |> orderByDesc #refundedAt
 
-                markets <- filteredMarketsQuery
-                    |> applyStatusOrdering
-                    |> limit visibleMarkets
-                    |> fetch
-                    >>= collectionFetchRelated #categoryId
+                markets <- case statusFilter of
+                    MarketIndexStatusPopular -> do
+                        markets <- case (categoryFilter, matchingMarketIds) of
+                            (Just categoryId, Just ids) ->
+                                sqlQueryTyped [typedSql|
+                                    SELECT id, user_id, title, slug, description, category_id, beta, status, opened_at, closed_at, resolved_at, refunded_at, created_at, updated_at, trades, volume, turnover, outcome_asset_id FROM markets
+                                    WHERE status != 'market_status_draft'
+                                    AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
+                                    AND category_id = ${categoryId}
+                                    AND id = ANY(${ids})
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    LIMIT ${visibleMarkets}
+                                |]
+                            (Just categoryId, Nothing) ->
+                                sqlQueryTyped [typedSql|
+                                    SELECT id, user_id, title, slug, description, category_id, beta, status, opened_at, closed_at, resolved_at, refunded_at, created_at, updated_at, trades, volume, turnover, outcome_asset_id FROM markets
+                                    WHERE status != 'market_status_draft'
+                                    AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
+                                    AND category_id = ${categoryId}
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    LIMIT ${visibleMarkets}
+                                |]
+                            (Nothing, Just ids) ->
+                                sqlQueryTyped [typedSql|
+                                    SELECT id, user_id, title, slug, description, category_id, beta, status, opened_at, closed_at, resolved_at, refunded_at, created_at, updated_at, trades, volume, turnover, outcome_asset_id FROM markets
+                                    WHERE status != 'market_status_draft'
+                                    AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
+                                    AND id = ANY(${ids})
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    LIMIT ${visibleMarkets}
+                                |]
+                            (Nothing, Nothing) ->
+                                sqlQueryTyped [typedSql|
+                                    SELECT id, user_id, title, slug, description, category_id, beta, status, opened_at, closed_at, resolved_at, refunded_at, created_at, updated_at, trades, volume, turnover, outcome_asset_id FROM markets
+                                    WHERE status != 'market_status_draft'
+                                    AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    LIMIT ${visibleMarkets}
+                                |]
+                        collectionFetchRelated #categoryId markets
+                    _ -> do
+                        let applyStatusOrdering queryBuilder =
+                                case statusFilter of
+                                    MarketIndexStatusNewest ->
+                                        queryBuilder |> orderByDesc #openedAt
+                                    MarketIndexStatusEnding ->
+                                        queryBuilder |> orderByAsc #closedAt
+                                    MarketIndexStatusClosed ->
+                                        queryBuilder |> orderByDesc #closedAt
+                                    MarketIndexStatusResolved ->
+                                        queryBuilder |> orderByDesc #resolvedAt
+                                    MarketIndexStatusRefunded ->
+                                        queryBuilder |> orderByDesc #refundedAt
+
+                        filteredMarketsQuery
+                            |> applyStatusOrdering
+                            |> limit visibleMarkets
+                            |> fetch
+                            >>= collectionFetchRelated #categoryId
 
                 let marketIds = map (.id) markets
 
