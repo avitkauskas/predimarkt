@@ -1,24 +1,18 @@
 module Web.Routes where
 
-import Generated.Types (MarketStatus (..))
+import qualified Data.Text.Encoding
+import Generated.Types (MarketStatus (..), textToEnumMarketStatus)
+import IHP.InputValue (inputValue)
 import IHP.Router.DSL (routes)
 import IHP.RouterPrelude
 import Web.Types
 
 instance UrlCapture MarketStatus where
-    parseCapture = \case
-        "draft"    -> Just MarketStatusDraft
-        "open"     -> Just MarketStatusOpen
-        "closed"   -> Just MarketStatusClosed
-        "resolved" -> Just MarketStatusResolved
-        "refunded" -> Just MarketStatusRefunded
-        _          -> Nothing
-    renderCapture = \case
-        MarketStatusDraft    -> "draft"
-        MarketStatusOpen     -> "open"
-        MarketStatusClosed   -> "closed"
-        MarketStatusResolved -> "resolved"
-        MarketStatusRefunded -> "refunded"
+    parseCapture bytes =
+        case Data.Text.Encoding.decodeUtf8' bytes of
+            Right text -> textToEnumMarketStatus text
+            Left _     -> Nothing
+    renderCapture = inputValue
 
 [routes|webRoutes
 
