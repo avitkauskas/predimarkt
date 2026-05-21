@@ -8,10 +8,7 @@ import IHP.RouterPrelude
 import Web.Types
 
 instance UrlCapture MarketStatus where
-    parseCapture bytes =
-        case Data.Text.Encoding.decodeUtf8' bytes of
-            Right text -> textToEnumMarketStatus text
-            Left _     -> Nothing
+    parseCapture = textToEnumMarketStatus . cs
     renderCapture = inputValue
 
 [routes|webRoutes
