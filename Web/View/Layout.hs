@@ -273,8 +273,9 @@ renderThemeToggle = [hsx|
 
 stylesheets :: Html
 stylesheets = [hsx|
-        <link rel="icon" type="image/x-icon" href="/favicon.ico">
-        <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/> -->
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="manifest" href="/site.webmanifest">
         <link rel="stylesheet" href={assetPath "/vendor/bootstrap-icons/bootstrap-icons.min.css"}/>
         <link rel="stylesheet" href={assetPath "/vendor/bootstrap.min.css"}/>
         <link rel="stylesheet" href={assetPath "/vendor/flatpickr.min.css"}/>
