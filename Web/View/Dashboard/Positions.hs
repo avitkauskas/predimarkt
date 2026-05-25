@@ -142,7 +142,7 @@ renderStatusOption activeStatus optionStatus = [hsx|
     </option>
 |]
 
-renderPositionsContent :: (?context :: ControllerContext) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
+renderPositionsContent :: (?request :: Request) => [EnrichedPosition] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
 renderPositionsContent [] _ _ Nothing _ = [hsx|
     <div class="alert alert-info">
         No positions found.
@@ -164,7 +164,7 @@ renderPositionsContent positions currentPage totalPages searchFilter statusFilte
     where
         currentBackToPath = pathTo (DashboardPositionsAction (normalizePageParam currentPage) searchFilter statusFilter)
 
-renderPositionCard :: (?context :: ControllerContext) => Text -> EnrichedPosition -> Html
+renderPositionCard :: (?request :: Request) => Text -> EnrichedPosition -> Html
 renderPositionCard backToPath ep =
     let position = get #epPosition ep
         asset = get #assetId position

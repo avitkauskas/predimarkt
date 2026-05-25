@@ -55,7 +55,7 @@ instance View IndexView where
         </div>
     |]
 
-renderRows :: (?context :: ControllerContext) => [UserSummary] -> Maybe Text -> Bool -> Html
+renderRows :: (?request :: Request) => [UserSummary] -> Maybe Text -> Bool -> Html
 renderRows [] _ _ = mempty
 renderRows users currentUserNickname showOverflow =
     if showOverflow
@@ -67,7 +67,7 @@ renderRows users currentUserNickname showOverflow =
                  _ -> mempty
         else mconcat (map (`renderUserRow` currentUserNickname) users)
 
-renderUserRow :: (?context :: ControllerContext) => UserSummary -> Maybe Text -> Html
+renderUserRow :: (?request :: Request) => UserSummary -> Maybe Text -> Html
 renderUserRow summary currentUserNickname =
     let isCurrentUser = maybe False (\nick -> get #nickname summary == nick) currentUserNickname
         rowClass :: Text = if isCurrentUser then "table-primary" else ""

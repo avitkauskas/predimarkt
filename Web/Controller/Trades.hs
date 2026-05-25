@@ -349,6 +349,6 @@ instance Controller TradesController where
         setSuccessMessage "Market refunded successfully"
         redirectTo $ ShowMarketAction mId Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
-readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
+readQueryFlag :: (?request :: Request) => Text -> Maybe Bool
 readQueryFlag name =
     QueryParams.parseBooleanText (paramOrNothing @Text (cs name))

@@ -1,7 +1,6 @@
 module Application.Helper.Pagination where
 
 import Data.Int (Int64)
-import IHP.ControllerSupport (ControllerContext)
 import IHP.ViewPrelude
 
 data PaginationBounds = PaginationBounds
@@ -64,7 +63,7 @@ generatePaginationItems currentPage totalPages
             ]
 
 renderSmartPagination
-    :: (?context :: ControllerContext)
+    :: (?request :: Request)
     => Int
     -> Int
     -> Text

@@ -119,7 +119,7 @@ typeOptionLabel (Just "buy")  = "Buy"
 typeOptionLabel (Just "sell") = "Sell"
 typeOptionLabel (Just x)      = x
 
-renderTransactionsContent :: (?context :: ControllerContext) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
+renderTransactionsContent :: (?request :: Request) => [TransactionWithDetails] -> Int -> Int -> Maybe Text -> Maybe Text -> Html
 renderTransactionsContent [] _ _ Nothing Nothing = [hsx|
     <div class="alert alert-info">
         No transactions found. Start trading to see your history here.
@@ -141,7 +141,7 @@ renderTransactionsContent txns currentPage totalPages searchFilter mType = [hsx|
     where
         currentBackToPath = pathTo (DashboardTransactionsAction (normalizePageParam currentPage) searchFilter mType)
 
-renderTransactionCard :: (?context :: ControllerContext) => Text -> TransactionWithDetails -> Html
+renderTransactionCard :: (?request :: Request) => Text -> TransactionWithDetails -> Html
 renderTransactionCard backToPath twd =
     let txn = get #transaction twd
         asset = get #assetId txn

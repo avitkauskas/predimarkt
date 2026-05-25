@@ -34,7 +34,7 @@ instance View MarketsView where
         where
             currentBackToPath = pathTo (DashboardMarketsAction (Just currentPage) searchFilter (Just activeStatus))
 
-renderMarket :: (?context :: ControllerContext) => Text -> Int -> Maybe Text -> Market -> Html
+renderMarket :: (?request :: Request) => Text -> Int -> Maybe Text -> Market -> Html
 renderMarket backToPath currentPage searchFilter market = [hsx|
     <tr class="d-none d-sm-table-row market-row">
         <td class="align-middle">
@@ -88,7 +88,7 @@ renderTabs activeStatus searchFilter = [hsx|
         statusLabel MarketStatusResolved = "Resolved"
         statusLabel MarketStatusRefunded = "Refunded"
 
-renderActions :: (?context :: ControllerContext) => Market -> Int -> Maybe Text -> Text -> Html
+renderActions :: (?request :: Request) => Market -> Int -> Maybe Text -> Text -> Html
 renderActions market currentPage searchFilter backToPath =
     let pageValue = if currentPage > 1 then Just currentPage else Nothing
         actionClasses :: Text

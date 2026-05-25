@@ -569,7 +569,7 @@ instance Controller MarketsController where
         let backTo = pathTo $ DashboardMarketsAction { statusFilter = Just MarketStatusClosed, page = Nothing, searchFilter = Nothing }
         render RefundView { .. }
 
-fetchAssetsFromParams :: (?context :: ControllerContext, ?request :: Request) => IO [Asset]
+fetchAssetsFromParams :: (?request :: Request) => IO [Asset]
 fetchAssetsFromParams =
     pure $ zipWith4 (\assetId name symbol quantity ->
         let asset = newRecord @Asset
@@ -593,7 +593,7 @@ attachAssetsToMarket
 attachAssetsToMarket market assets =
     market { GeneratedMarket.assets = assets }
 
-fillMarketWithFormData :: (?context :: ControllerContext, ?request :: Request) => Market -> Market
+fillMarketWithFormData :: (?request :: Request) => Market -> Market
 fillMarketWithFormData market =
     let title = fromMaybe (get #title market) (paramOrNothing @Text "title")
         description = fromMaybe (get #description market) (paramOrNothing @Text "description")
@@ -605,7 +605,7 @@ fillMarketWithFormData market =
         |> set #categoryId categoryId
         |> set #closedAt closedAt
 
-fillMarketWithEditableFormData :: (?context :: ControllerContext, ?request :: Request) => Market -> Market
+fillMarketWithEditableFormData :: (?request :: Request) => Market -> Market
 fillMarketWithEditableFormData market =
     let title = fromMaybe (get #title market) (paramOrNothing @Text "title")
         description = fromMaybe (get #description market) (paramOrNothing @Text "description")
@@ -639,6 +639,6 @@ editableMarketStatuses = [MarketStatusDraft, MarketStatusOpen, MarketStatusClose
 fetchCategories :: (?modelContext :: ModelContext) => IO [Category]
 fetchCategories = query @Category |> orderByAsc #sortIdx |> fetch
 
-readQueryFlag :: (?context :: ControllerContext, ?request :: Request) => Text -> Maybe Bool
+readQueryFlag :: (?request :: Request) => Text -> Maybe Bool
 readQueryFlag name =
     QueryParams.parseBooleanText (paramOrNothing @Text (cs name))

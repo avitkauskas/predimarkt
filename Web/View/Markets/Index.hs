@@ -143,7 +143,7 @@ renderStatusOption activeStatus optionStatus = [hsx|
 |]
 
 renderMarketsResults
-    :: (?context :: ControllerContext)
+    :: (?request :: Request)
     => [Include' ["categoryId", "assets"] Market]
     -> [Category]
     -> Maybe (Id Category)
@@ -182,7 +182,7 @@ renderMarketsResults markets categories categoryFilter statusFilter searchFilter
     where
         currentMarketsPath = buildCurrentMarketsPath categoryFilter statusFilter searchFilter currentPage
 
-renderMarketsList :: (?context :: ControllerContext) => [Include' ["categoryId", "assets"] Market] -> Text -> Html
+renderMarketsList :: (?request :: Request) => [Include' ["categoryId", "assets"] Market] -> Text -> Html
 renderMarketsList [] _ = [hsx|
     <div class="alert alert-info mb-5">
         No markets match the current filters.
@@ -195,7 +195,7 @@ renderMarketsList markets backToPath = [hsx|
 |]
 
 renderLoadMoreButton
-    :: (?context :: ControllerContext)
+    :: (?request :: Request)
     => Maybe (Id Category)
     -> MarketIndexStatusFilter
     -> Maybe Text
@@ -214,7 +214,7 @@ renderLoadMoreButton categoryFilter statusFilter searchFilter currentPage shownM
         </div>
     |]
 
-renderCategoryTab :: (?context :: ControllerContext) => Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Category -> Html
+renderCategoryTab :: (?request :: Request) => Maybe (Id Category) -> MarketIndexStatusFilter -> Maybe Text -> Category -> Html
 renderCategoryTab categoryFilter statusFilter searchFilter category = [hsx|
     <li class="nav-item">
         <a class={classes ["nav-link text-reset", ("active", categoryFilter == Just category.id)]}
@@ -278,7 +278,7 @@ showMarketTradeAction marketId assetId action backTo = ShowMarketAction
     , backTo = backTo
     }
 
-renderMarket :: (?context :: ControllerContext) => Text -> Include' ["categoryId", "assets"] Market -> Html
+renderMarket :: (?request :: Request) => Text -> Include' ["categoryId", "assets"] Market -> Html
 renderMarket backToPath market = [hsx|
     <div class="col-12 col-sm-6 col-lg-4">
         <div class="card h-100">
