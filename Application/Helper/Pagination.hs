@@ -1,6 +1,7 @@
 module Application.Helper.Pagination where
 
 import Data.Int (Int64)
+import IHP.ControllerSupport (ControllerContext)
 import IHP.ViewPrelude
 
 data PaginationBounds = PaginationBounds

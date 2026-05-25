@@ -7,6 +7,7 @@ module Web.View.Prelude
 , module Application.Helper.Pagination
 , module Application.Helper.Text
 , module Application.Helper.View
+, ControllerContext
 ) where
 
 import Application.Helper.Formatting
@@ -14,6 +15,7 @@ import Application.Helper.Pagination
 import Application.Helper.Text
 import Application.Helper.View
 import Generated.Types
+import IHP.ControllerSupport (ControllerContext)
 import IHP.ViewPrelude
 import Web.Routes ()
 import Web.Types

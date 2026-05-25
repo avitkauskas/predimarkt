@@ -21,6 +21,7 @@
                 ihp = {
                     appName = "predimarkt";
                     enable = true;
+                    ghcCompiler = pkgs.ghc914;
                     projectPath = ./.;
                     packages = with pkgs; [
                         # Native dependencies, e.g. imagemagick
