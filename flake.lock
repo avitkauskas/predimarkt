@@ -1058,11 +1058,11 @@
         "systems": "systems_7"
       },
       "locked": {
-        "lastModified": 1779732564,
-        "narHash": "sha256-GmdYd08dfsGcr0eqPwISQPX6CJsk0bvBPpY7QvcDUdc=",
+        "lastModified": 1779998284,
+        "narHash": "sha256-pwkKFnmWdGTtwE+Ml0R8TTE4EI9HM11ae/2ZzBM817M=",
         "owner": "digitallyinduced",
         "repo": "ihp",
-        "rev": "2464cd990f4b6fcc19489ae71b474b39428f8372",
+        "rev": "50dfec0eb15e80f60bb2051d90b17477fe1f58dd",
         "type": "github"
       },
       "original": {
