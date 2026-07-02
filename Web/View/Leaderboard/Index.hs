@@ -126,7 +126,7 @@ formatYears value =
 
 formatScore :: Double -> Text
 formatScore value =
-    pack (printf "%.0f" (value * 10000))
+    formatWithSep (round (value * 10000) :: Integer)
 
 renderOverflowRow :: Html
 renderOverflowRow = [hsx|
