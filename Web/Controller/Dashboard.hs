@@ -42,7 +42,7 @@ instance Controller DashboardController where
                 let searchPattern = "%" <> query <> "%"
                 case mStatus of
                     Just st ->
-                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                        fromIntegral <$> sqlQueryTyped [typedSql|
                             SELECT COUNT(*)
                             FROM positions p
                             JOIN markets m ON p.market_id = m.id
@@ -52,7 +52,7 @@ instance Controller DashboardController where
                             AND m.status = ${st}
                         |]
                     Nothing ->
-                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                        fromIntegral <$> sqlQueryTyped [typedSql|
                             SELECT COUNT(*)
                             FROM positions p
                             JOIN markets m ON p.market_id = m.id
@@ -63,7 +63,7 @@ instance Controller DashboardController where
             (Nothing, mStatus) -> do
                 case mStatus of
                     Just st ->
-                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                        fromIntegral <$> sqlQueryTyped [typedSql|
                             SELECT COUNT(*)
                             FROM positions p
                             JOIN markets m ON p.market_id = m.id
@@ -210,7 +210,7 @@ instance Controller DashboardController where
         totalCount <- case searchQuery of
             Just query -> do
                 let searchPattern = "%" <> query <> "%"
-                typedCountScalar <$> sqlQueryTyped [typedSql|
+                fromIntegral <$> sqlQueryTyped [typedSql|
                     SELECT COUNT(*)
                     FROM markets
                     WHERE user_id = ${currentUserId}
@@ -412,7 +412,7 @@ instance Controller DashboardController where
                 let searchPattern = "%" <> query <> "%"
                 case mType of
                     Just "buy" ->
-                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                        fromIntegral <$> sqlQueryTyped [typedSql|
                             SELECT COUNT(*)
                             FROM transactions t
                             JOIN markets m ON t.market_id = m.id
@@ -422,7 +422,7 @@ instance Controller DashboardController where
                                 AND t.quantity > 0
                         |]
                     Just "sell" ->
-                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                        fromIntegral <$> sqlQueryTyped [typedSql|
                             SELECT COUNT(*)
                             FROM transactions t
                             JOIN markets m ON t.market_id = m.id
@@ -432,7 +432,7 @@ instance Controller DashboardController where
                                 AND t.quantity < 0
                         |]
                     _ ->
-                        typedCountScalar <$> sqlQueryTyped [typedSql|
+                        fromIntegral <$> sqlQueryTyped [typedSql|
                             SELECT COUNT(*)
                             FROM transactions t
                             JOIN markets m ON t.market_id = m.id
@@ -553,12 +553,6 @@ instance Controller DashboardController where
             , searchFilter = searchQuery
             , typeFilter = mTypeFilter
             }
-
-typedCountScalar :: (Integral a, HasCallStack) => [a] -> Int
-typedCountScalar result = case result of
-    [value]      -> fromIntegral value
-    []           -> error "typedCountScalar: Query returned no rows"
-    _            -> error $ "typedCountScalar: Expected 1 row, got " <> tshow (length result)
 
 fetchUserPositionsValue :: (?modelContext :: ModelContext) => Id User -> IO Integer
 fetchUserPositionsValue userId = do
