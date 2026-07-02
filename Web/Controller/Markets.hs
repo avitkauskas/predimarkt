@@ -111,7 +111,7 @@ instance Controller MarketsController where
                                     AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
                                     AND category_id = ${categoryId}
                                     AND id = ANY(${ids})
-                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC, id DESC
                                     LIMIT ${visibleMarkets}
                                 |]
                             (Just categoryId, Nothing) ->
@@ -120,7 +120,7 @@ instance Controller MarketsController where
                                     WHERE status != 'market_status_draft'
                                     AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
                                     AND category_id = ${categoryId}
-                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC, id DESC
                                     LIMIT ${visibleMarkets}
                                 |]
                             (Nothing, Just ids) ->
@@ -129,7 +129,7 @@ instance Controller MarketsController where
                                     WHERE status != 'market_status_draft'
                                     AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
                                     AND id = ANY(${ids})
-                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC, id DESC
                                     LIMIT ${visibleMarkets}
                                 |]
                             (Nothing, Nothing) ->
@@ -137,7 +137,7 @@ instance Controller MarketsController where
                                     SELECT id, user_id, title, slug, description, category_id, beta, status, opened_at, closed_at, resolved_at, refunded_at, created_at, updated_at, trades, volume, turnover, outcome_asset_id FROM markets
                                     WHERE status != 'market_status_draft'
                                     AND (status = 'market_status_open' OR updated_at >= CURRENT_DATE - INTERVAL '10 days')
-                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC
+                                    ORDER BY trades / GREATEST(EXTRACT(DAY FROM NOW() - opened_at), 1) DESC, id DESC
                                     LIMIT ${visibleMarkets}
                                 |]
                         collectionFetchRelated #categoryId markets
