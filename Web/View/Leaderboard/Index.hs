@@ -118,7 +118,7 @@ renderHeaderWithTooltip label tooltip extraClasses = [hsx|
 
 formatPercent :: Double -> Text
 formatPercent value =
-    pack (printf "%.2f%%" (value * 100))
+    formatMoney (round (value * 10000) :: Integer) <> "%"
 
 formatYears :: Double -> Text
 formatYears value =
